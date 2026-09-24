@@ -119,9 +119,12 @@ export function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 sm:flex-row">
-            <Button variant="outline" onClick={exportData}>
-              <Download /> Exportar meus dados
-            </Button>
+            {/* A versão de demonstração publicada não pode oferecer downloads */}
+            {import.meta.env.VITE_MEMORY_ROUTER !== 'true' && (
+              <Button variant="outline" onClick={exportData}>
+                <Download /> Exportar meus dados
+              </Button>
+            )}
             <Button variant="ghost" className="text-danger hover:bg-danger-tint hover:text-danger" onClick={() => setConfirmReset(true)}>
               <RotateCcw /> Apagar progresso e resumos
             </Button>

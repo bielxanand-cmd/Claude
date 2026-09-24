@@ -3,8 +3,15 @@ import { useCallback, useEffect, useState } from 'react'
 export type Theme = 'light' | 'dark' | 'system'
 const KEY = 'concursos.theme'
 
+/** Tema do sistema — ou o escolhido pelo ambiente que hospeda a página (data-theme). */
+function systemIsDark() {
+  const host = document.documentElement.dataset.theme
+  if (host === 'dark' || host === 'light') return host === 'dark'
+  return matchMedia('(prefers-color-scheme: dark)').matches
+}
+
 function apply(theme: Theme) {
-  const dark = theme === 'dark' || (theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
+  const dark = theme === 'dark' || (theme === 'system' && systemIsDark())
   document.documentElement.classList.toggle('dark', dark)
 }
 

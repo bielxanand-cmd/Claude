@@ -4,8 +4,13 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
+  // `--mode artifact`: bundle único e caminhos relativos (versão de demonstração publicada)
+  ...(mode === 'artifact' && {
+    base: './',
+    build: { outDir: 'dist-artifact', rolldownOptions: { output: { codeSplitting: false } } },
+  }),
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, 'src') },
   },
@@ -13,4 +18,4 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts', 'supabase/**/*.test.ts'],
   },
-})
+}))

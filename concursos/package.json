@@ -11,7 +11,8 @@
     "test": "vitest run",
     "typecheck": "tsc -b",
     "db:seed-sql": "tsx scripts/generate-seed-sql.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "build:artifact": "node scripts/build-artifact.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

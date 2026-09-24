@@ -14,7 +14,8 @@
       // Aplica o tema antes da renderização para evitar flash.
       try {
         const t = localStorage.getItem('concursos.theme') || 'system'
-        const dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
+        const h = document.documentElement.dataset.theme
+        const dark = t === 'dark' || (t === 'system' && (h ? h === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches))
         if (dark) document.documentElement.classList.add('dark')
       } catch {}
     </script>

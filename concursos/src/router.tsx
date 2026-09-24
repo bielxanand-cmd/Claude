@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
+import { createBrowserRouter, createMemoryRouter, Navigate, Outlet } from 'react-router-dom'
 import { AppShell } from '@/components/layout/app-shell'
 import { PageSkeleton } from '@/components/study/feedback'
 import { useSelection } from '@/data/queries'
@@ -25,7 +25,13 @@ function AppLoading() {
   )
 }
 
-export const router = createBrowserRouter([
+/**
+ * Na versão de demonstração publicada (arquivo único), a página não controla a
+ * URL: a navegação fica em memória. No app normal, usamos rotas de verdade.
+ */
+const createRouter = import.meta.env.VITE_MEMORY_ROUTER === 'true' ? createMemoryRouter : createBrowserRouter
+
+export const router = createRouter([
   { path: '/', element: <LandingPage /> },
   { path: '/onboarding', lazy: page(() => import('@/pages/onboarding-page'), 'OnboardingPage'), HydrateFallback: AppLoading },
   {
