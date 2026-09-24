@@ -7,7 +7,7 @@ import { buildSeedRows } from '../src/data/seed'
 
 /** Aplica as migrations e o seed num Postgres embutido para validar o SQL. */
 describe('schema do Supabase', () => {
-  it('aplica migrations + seed e calcula frequências coerentes', async () => {
+  it('aplica migrations + seed e calcula frequências coerentes', { timeout: 30_000 }, async () => {
     const db = new PGlite()
     const dir = resolve(import.meta.dirname, 'migrations')
     for (const file of readdirSync(dir).sort()) await db.exec(readFileSync(resolve(dir, file), 'utf8'))

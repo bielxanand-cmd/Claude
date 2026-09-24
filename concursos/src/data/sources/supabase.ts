@@ -128,7 +128,7 @@ export function createSupabaseDataSource(url: string, anonKey: string): DataSour
         subjects: subjects.map(toSubject),
         topics: topics.map(toTopic),
         contestSubjects: contestSubjects.map((r): ContestSubject => ({ contestId: r.contest_id, subjectId: r.subject_id, weight: r.weight == null ? null : Number(r.weight), questionCount: r.question_count })),
-        contestTopics: contestTopics.map((r): ContestTopic => ({ contestId: r.contest_id, topicId: r.topic_id })),
+        contestTopics: contestTopics.map((r): ContestTopic => ({ contestId: r.contest_id, topicId: r.topic_id, details: r.details ?? [] })),
       }
     },
 
@@ -161,6 +161,11 @@ export function createSupabaseDataSource(url: string, anonKey: string): DataSour
       ])
       const result = planNoticeImport(input, { subjects, topics }, uuid)
       const c = result.contest
+      let examBoardId: string | null = null
+      if (c.examBoard) {
+        const board = must<Row | null>(await client.from('exam_boards').select('id').eq('name', c.examBoard).maybeSingle())
+        examBoardId = board?.id ?? must<Row>(await client.from('exam_boards').insert({ name: c.examBoard }).select('id').single()).id
+      }
       must(
         await client.from('contests').insert({
           id: c.id,
@@ -174,6 +179,7 @@ export function createSupabaseDataSource(url: string, anonKey: string): DataSour
           year: c.year,
           notice_url: c.noticeUrl,
           notice_date: c.noticeDate,
+          exam_board_id: examBoardId,
           origin: c.origin,
           created_by: await userId(),
         }),
@@ -189,7 +195,11 @@ export function createSupabaseDataSource(url: string, anonKey: string): DataSour
             .insert(result.contestSubjects.map((cs) => ({ contest_id: cs.contestId, subject_id: cs.subjectId, weight: cs.weight, question_count: cs.questionCount }))),
         )
       if (result.contestTopics.length)
-        must(await client.from('contest_topics').insert(result.contestTopics.map((ct) => ({ contest_id: ct.contestId, topic_id: ct.topicId }))))
+        must(
+          await client
+            .from('contest_topics')
+            .insert(result.contestTopics.map((ct) => ({ contest_id: ct.contestId, topic_id: ct.topicId, details: ct.details ?? [] }))),
+        )
       return c
     },
 

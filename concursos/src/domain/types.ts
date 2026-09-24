@@ -92,6 +92,8 @@ export interface ContestSubject {
 export interface ContestTopic {
   contestId: string
   topicId: string
+  /** Subitens com que o edital detalha o assunto */
+  details?: string[]
 }
 
 /** Linhas brutas necessárias para consolidar o plano de um cargo. */
@@ -115,6 +117,8 @@ export interface PlanTopic {
   frequency: number
   /** Editais em que o assunto apareceu */
   contestIds: string[]
+  /** Subitens citados pelos editais (sem repetição) */
+  details: string[]
 }
 
 export interface PlanSubject {
@@ -185,11 +189,17 @@ export interface Summary {
 /* Importação de edital                                                       */
 /* -------------------------------------------------------------------------- */
 
+export interface NoticeImportTopic {
+  name: string
+  /** Subitens do edital para este assunto (ex.: 4.1, 4.2) */
+  details?: string[]
+}
+
 export interface NoticeImportSubject {
   name: string
   weight?: number | null
   questionCount?: number | null
-  topics: string[]
+  topics: NoticeImportTopic[]
 }
 
 /**

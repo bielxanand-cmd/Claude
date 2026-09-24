@@ -1,3 +1,4 @@
+import { normalize } from '@/lib/text'
 import type { CatalogSnapshot, PlanSubject, PlanTopic, StudyPlan } from './types'
 
 function average(values: number[]): number | null {
@@ -22,13 +23,19 @@ export function consolidateStudyPlan(snapshot: CatalogSnapshot): StudyPlan {
 
   const topicById = new Map(topics.map((t) => [t.id, t]))
 
-  // assunto -> editais em que aparece
+  // assunto -> editais em que aparece (e subitens citados)
   const topicContests = new Map<string, Set<string>>()
+  const topicDetails = new Map<string, Map<string, string>>()
   for (const ct of contestTopics) {
     if (!contestIds.has(ct.contestId) || !topicById.has(ct.topicId)) continue
     const set = topicContests.get(ct.topicId) ?? new Set<string>()
     set.add(ct.contestId)
     topicContests.set(ct.topicId, set)
+    if (ct.details?.length) {
+      const details = topicDetails.get(ct.topicId) ?? new Map<string, string>()
+      for (const d of ct.details) if (!details.has(normalize(d))) details.set(normalize(d), d)
+      topicDetails.set(ct.topicId, details)
+    }
   }
 
   const planSubjects: PlanSubject[] = []
@@ -44,6 +51,7 @@ export function consolidateStudyPlan(snapshot: CatalogSnapshot): StudyPlan {
       return {
         topic,
         contestIds: ids,
+        details: [...(topicDetails.get(topic.id)?.values() ?? [])],
         frequency: totalContests ? ids.length / totalContests : 0,
       }
     })

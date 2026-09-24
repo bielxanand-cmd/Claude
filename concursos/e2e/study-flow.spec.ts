@@ -127,9 +127,8 @@ test('onboarding → cargo → disciplina → assunto → resumo → conclusão 
   await shot(page, '14-dashboard-final')
 })
 
-test('importar edital por texto adiciona disciplinas com a fonte registrada', async ({ page }) => {
-  await page.goto('/')
-  await page.evaluate(() => {
+const seedUser = (page: Page) =>
+  page.evaluate(() => {
     localStorage.setItem(
       'concursos.user.v1',
       JSON.stringify({
@@ -140,13 +139,82 @@ test('importar edital por texto adiciona disciplinas com a fonte registrada', as
       }),
     )
   })
+
+/** Gera um PDF mínimo (texto em Helvetica, uma linha por item) para testar o upload. */
+function makePdf(lines: string[]): Buffer {
+  const esc = (t: string) => t.replace(/[\\()]/g, '\\$&')
+  const content = `BT /F1 10 Tf 40 800 Td 14 TL ${lines.map((l) => `(${esc(l)}) Tj T*`).join(' ')} ET`
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
+  ]
+  let pdf = '%PDF-1.4\n'
+  const offsets: number[] = []
+  objects.forEach((body, i) => {
+    offsets.push(pdf.length)
+    pdf += `${i + 1} 0 obj\n${body}\nendobj\n`
+  })
+  const xref = pdf.length
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('')}`
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`
+  return Buffer.from(pdf, 'latin1')
+}
+
+test('importar edital em PDF identifica disciplinas, assuntos e dados do edital', async ({ page }) => {
+  await page.goto('/')
+  await seedUser(page)
   await page.goto('/concursos?importar=1')
-  await page.getByLabel('Órgão (sigla)').fill('TCU')
-  await page.getByLabel('Conteúdo programático').fill('CIÊNCIA DE DADOS (peso 2): 1. Estatística descritiva. 2. Regressão linear.')
+
+  const pdf = makePdf([
+    'TRIBUNAL DE CONTAS DA UNIAO',
+    'EDITAL No 1 - TCU, DE 10 DE MARCO DE 2025',
+    '1.1 O concurso sera executado pelo Cebraspe.',
+    '12 DOS OBJETOS DE AVALIACAO',
+    'CIENCIA DE DADOS: 1 Estatistica descritiva. 2 Regressao linear. 2.1 Minimos quadrados.',
+    'GOVERNANCA DE TI: 1 COBIT. 2 ITIL.',
+    'ANEXO I',
+    'CRONOGRAMA PREVISTO',
+  ])
+  await page.locator('#notice-file').setInputFiles({ name: 'edital-tcu.pdf', mimeType: 'application/pdf', buffer: pdf })
+
+  await expect(page.getByText(/Encontramos/)).toContainText('2 disciplinas')
+  await expect(page.getByText(/Encontramos/)).toContainText('12 DOS OBJETOS DE AVALIACAO')
+  await expect(page.locator('#board')).toHaveValue('Cebraspe')
+  await expect(page.locator('#year')).toHaveValue('2025')
+  await expect(page.locator('#org-short')).toHaveValue('TCU')
+
+  // Revisão: desmarca uma disciplina e transforma subitens em assuntos
+  await page.getByRole('checkbox', { name: 'Importar Governanca de TI' }).uncheck()
+  await page.getByRole('radio', { name: /Transformar em assuntos/ }).click()
   await expect(page.getByText('1 disciplinas · 2 assuntos')).toBeVisible()
   await page.getByRole('button', { name: 'Importar para meu plano' }).click()
   await expect(page.getByText('Edital importado!')).toBeVisible()
-  await expect(page.getByText('TCU').first()).toBeVisible()
+
   await page.goto('/disciplinas')
-  await expect(page.getByRole('link', { name: /Ciência de Dados/ })).toBeVisible()
+  await expect(page.getByRole('link', { name: /Ciencia de Dados/ })).toBeVisible()
+  await expect(page.getByRole('link', { name: /Governanca de TI/ })).toHaveCount(0)
+})
+
+test('importar edital colando o texto', async ({ page }) => {
+  await page.goto('/')
+  await seedUser(page)
+  await page.goto('/concursos?importar=1')
+  await page.getByRole('tab', { name: /Colar texto/ }).click()
+  await page.getByLabel('Texto do edital ou do conteúdo programático').fill(
+    'CIÊNCIA DE DADOS (peso 2): 1 Estatística descritiva. 2 Regressão linear. 2.1 Mínimos quadrados.',
+  )
+  await page.getByRole('button', { name: /Identificar disciplinas/ }).click()
+  await expect(page.getByText(/Encontramos/)).toContainText('1 disciplinas')
+  await page.locator('#org-short').fill('TCU')
+  await page.getByRole('button', { name: 'Importar para meu plano' }).click()
+  await expect(page.getByText('Edital importado!')).toBeVisible()
+
+  await page.goto('/disciplinas')
+  await page.getByRole('link', { name: /Ciência de Dados/ }).click()
+  await page.getByRole('link', { name: /Regressão linear/ }).first().click()
+  await expect(page.getByText('O que o edital cobra')).toBeVisible()
+  await expect(page.getByText('Mínimos quadrados')).toBeVisible()
 })

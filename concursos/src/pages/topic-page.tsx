@@ -211,6 +211,20 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
         </div>
 
         <aside className="space-y-5">
+          {planTopic.details.length > 0 && (
+            <Card className="p-5">
+              <h2 className="text-sm font-bold">O que o edital cobra</h2>
+              <p className="mt-1 text-xs text-muted">Subitens listados no conteúdo programático.</p>
+              <ul className="mt-3 space-y-2">
+                {planTopic.details.map((d) => (
+                  <li key={d} className="flex gap-2 text-sm leading-snug">
+                    <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-primary-soft" aria-hidden />
+                    {d}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
           <Card className="p-5">
             <h2 className="text-sm font-bold">Onde este assunto foi cobrado</h2>
             <p className="mt-1 text-xs text-muted">

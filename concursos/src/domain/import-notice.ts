@@ -33,7 +33,7 @@ export function planNoticeImport(
     let subject = subjectByName.get(normalize(name))
     if (!subject) {
       const slug = slugify(name)
-      subject = { id: `${slug}-${newId().slice(0, 6)}`, slug, name, icon: 'book-open' }
+      subject = { id: `${slug}-${newId().slice(0, 6)}`, slug, name, icon: guessSubjectIcon(name) }
       subjectByName.set(normalize(name), subject)
       newSubjects.push(subject)
     }
@@ -46,17 +46,47 @@ export function planNoticeImport(
     })
 
     const orderBase = existing.topics.filter((t) => t.subjectId === subject.id).length + newTopics.filter((t) => t.subjectId === subject.id).length
-    item.topics.forEach((topicName, index) => {
+    item.topics.forEach(({ name: rawTopic, details = [] }, index) => {
+      const topicName = rawTopic.trim()
+      if (!topicName) return
       const key = `${subject.id}|${normalize(topicName)}`
       let topic = topicByKey.get(key)
       if (!topic) {
-        topic = { id: `${subject.id}__${slugify(topicName).slice(0, 60)}-${newId().slice(0, 6)}`, subjectId: subject.id, name: topicName.trim(), order: orderBase + index }
+        topic = { id: `${subject.id}__${slugify(topicName).slice(0, 60)}-${newId().slice(0, 6)}`, subjectId: subject.id, name: topicName, order: orderBase + index }
         topicByKey.set(key, topic)
         newTopics.push(topic)
       }
-      if (!contestTopics.some((ct) => ct.topicId === topic.id)) contestTopics.push({ contestId: contest.id, topicId: topic.id })
+      const link = contestTopics.find((ct) => ct.topicId === topic.id)
+      if (link) link.details = [...new Set([...(link.details ?? []), ...details])]
+      else contestTopics.push({ contestId: contest.id, topicId: topic.id, details: [...details] })
     })
   }
 
   return { contest, newSubjects, newTopics, contestSubjects, contestTopics }
+}
+
+/** Ícone sugerido para disciplinas novas, a partir do nome. */
+export function guessSubjectIcon(name: string): string {
+  const n = normalize(name)
+  const rules: [RegExp, string][] = [
+    [/portugues|lingua|redacao|ingles|espanhol|literatura/, 'languages'],
+    [/constitucional/, 'landmark'],
+    [/processual|processo/, 'gavel'],
+    [/penal|criminal|policia|seguranca publica/, 'shield'],
+    [/administrativo|administracao/, 'building-2'],
+    [/tributari|fiscal|icms/, 'receipt'],
+    [/civil|direito|legislacao|lei|etica|humanos/, 'scale'],
+    [/contab|custos|financeira|matematica|estatistica|fisica/, 'calculator'],
+    [/raciocinio|logic/, 'brain'],
+    [/informatica|computa|tecnologia|dados|software|redes/, 'monitor'],
+    [/economia|mercado/, 'trending-up'],
+    [/auditoria|controle/, 'search-check'],
+    [/geografia|geopolitica|atualidades|historia/, 'globe'],
+    [/orcament|afo/, 'wallet'],
+    [/transito/, 'file-text'],
+    [/saude|enfermagem|medic/, 'heart-pulse'],
+    [/educacao|pedagog/, 'graduation-cap'],
+    [/bancari|banco/, 'banknote'],
+  ]
+  return rules.find(([re]) => re.test(n))?.[1] ?? 'book-open'
 }

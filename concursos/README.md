@@ -67,6 +67,18 @@ e2e/               testes Playwright do fluxo de ponta a ponta
 
 Todos os canais de entrada (seed, texto colado, PDF e API no futuro) convergem para o formato `NoticeImport` e para `planNoticeImport`, que reaproveita disciplinas/assuntos existentes (comparação sem acento/caixa) e registra a origem (`notice_origin`).
 
+### Importação de edital (PDF ou texto)
+
+Em **Meu concurso → Importar edital**, envie o PDF do edital ou cole o texto:
+
+1. `features/import/pdf-text.ts` extrai o texto do PDF no navegador (pdf.js); nada é enviado a servidores. PDFs escaneados (sem texto) são detectados e o usuário é orientado a colar o texto.
+2. `findSyllabusSection` localiza a seção de conteúdos ("Dos objetos de avaliação", "Conteúdo programático", "Conhecimentos exigidos"…) e para no próximo ANEXO.
+3. `parseSyllabus` reconhece disciplinas e assuntos nos formatos das bancas: `1 Item. 2 Item. 4.1 Subitem` (Cebraspe), `1.`/`1)`/`1 –` (FGV, FCC, Vunesp…), títulos sozinhos na linha, várias disciplinas na mesma linha, listas com marcadores e grupos (Bloco I, Conhecimentos básicos). A numeração é validada em sequência, então números de leis (“Lei nº 8.112/1990”) não quebram os itens.
+4. `detectNoticeMetadata` preenche órgão, sigla, ano, banca e esfera.
+5. O usuário revisa: renomeia/desmarca disciplinas, remove assuntos e escolhe se os subitens (4.1, 4.2…) viram assuntos ou ficam como detalhes (exibidos em “O que o edital cobra”, gravados em `contest_topics.details`).
+
+Os testes usam um trecho real do Edital nº 1 – PRF/2021 (`src/domain/__fixtures__`).
+
 ### Progresso
 
 - Disciplina = assuntos concluídos ÷ assuntos da disciplina.
