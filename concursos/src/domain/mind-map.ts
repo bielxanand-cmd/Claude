@@ -1,3 +1,4 @@
+import { splitSentences } from './sentences'
 import { parseHtml, textOf, type HtmlNode } from './html'
 
 /**
@@ -59,8 +60,7 @@ function labelled(text: string): MindMapNode {
 }
 
 function sentences(text: string): string[] {
-  return clean(text)
-    .split(/(?<=[.!?;])\s+(?=["“(]?[A-ZÀ-Ý0-9])/)
+  return splitSentences(clean(text))
     .map(clean)
     .filter((s) => s.replace(/[^\p{L}\p{N}]/gu, '').length > 1)
 }

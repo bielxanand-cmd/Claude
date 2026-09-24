@@ -1,3 +1,4 @@
+import { splitSentences as splitText } from './sentences'
 import { normalize } from '@/lib/text'
 import { parseHtml, textOf, type HtmlNode } from './html'
 import type { SummaryContent } from './types'
@@ -71,9 +72,8 @@ function inline(node: HtmlNode | string, emphasis: string[], inEmphasis = false)
   return text
 }
 
-function splitSentences(text: string, emphasis: string[]): Sentence[] {
-  return clean(text)
-    .split(/(?<=[.!?;])\s+(?=["“(]?[A-ZÀ-Ý0-9])/)
+function sentencesWithEmphasis(text: string, emphasis: string[]): Sentence[] {
+  return splitText(clean(text))
     .map((s) => clean(s))
     .filter((s) => s.length > 2)
     .map((s) => ({ text: s, emphasis: emphasis.filter((e) => s.includes(e)) }))
@@ -81,7 +81,7 @@ function splitSentences(text: string, emphasis: string[]): Sentence[] {
 
 function blockSentences(node: HtmlNode): Sentence[] {
   const emphasis: string[] = []
-  return splitSentences(inline(node, emphasis), emphasis)
+  return sentencesWithEmphasis(inline(node, emphasis), emphasis)
 }
 
 /** "Rótulo: explicação" → pergunta e resposta */

@@ -398,3 +398,55 @@ test('flashcards: gera do resumo, edita, estuda com revisão espaçada e aparece
   await page.goto('/disciplina/direito-constitucional')
   await expect(page.getByText(/3 cartões em 1 assunto · 0 para revisar agora/)).toBeVisible()
 })
+
+test('livro em PDF preenche o resumo do assunto e os resumos da disciplina', async ({ page }) => {
+  await page.goto('/')
+  await seedUser(page)
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('concursos.user.v1')!)
+    raw.selection = { positionId: 'auditor-fiscal-estadual', sphere: 'estadual', state: 'SP', createdAt: new Date().toISOString() }
+    localStorage.setItem('concursos.user.v1', JSON.stringify(raw))
+  })
+  // Livro fictício, uma frase por linha (texto ASCII para a fonte padrão do PDF)
+  const book = makePdf([
+    'CAPITULO 7 - REMEDIOS CONSTITUCIONAIS',
+    'Os remedios constitucionais sao garantias que protegem direitos fundamentais contra abusos.',
+    'O habeas corpus protege a liberdade de locomocao e pode ser impetrado por qualquer pessoa.',
+    'O mandado de seguranca deve ser impetrado no prazo de 120 dias contados da ciencia do ato.',
+    'Nao cabe habeas corpus em relacao a punicoes disciplinares militares, salvo quanto a legalidade.',
+    'O habeas data assegura o conhecimento de informacoes pessoais constantes de registros publicos.',
+    'CAPITULO 8 - PODER LEGISLATIVO',
+    'O Poder Legislativo federal e exercido pelo Congresso Nacional, composto pela Camara e pelo Senado.',
+    'As comissoes parlamentares de inquerito tem poderes de investigacao proprios das autoridades judiciais.',
+  ])
+
+  // 1. Assunto: preenche os campos no editor
+  await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
+  await page.getByRole('button', { name: /Preencher com livro/ }).click()
+  const dialog = page.getByRole('dialog', { name: /Preencher com livro/ })
+  await dialog.locator('#topic-book-file').setInputFiles({ name: 'constitucional.pdf', mimeType: 'application/pdf', buffer: book })
+  await expect(dialog.getByText(/Encontrado: p\. 1/)).toBeVisible()
+  await dialog.getByRole('button', { name: 'Preencher campos' }).click()
+  await expect(page.getByText('Campos preenchidos')).toBeVisible()
+  await expect(page.getByRole('textbox', { name: 'Meu resumo' })).toContainText('habeas corpus protege a liberdade')
+  await expect(page.getByRole('textbox', { name: 'Meu resumo' })).not.toContainText('Congresso Nacional')
+  await expect(page.getByRole('textbox', { name: 'Pegadinhas' })).toContainText('Nao cabe habeas corpus')
+  await expect(page.getByRole('textbox', { name: 'Pontos importantes' }).locator('strong')).toContainText('120 dias')
+  await expect(page.getByRole('textbox', { name: 'Observações' })).toContainText('constitucional')
+  await page.getByRole('button', { name: /^Salvar/ }).click()
+  await expect(page.getByText('Resumo salvo!')).toBeVisible()
+
+  // 2. Disciplina: preenche vários assuntos de uma vez (o livro continua carregado)
+  await page.getByRole('link', { name: 'Voltar para disciplina' }).first().click()
+  await page.getByRole('button', { name: /Enviar livro \(PDF\)/ }).click()
+  const batch = page.getByRole('dialog', { name: /Preencher resumos com livro/ })
+  await expect(batch.getByText('constitucional', { exact: true })).toBeVisible()
+  await expect(batch.getByRole('checkbox', { name: 'Preencher Poder Legislativo' })).toBeChecked()
+  // Já tem resumo: fica desmarcado por padrão
+  await expect(batch.getByRole('checkbox', { name: 'Preencher Remédios constitucionais' })).not.toBeChecked()
+  await batch.getByRole('button', { name: /Preencher \d+ assunto/ }).click()
+  await expect(page.getByText(/resumos? preenchidos?/)).toBeVisible()
+
+  await page.goto('/resumos')
+  await expect(page.getByRole('link', { name: 'Poder Legislativo' })).toBeVisible()
+})

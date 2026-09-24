@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Filter, SearchX } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpenText, Filter, SearchX } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { EmptyState, ErrorState, PageSkeleton } from '@/components/study/feedback'
@@ -13,6 +13,7 @@ import { ProgressBar } from '@/components/ui/progress-bar'
 import { useStudy } from '@/data/queries'
 import { statusOf, subjectProgress } from '@/domain/progress'
 import type { TopicStatus } from '@/domain/types'
+import { FillSubjectDialog } from '@/features/book/fill-subject-dialog'
 import { SubjectFlashcards } from '@/features/flashcards/subject-flashcards'
 import { useTopicActions } from '@/hooks/use-topic-actions'
 import { percent } from '@/lib/text'
@@ -22,7 +23,9 @@ type FilterValue = 'all' | TopicStatus
 
 export function SubjectPage() {
   const { id = '' } = useParams()
-  const { plan, statuses, subjectIndex, summaryIndex, contestIndex, isLoading, error, refetch } = useStudy()
+  const study = useStudy()
+  const { plan, statuses, subjectIndex, summaryIndex, contestIndex, isLoading, error, refetch } = study
+  const [bookOpen, setBookOpen] = useState(false)
   const { setStatus } = useTopicActions()
   const [filter, setFilter] = useState<FilterValue>('all')
 
@@ -97,9 +100,22 @@ export function SubjectPage() {
         </div>
       </Card>
 
-      <div className="mt-6">
+      <div className="mt-6 grid gap-4">
+        <Card className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:p-6">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary-tint text-primary dark:text-primary-soft">
+            <BookOpenText className="size-5" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-bold">Resumos a partir de um livro</h2>
+            <p className="mt-0.5 text-sm text-muted">Envie o livro ou a apostila em PDF e preencha os resumos dos assuntos automaticamente.</p>
+          </div>
+          <Button size="sm" onClick={() => setBookOpen(true)}>
+            <BookOpenText /> Enviar livro (PDF)
+          </Button>
+        </Card>
         <SubjectFlashcards subject={subject} />
       </div>
+      <FillSubjectDialog open={bookOpen} onOpenChange={setBookOpen} subject={subject} study={study} />
 
       <section className="mt-8" aria-label="Assuntos">
         <div className="mb-3 flex items-center justify-between gap-3">

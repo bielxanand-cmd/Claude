@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2, Layers3, Lightbulb, Network, NotebookPen, Save, SearchX, StickyNote } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, BookOpenText, Check, CheckCircle2, Layers3, Lightbulb, Network, NotebookPen, Save, SearchX, StickyNote } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useBlocker, useParams } from 'react-router-dom'
@@ -17,6 +17,7 @@ import type { Flashcard } from '@/domain/flashcards'
 import { statusOf } from '@/domain/progress'
 import type { SummaryContent } from '@/domain/types'
 import { AiPanel } from '@/features/ai/ai-panel'
+import { FillTopicDialog } from '@/features/book/fill-topic-dialog'
 import { FlashcardsDialog } from '@/features/flashcards/flashcards-dialog'
 import { StudySession } from '@/features/flashcards/study-session'
 import { MindMapDialog } from '@/features/mind-map/mind-map-dialog'
@@ -77,6 +78,7 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
   const [justSaved, setJustSaved] = useState(false)
   const [mindMapOpen, setMindMapOpen] = useState(false)
   const [flashcardsOpen, setFlashcardsOpen] = useState(false)
+  const [bookOpen, setBookOpen] = useState(false)
   const [studyCards, setStudyCards] = useState<Flashcard[] | null>(null)
   const flashcards = useFlashcards()
   const deckSize = (flashcards.data ?? []).filter((c) => c.topicId === topicId).length
@@ -183,6 +185,9 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
             <Button variant="secondary" size="sm" onClick={() => setFlashcardsOpen(true)}>
               <Layers3 /> Flashcards
               {deckSize > 0 && <span className="rounded-full bg-primary px-1.5 text-[11px] font-bold text-white tabular-nums">{deckSize}</span>}
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setBookOpen(true)}>
+              <BookOpenText /> Preencher com livro (PDF)
             </Button>
             <FrequencyPill frequency={planTopic.frequency} total={plan!.contests.length} />
             <SourceChips contests={sources} max={3} />
@@ -315,6 +320,16 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
         document.body,
       )}
 
+      <FillTopicDialog
+        open={bookOpen}
+        onOpenChange={setBookOpen}
+        topicName={planTopic.topic.name}
+        subjectName={subject.subject.name}
+        positionName={plan!.position.name}
+        details={planTopic.details}
+        current={draft}
+        onFill={setDraft}
+      />
       <FlashcardsDialog
         open={flashcardsOpen}
         onOpenChange={setFlashcardsOpen}

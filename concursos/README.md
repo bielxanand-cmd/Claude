@@ -96,6 +96,15 @@ trechos em negrito/destaque viram lacunas, “Tema: explicação” vira pergunt
 
 A revisão usa um SM-2 simplificado (Errei 10 min · Difícil 1 h/×1,2 · Acertei 1 → 3 → ×facilidade dias · Fácil). A página da disciplina reúne os cartões de todos os assuntos e mostra quantos estão para revisar.
 
+### Resumos a partir de um livro (PDF)
+
+No assunto (**Preencher com livro (PDF)**) ou na disciplina (**Enviar livro (PDF)**, vários assuntos de uma vez), o usuário envia um livro/apostila. `domain/book.ts` localiza as páginas de cada assunto (nome + subitens do edital, com radicais para casar singular/plural) e preenche os campos:
+
+- **Trechos do livro** (sem IA): lê o trecho em ordem, mantém as frases que continuam o assunto e para no próximo capítulo; exceções (“salvo”, “exceto”, “não cabe”…) vão para Pegadinhas, prazos/artigos para Pontos importantes (em negrito — viram lacunas nos flashcards) e a fonte com as páginas vai para Observações.
+- **Resumo com o Claude** (página publicada, capacidade `sample`): o Claude escreve os quatro campos usando só o trecho enviado; o HTML de resposta é higienizado (`domain/sanitize-html.ts`).
+
+No assunto, o texto vai para o editor para revisão antes de salvar; na disciplina, assuntos sem resumo são preenchidos e salvos (os que já têm resumo recebem o conteúdo ao final, se marcados). O livro fica só na memória da sessão.
+
 ### Progresso
 
 - Disciplina = assuntos concluídos ÷ assuntos da disciplina.
