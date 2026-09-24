@@ -1,8 +1,9 @@
-import { ArrowLeftRight, FileSearch, FileUp, GitMerge, Upload } from 'lucide-react'
+import { FileSearch, FileUp, GitMerge, Plus, Upload } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { DemoNotice, ErrorState, PageSkeleton } from '@/components/study/feedback'
 import { IconTile } from '@/components/study/icon-registry'
+import { MyContests } from '@/components/study/my-contests'
 import { PageHeader, SectionTitle } from '@/components/study/page-header'
 import { ContestRow } from '@/components/study/sources'
 import { Button } from '@/components/ui/button'
@@ -54,7 +55,7 @@ export function ContestsPage() {
           <>
             <Button variant="outline" asChild>
               <Link to="/onboarding">
-                <ArrowLeftRight /> Trocar concurso
+                <Plus /> Outro concurso
               </Link>
             </Button>
             <Button onClick={() => setImport(true)}>
@@ -88,6 +89,8 @@ export function ContestsPage() {
           </Card>
 
           {plan.hasDemoData && <DemoNotice />}
+
+          <MyContests />
 
           <section>
             <SectionTitle title="Editais utilizados como fonte" />

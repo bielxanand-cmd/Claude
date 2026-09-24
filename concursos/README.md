@@ -79,6 +79,16 @@ Em **Meu concurso → Importar edital**, envie o PDF do edital ou cole o texto:
 
 Os testes usam um trecho real do Edital nº 1 – PRF/2021 (`src/domain/__fixtures__`).
 
+### Onde os dados ficam salvos
+
+| Modo | Quando | Onde |
+| --- | --- | --- |
+| Supabase | `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` definidos | banco Postgres (`supabase/migrations`) |
+| Conta do Claude | página publicada no claude.ai (`VITE_CLOUD_STORAGE=true`) | banco privado da página, em `data/users/<id>/` — visível só para o próprio usuário, disponível em qualquer navegador/dispositivo |
+| Navegador | demais casos (`npm run dev`) | `localStorage` |
+
+A camada `src/data/persistence` carrega tudo uma vez e grava só o documento afetado por cada alteração (perfil/histórico, progresso, um documento por resumo e um por edital importado — cada documento tem limite de 256 KB). Na primeira abertura na conta, o que estava salvo no navegador é migrado automaticamente. **Meus concursos** guarda os concursos já abertos (até 20) para voltar a eles com um clique, sem refazer o cadastro nem reimportar editais.
+
 ### Progresso
 
 - Disciplina = assuntos concluídos ÷ assuntos da disciplina.

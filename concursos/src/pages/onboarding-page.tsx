@@ -18,6 +18,7 @@ import { toast } from 'sonner'
 import { Logo } from '@/components/layout/logo'
 import { DemoNotice, EmptyState, ErrorState } from '@/components/study/feedback'
 import { IconTile } from '@/components/study/icon-registry'
+import { MyContests } from '@/components/study/my-contests'
 import { SourceChips } from '@/components/study/sources'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -184,6 +185,9 @@ function CareerStep({ onSelect, onCustom }: { onSelect: (career: Career) => void
   return (
     <>
       <StepTitle title="Qual carreira você deseja seguir?" description="Vamos montar seu plano de estudos a partir dos editais anteriores dessa área." />
+      <div className="mx-auto mb-10 max-w-2xl">
+        <MyContests title="Continuar um concurso que você já abriu" hideWhenEmpty />
+      </div>
       {careers.error ? (
         <ErrorState error={careers.error} onRetry={() => careers.refetch()} />
       ) : (

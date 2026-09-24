@@ -230,6 +230,21 @@ export function createSupabaseDataSource(url: string, anonKey: string): DataSour
       return { positionId: row.position_id, sphere: row.sphere, state: row.state, createdAt: row.created_at }
     },
 
+    async listRecentSelections() {
+      const rows = must<Row[]>(
+        await client.from('user_positions').select('*').eq('user_id', await userId()).eq('forgotten', false).order('created_at', { ascending: false }).limit(100),
+      )
+      const seen = new Set<string>()
+      return rows
+        .filter((r) => !seen.has(r.position_id) && seen.add(r.position_id))
+        .slice(0, 20)
+        .map((r) => ({ positionId: r.position_id, sphere: r.sphere, state: r.state, createdAt: r.created_at }))
+    },
+
+    async forgetSelection(positionId) {
+      must(await client.from('user_positions').update({ forgotten: true }).eq('user_id', await userId()).eq('position_id', positionId).eq('is_active', false))
+    },
+
     async listUserTopics() {
       const id = await userId()
       return (await selectAll(client, 'user_topics', '*', (q) => q.eq('user_id', id))).map(toUserTopic)

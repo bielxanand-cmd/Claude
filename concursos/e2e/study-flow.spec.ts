@@ -284,3 +284,47 @@ test('cria mapa mental a partir do resumo do assunto', async ({ page, isMobile }
     expect((await download).suggestedFilename()).toBe('mapa-mental-remedios-constitucionais.png')
   }
 })
+
+test('Meus concursos: troca entre concursos já abertos mantendo o progresso', async ({ page, isMobile }) => {
+  const start = async (career: RegExp, sphere: RegExp, position: RegExp, uf?: string) => {
+    await page.goto('/onboarding')
+    await page.getByRole('button', { name: career }).click()
+    await page.getByRole('radio', { name: sphere }).click()
+    if (uf) await page.getByRole('button', { name: uf }).click()
+    await page.getByRole('button', { name: /Continuar/ }).click()
+    await page.getByRole('button', { name: position }).first().click()
+    await page.getByRole('button', { name: /Começar a estudar/ }).click()
+    await expect(page).toHaveURL(/\/dashboard$/)
+  }
+
+  await start(/^Área Fiscal/, /^Estadual/, /^Auditor Fiscal Edital em SP/, 'São Paulo')
+  await page.goto('/assunto/direito-tributario__competencia-tributaria')
+  await page.getByRole('button', { name: /Marcar como concluído|Concluir/ }).click()
+  await expect(page.getByText('Assunto concluído!')).toBeVisible()
+
+  await start(/^Policial/, /^Federal/, /^Agente de Polícia Federal/)
+
+  // O onboarding oferece voltar aos concursos já abertos
+  await page.goto('/onboarding')
+  await expect(page.getByText('Continuar um concurso que você já abriu')).toBeVisible()
+
+  // Recarrega o app: tudo continua salvo
+  await page.goto('/dashboard')
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Agente de Polícia Federal', level: 1 })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Trocar concurso' }).filter({ visible: true }).first().click()
+  const dialog = page.getByRole('dialog', { name: 'Trocar concurso' })
+  await expect(dialog.getByText('Agente de Polícia Federal — PF')).toBeVisible()
+  await expect(dialog.getByText('Atual')).toBeVisible()
+  const fiscal = dialog.getByRole('button', { name: /Auditor Fiscal — SEFAZ SP/ })
+  await expect(fiscal).toContainText('1 concluídos')
+  await fiscal.click()
+
+  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(page.getByRole('heading', { name: 'Auditor Fiscal', level: 1 })).toBeVisible()
+  await expect(page.getByText('1 / 127')).toBeVisible()
+  if (isMobile) return
+  await page.getByRole('link', { name: 'Meu concurso' }).click()
+  await expect(page.getByRole('region', { name: 'Meus concursos' }).getByText('Agente de Polícia Federal — PF')).toBeVisible()
+})

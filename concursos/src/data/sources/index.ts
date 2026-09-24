@@ -1,8 +1,11 @@
+import { createCloudPersistence } from '../persistence/cloud'
 import { createLocalDataSource } from './local'
 import type { DataSource } from './types'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+/** Página publicada no claude.ai: salva na conta do usuário (capacidade `db`). */
+const cloudStorage = import.meta.env.VITE_CLOUD_STORAGE === 'true'
 
 /** Carrega o cliente Supabase sob demanda (fora do bundle no modo local). */
 function createLazySupabaseDataSource(url: string, anonKey: string): DataSource {
@@ -19,9 +22,11 @@ function createLazySupabaseDataSource(url: string, anonKey: string): DataSource 
 }
 
 /**
- * Com `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` definidos, os dados vêm do
- * Supabase. Sem eles, o app roda em modo local (seed + localStorage).
+ * - `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`: dados no Supabase;
+ * - `VITE_CLOUD_STORAGE=true` (página publicada): dados na conta do claude.ai;
+ * - caso contrário: dados neste navegador (localStorage).
  */
-export const dataSource: DataSource = url && anonKey ? createLazySupabaseDataSource(url, anonKey) : createLocalDataSource()
+export const dataSource: DataSource =
+  url && anonKey ? createLazySupabaseDataSource(url, anonKey) : createLocalDataSource(cloudStorage ? createCloudPersistence : undefined)
 
 export type { DataSource, PositionListItem, PositionFilter } from './types'

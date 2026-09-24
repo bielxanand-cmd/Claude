@@ -22,6 +22,7 @@ export const queryKeys = {
   positions: (filter: PositionFilter) => ['positions', filter] as const,
   plan: (positionId: string) => ['plan', positionId] as const,
   selection: ['selection'] as const,
+  recentSelections: ['recent-selections'] as const,
   profile: ['profile'] as const,
   userTopics: ['user-topics'] as const,
   summaries: ['summaries'] as const,
@@ -87,7 +88,21 @@ export function useSetSelection() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (selection: Omit<UserSelection, 'createdAt'> | null) => dataSource.setSelection(selection),
-    onSuccess: (selection) => qc.setQueryData(queryKeys.selection, selection),
+    onSuccess: (selection) => {
+      qc.setQueryData(queryKeys.selection, selection)
+      qc.invalidateQueries({ queryKey: queryKeys.recentSelections })
+    },
+  })
+}
+
+export const useRecentSelections = () => useQuery({ queryKey: queryKeys.recentSelections, queryFn: () => dataSource.listRecentSelections() })
+
+export function useForgetSelection() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (positionId: string) => dataSource.forgetSelection(positionId),
+    onSuccess: (_v, positionId) =>
+      qc.setQueryData<UserSelection[]>(queryKeys.recentSelections, (list = []) => list.filter((s) => s.positionId !== positionId)),
   })
 }
 

@@ -1,4 +1,4 @@
-import { Database, Download, Monitor, Moon, RotateCcw, Sun, User } from 'lucide-react'
+import { Cloud, CloudOff, Database, Download, HardDrive, Monitor, Moon, RotateCcw, Sun, User } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Input, Label } from '@/components/ui/input'
 import { useProfile, useResetData, useSelection, useSummaries, useUpdateProfile, useUserTopics } from '@/data/queries'
+import { useSyncStatus } from '@/data/persistence/status'
 import { dataSource } from '@/data/sources'
 import { useTheme, type Theme } from '@/hooks/use-theme'
 import { cn } from '@/lib/utils'
@@ -27,6 +28,7 @@ export function SettingsPage() {
   const reset = useResetData()
   const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
+  const sync = useSyncStatus()
   const [nameDraft, setName] = useState<string | null>(null)
   const name = nameDraft ?? profile.data?.name ?? ''
   const [confirmReset, setConfirmReset] = useState(false)
@@ -114,7 +116,27 @@ export function SettingsPage() {
               <CardDescription>
                 {dataSource.kind === 'supabase'
                   ? 'Seus dados estão sincronizados com o Supabase.'
-                  : 'Modo local: seus dados ficam salvos neste navegador. Configure o Supabase para sincronizar entre dispositivos.'}
+                  : sync.where === 'cloud'
+                    ? 'Seus concursos, progresso, resumos e editais importados ficam salvos na sua conta do Claude e aparecem em qualquer navegador ou dispositivo em que você abrir esta página.'
+                    : 'Seus dados ficam salvos neste navegador. Limpar os dados do navegador apaga o progresso.'}
+                {sync.where !== 'loading' && dataSource.kind !== 'supabase' && (
+                  <span
+                    className={cn(
+                      'mt-3 flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
+                      sync.state === 'error' ? 'bg-danger-tint text-danger' : 'bg-success-tint text-success-strong',
+                    )}
+                  >
+                    {sync.state === 'error' ? <CloudOff className="size-3.5" /> : sync.where === 'cloud' ? <Cloud className="size-3.5" /> : <HardDrive className="size-3.5" />}
+                    {sync.state === 'error'
+                      ? 'Falha ao salvar'
+                      : sync.state === 'saving'
+                        ? 'Salvando…'
+                        : sync.where === 'cloud'
+                          ? 'Salvo na sua conta'
+                          : 'Salvo neste navegador'}
+                  </span>
+                )}
+                {sync.message && <span className="mt-2 block text-xs text-danger">{sync.message}</span>}
               </CardDescription>
             </div>
           </CardHeader>
@@ -131,7 +153,7 @@ export function SettingsPage() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-subtle">Aprova · versão 1.0 · {dataSource.kind === 'supabase' ? 'Supabase' : 'modo local'}</p>
+        <p className="text-center text-xs text-subtle">Aprova · versão 1.0 · {dataSource.kind === 'supabase' ? 'Supabase' : sync.where === 'cloud' ? 'conta do Claude' : 'neste navegador'}</p>
       </div>
 
       <Dialog open={confirmReset} onOpenChange={setConfirmReset}>

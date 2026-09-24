@@ -9,11 +9,13 @@ import { useStudy } from '@/data/queries'
 import { positionTitle } from '@/domain/labels'
 import { Logo } from './logo'
 import { SearchDialog } from './search-dialog'
+import { SwitchContestDialog } from './switch-contest-dialog'
 import { Sidebar, SidebarContent } from './sidebar'
 
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [switchOpen, setSwitchOpen] = useState(false)
   const { plan, selection } = useStudy()
   const location = useLocation()
   const navigation = useNavigation()
@@ -87,10 +89,11 @@ export function AppShell() {
             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSearchOpen(true)} aria-label="Pesquisar">
               <Search className="!size-5" />
             </Button>
-            <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
-              <Link to="/onboarding">
-                <ArrowLeftRight /> Trocar concurso
-              </Link>
+            <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => setSwitchOpen(true)}>
+              <ArrowLeftRight /> Trocar concurso
+            </Button>
+            <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setSwitchOpen(true)} aria-label="Trocar concurso">
+              <ArrowLeftRight className="!size-5" />
             </Button>
           </div>
         </header>
@@ -101,6 +104,7 @@ export function AppShell() {
       </div>
 
       <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
+      <SwitchContestDialog open={switchOpen} onOpenChange={setSwitchOpen} />
     </div>
   )
 }

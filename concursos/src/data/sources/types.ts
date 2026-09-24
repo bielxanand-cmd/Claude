@@ -47,6 +47,10 @@ export interface DataSource {
   updateProfile(patch: Partial<Pick<UserProfile, 'name' | 'email'>>): Promise<UserProfile>
   getSelection(): Promise<UserSelection | null>
   setSelection(selection: Omit<UserSelection, 'createdAt'> | null): Promise<UserSelection | null>
+  /** Concursos já abertos pelo usuário, do mais recente para o mais antigo */
+  listRecentSelections(): Promise<UserSelection[]>
+  /** Remove um concurso do histórico (o progresso dos assuntos é mantido) */
+  forgetSelection(positionId: string): Promise<void>
   listUserTopics(): Promise<UserTopic[]>
   updateUserTopic(topicId: string, patch: Partial<Omit<UserTopic, 'topicId'>>): Promise<UserTopic>
   listSummaries(): Promise<Summary[]>
