@@ -55,13 +55,13 @@ export function validateProposal(p: Proposal): CheckItem[] {
   }
 
   if (s.investment) {
-    const ok = calc.includedCount > 0
+    const missing = [calc.monthly.table <= 0 && 'informe a mensalidade por posto', calc.includedCount === 0 && 'marque o que está incluso'].filter(Boolean)
     items.push({
       step: 'investment',
       label: 'Investimentos',
-      ok,
+      ok: missing.length === 0,
       blocking: true,
-      message: ok ? undefined : 'Marque pelo menos um módulo como incluso.',
+      message: missing.length ? `${missing.join(' e ')[0]!.toUpperCase()}${missing.join(' e ').slice(1)}.` : undefined,
     })
   }
 

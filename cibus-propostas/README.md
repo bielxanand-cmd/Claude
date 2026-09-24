@@ -19,7 +19,7 @@ Sem variáveis de ambiente, o app roda em **modo local**: os dados ficam no Inde
 ## Conectando ao Supabase
 
 1. Crie um projeto no Supabase.
-2. No SQL Editor, execute `supabase/migrations/0001_cibus_propostas.sql` e depois `supabase/seed.sql`.
+2. No SQL Editor, execute os arquivos de `supabase/migrations/` em ordem e depois `supabase/seed.sql`.
 3. Em *Authentication → Users*, crie os usuários dos executivos (e-mail e senha).
 4. Copie `.env.example` para `.env` e preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 
@@ -32,8 +32,8 @@ Com o Supabase configurado, o app exige login e todas as tabelas ficam restritas
 | `proposals` | dados do cliente, da proposta, da capa, do ROI, do encerramento e das seções ativas |
 | `proposal_scenarios` | operação atual, texto do cenário, desafios, oportunidades |
 | `proposal_projects` | objetivo, estratégia, "como o Cibus ajuda", módulos do projeto |
-| `proposal_modules` | linhas da tabela de investimento (valor de tabela, desconto, valor final, incluso) |
-| `proposal_investments` | postos, implantação, mensalidade, descontos personalizados, itens sob consumo |
+| `proposal_modules` | itens da lista "O que está incluso" (marcados ou não) |
+| `proposal_investments` | postos, mensalidade por posto, implantação (1º posto e adicionais), descontos, itens sob consumo |
 | `proposal_cases` | cases selecionados e a ordem de apresentação |
 | `modules`, `cases`, `executives`, `settings` | bibliotecas e configurações da área administrativa |
 
@@ -60,16 +60,18 @@ Cada página é um componente de layout fixo de **1280×720** (`src/components/s
 
 Tudo fica em `src/lib/pricing.ts`, com testes em `pricing.test.ts`:
 
-- mensalidade por posto = soma dos valores negociados dos módulos inclusos, menos o desconto mensal (% ou R$) e os descontos personalizados, aplicados em cascata;
+- mensalidade = valor por posto (padrão R$ 540) menos o desconto (% ou R$) e os descontos personalizados, aplicados em cascata;
 - total da rede = mensalidade por posto × quantidade de postos;
-- economia = valor de tabela − valor final; desconto % = economia ÷ valor de tabela × 100;
-- implantação: valor, desconto (% ou R$) ou "Implantação gratuita" (exibida como *Isenta*).
+- implantação = valor do 1º posto (padrão R$ 6.000) + valor de cada posto adicional (padrão R$ 600) × (postos − 1), com desconto opcional ou "Implantação gratuita" (exibida como *Isenta*);
+- economia = valor de tabela − valor final; desconto % = economia ÷ valor de tabela × 100.
+
+O slide de investimento mostra a mensalidade por posto, o total da rede, a implantação com o detalhamento e a lista **O que está incluso**, com os itens que o vendedor marcou.
 
 ## Área administrativa
 
 Em *Configurações*:
 
-- **Módulos:** nome, descrição, categoria, valor padrão, ativo/inativo.
+- **Itens inclusos:** nome, descrição, categoria, ativo/inativo (a lista usada em "O que está incluso" e em "Módulos do projeto").
 - **Cases:** cliente, segmento, localização, logo, imagem, descrição e até 4 resultados, com prévia do slide.
 - **Executivos:** nome, cargo, e-mail, telefone, WhatsApp, foto.
 - **Geral:** logos (fundo claro e escuro), cores, URL da calculadora de ROI, contatos e padrões das novas propostas.

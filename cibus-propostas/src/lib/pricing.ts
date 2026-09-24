@@ -1,4 +1,4 @@
-import type { CustomDiscount, Discount, Proposal, ProposalModule } from './types'
+import type { CustomDiscount, Discount, Proposal } from './types'
 
 export const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100
 
@@ -13,19 +13,12 @@ function applyAll(base: number, discounts: Pick<Discount, 'type' | 'value'>[]): 
   return discounts.reduce((acc, d) => round2(acc - discountAmount(acc, d)), base)
 }
 
-export interface ModuleRowCalc {
-  row: ProposalModule
-  final: number // valor final por posto, após descontos específicos do módulo
-}
-
 export interface InvestmentCalc {
   stations: number
-  rows: ModuleRowCalc[]
   includedCount: number
   /** Mensalidade por posto */
   monthly: {
     table: number
-    negotiated: number // soma dos valores negociados por módulo
     final: number
     discount: number // table - final
     discountPercent: number
@@ -33,7 +26,10 @@ export interface InvestmentCalc {
   /** Mensalidade da rede (por posto × postos) */
   monthlyNetwork: { table: number; final: number; discount: number }
   implementation: {
-    table: number
+    first: number
+    additional: number
+    additionalStations: number
+    table: number // 1º posto + adicionais
     final: number
     discount: number
     discountPercent: number
@@ -50,24 +46,22 @@ export interface InvestmentCalc {
 
 const pct = (part: number, whole: number) => (whole > 0 ? round2((part / whole) * 100) : 0)
 
+/** Implantação de tabela: valor do 1º posto + valor de cada posto adicional. */
+export function implementationTable(first: number, additional: number, stations: number) {
+  const n = Math.max(1, Math.floor(stations || 1))
+  return round2(Math.max(0, first || 0) + Math.max(0, additional || 0) * (n - 1))
+}
+
 export function calcInvestment(inv: Proposal['investment']): InvestmentCalc {
   const stations = Math.max(1, Math.floor(inv.stations || 1))
   const custom = inv.customDiscounts ?? []
   const byTarget = (t: CustomDiscount['target']) => custom.filter((c) => c.target === t)
 
-  const rows: ModuleRowCalc[] = inv.modules.map((row) => {
-    const specific = byTarget('module').filter((c) => c.moduleRowId === row.id)
-    const negotiated = Number.isFinite(row.negotiatedPrice) ? row.negotiatedPrice : row.tablePrice
-    return { row, final: Math.max(0, applyAll(Math.max(0, negotiated), specific)) }
-  })
-  const included = rows.filter((r) => r.row.included)
+  const table = round2(Math.max(0, inv.monthlyPrice || 0))
+  const final = Math.max(0, applyAll(table, [inv.monthlyDiscount, ...byTarget('monthly')]))
+  const monthlyDiscount = round2(table - final)
 
-  const table = round2(included.reduce((s, r) => s + (r.row.tablePrice || 0), 0))
-  const negotiated = round2(included.reduce((s, r) => s + r.final, 0))
-  const final = Math.max(0, applyAll(negotiated, [inv.monthlyDiscount, ...byTarget('monthly')]))
-  const monthlyDiscount = round2(Math.max(0, table - final))
-
-  const implTable = round2(Math.max(0, inv.implementationPrice || 0))
+  const implTable = implementationTable(inv.implementationFirst, inv.implementationAdditional, stations)
   const implFinal = inv.implementationFree
     ? 0
     : Math.max(0, applyAll(implTable, [inv.implementationDiscount, ...byTarget('implementation')]))
@@ -82,11 +76,13 @@ export function calcInvestment(inv: Proposal['investment']): InvestmentCalc {
 
   return {
     stations,
-    rows,
-    includedCount: included.length,
-    monthly: { table, negotiated, final, discount: monthlyDiscount, discountPercent: pct(monthlyDiscount, table) },
+    includedCount: (inv.items ?? []).filter((i) => i.included).length,
+    monthly: { table, final, discount: monthlyDiscount, discountPercent: pct(monthlyDiscount, table) },
     monthlyNetwork: { table: netTable, final: netFinal, discount: round2(netTable - netFinal) },
     implementation: {
+      first: round2(Math.max(0, inv.implementationFirst || 0)),
+      additional: round2(Math.max(0, inv.implementationAdditional || 0)),
+      additionalStations: stations - 1,
       table: implTable,
       final: implFinal,
       discount: implDiscount,

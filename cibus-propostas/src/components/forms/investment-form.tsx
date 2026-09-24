@@ -2,13 +2,12 @@ import { useState } from 'react'
 import { Plus, Sparkles, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAppData } from '@/lib/app-data'
 import { calcInvestment, discountAmount, discountForFinal, formatBRL, formatPercent, type InvestmentCalc } from '@/lib/pricing'
-import { moduleRowFromDef, uid } from '@/lib/templates'
-import type { Discount } from '@/lib/types'
+import { itemFromModule, libraryItems, uid } from '@/lib/templates'
+import { MODULE_CATEGORIES, type Discount } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { SectionToggle, type FormProps } from './client-forms'
 import { Field, MoneyInput, NumberInput, Section } from './fields'
@@ -83,6 +82,7 @@ export function FinancialSummary({ calc, className }: { calc: InvestmentCalc; cl
             <span className="font-semibold tabular-nums">{v}</span>
           </div>
         ))}
+        {calc.summary.savings > 0 && (
         <div className="mt-2 flex items-center justify-between rounded-lg bg-brand/15 px-3 py-2.5">
           <span className="text-sm font-semibold text-white">Economia gerada</span>
           <span className="text-right">
@@ -90,6 +90,7 @@ export function FinancialSummary({ calc, className }: { calc: InvestmentCalc; cl
             <span className="block text-[11px] text-white/60">{formatPercent(calc.summary.savingsPercent)} · 1º mês</span>
           </span>
         </div>
+        )}
         {calc.summary.savingsFirstYear > 0 && (
           <div className="pt-1.5 text-right text-xs text-white/60">
             Em 12 meses: <span className="font-bold text-white">{formatBRL(calc.summary.savingsFirstYear)}</span>
@@ -100,62 +101,141 @@ export function FinancialSummary({ calc, className }: { calc: InvestmentCalc; cl
   )
 }
 
-function AddModuleDialog({ open, onOpenChange, onAdd }: { open: boolean; onOpenChange: (o: boolean) => void; onAdd: (m: { name: string; description: string; table: number; negotiated: number }) => void }) {
-  const [f, setF] = useState({ name: '', description: '', table: 0, negotiated: 0 })
+function IncludedItems({ p, update }: FormProps) {
+  const { modules } = useAppData()
+  const items = p.investment.items
+  const [draft, setDraft] = useState('')
+  const included = items.filter((i) => i.included).length
+  const inList = new Set(items.map((i) => i.moduleId).filter(Boolean))
+  const missing = libraryItems(modules).filter((m) => !inList.has(m.id))
+  const byId = new Map(modules.map((m) => [m.id, m]))
+  const groups = [...MODULE_CATEGORIES, 'Personalizados'].map((cat) => ({
+    cat,
+    rows: items
+      .map((it, i) => ({ it, i }))
+      .filter(({ it }) => (it.moduleId && byId.get(it.moduleId)?.category ? byId.get(it.moduleId)!.category : 'Personalizados') === cat),
+  }))
+  const setAll = (v: boolean) => update((d) => d.investment.items.forEach((i) => void (i.included = v)))
+  const add = () => {
+    const name = draft.trim()
+    if (!name) return
+    update((d) => void d.investment.items.push({ id: uid(), moduleId: null, name, included: true }))
+    setDraft('')
+  }
+  const fromProject = p.project.moduleIds.length > 0
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Adicionar módulo</DialogTitle>
-          <DialogDescription>Um módulo personalizado apenas para esta proposta.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <Field label="Nome do módulo" htmlFor="nm-name">
-            <Input id="nm-name" autoFocus value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
-          </Field>
-          <Field label="Descrição" htmlFor="nm-desc">
-            <Input id="nm-desc" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Valor de tabela" htmlFor="nm-table">
-              <MoneyInput id="nm-table" value={f.table} onChange={(n) => setF((x) => ({ ...x, table: n, negotiated: x.negotiated === x.table ? n : x.negotiated }))} />
-            </Field>
-            <Field label="Valor negociado" htmlFor="nm-neg">
-              <MoneyInput id="nm-neg" value={f.negotiated} onChange={(n) => setF({ ...f, negotiated: n })} />
-            </Field>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
+    <Section
+      title="O que está incluso"
+      description="Marque tudo o que o cliente recebe na mensalidade. Só os itens marcados aparecem no slide."
+      action={<span className="rounded-full bg-brand/10 px-2.5 py-1 text-xs font-bold text-brand">{included} selecionados</span>}
+    >
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" onClick={() => setAll(true)}>
+          Selecionar todos
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => setAll(false)}>
+          Limpar
+        </Button>
+        {fromProject && (
           <Button
-            disabled={!f.name.trim()}
-            onClick={() => {
-              onAdd(f)
-              setF({ name: '', description: '', table: 0, negotiated: 0 })
-              onOpenChange(false)
-            }}
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              update((d) => {
+                for (const id of d.project.moduleIds) {
+                  const it = d.investment.items.find((x) => x.moduleId === id)
+                  const m = byId.get(id)
+                  if (it) it.included = true
+                  else if (m) d.investment.items.push(itemFromModule(m, true))
+                }
+              })
+            }
           >
-            Adicionar
+            Usar módulos do projeto
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        )}
+        {missing.length > 0 && (
+          <Button size="sm" variant="ghost" onClick={() => update((d) => void d.investment.items.push(...missing.map((m) => itemFromModule(m, false))))}>
+            <Plus /> Novos itens da biblioteca ({missing.length})
+          </Button>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        {groups
+          .filter((g) => g.rows.length)
+          .map((g) => (
+            <div key={g.cat}>
+              <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{g.cat}</div>
+              <div className="grid gap-2 @md:grid-cols-2">
+                {g.rows.map(({ it, i }) => (
+                  <label
+                    key={it.id}
+                    className={cn(
+                      'group flex cursor-pointer items-center gap-3 rounded-lg border bg-white px-3 py-2.5 transition-all hover:border-ink/25',
+                      it.included && 'border-brand bg-brand/[0.04] ring-1 ring-brand',
+                    )}
+                  >
+                    <Checkbox
+                      checked={it.included}
+                      aria-label={`Incluir ${it.name}`}
+                      onCheckedChange={(v) => update((d) => void (d.investment.items[i]!.included = !!v))}
+                    />
+                    <span className={cn('min-w-0 flex-1 truncate text-sm font-semibold', !it.included && 'text-ink/70')}>{it.name}</span>
+                    {!it.moduleId && (
+                      <button
+                        type="button"
+                        aria-label={`Remover ${it.name}`}
+                        className="text-muted-foreground opacity-0 transition-opacity hover:text-ink group-hover:opacity-100"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          update((d) => void d.investment.items.splice(i, 1))
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+      </div>
+
+      <div className="flex gap-2">
+        <Input
+          placeholder="Adicionar item personalizado (ex.: Treinamento da equipe)"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              add()
+            }
+          }}
+        />
+        <Button type="button" variant="outline" onClick={add} disabled={!draft.trim()}>
+          <Plus /> Adicionar
+        </Button>
+      </div>
+      {included > 12 && (
+        <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
+          <Sparkles className="h-3.5 w-3.5" /> Com muitos itens o slide reduz a fonte automaticamente. Até 12 fica mais legível.
+        </p>
+      )}
+    </Section>
   )
 }
 
 export function InvestmentForm({ p, update, showSummary = true }: FormProps & { showSummary?: boolean }) {
-  const { modules } = useAppData()
   const inv = p.investment
   const calc = calcInvestment(inv)
-  const [adding, setAdding] = useState(false)
-  const inTable = new Set(inv.modules.map((m) => m.moduleId).filter(Boolean))
-  const available = modules.filter((m) => m.active && !inTable.has(m.id))
+  const impl = calc.implementation
 
   return (
     <>
-      <Section title="Investimento por posto" description="Configure módulos, valores e descontos. Tudo é calculado automaticamente." action={<SectionToggle p={p} update={update} k="investment" />}>
+      <Section title="Investimento por posto" description="Mensalidade por posto e implantação escalonada. Tudo é calculado automaticamente." action={<SectionToggle p={p} update={update} k="investment" />}>
         <Field label="Quantidade de postos" htmlFor="inv-stations">
           <div className="flex flex-wrap items-center gap-2">
             {QUICK_STATIONS.map((n) => (
@@ -176,151 +256,23 @@ export function InvestmentForm({ p, update, showSummary = true }: FormProps & { 
         </Field>
       </Section>
 
-      <Section
-        title="Módulos contratados"
-        description="Todos aparecem na tabela do slide; os marcados como inclusos ficam em destaque."
-        action={
-          <div className="flex gap-2">
-            {available.length > 0 && (
-              <Select
-                value=""
-                onValueChange={(id) => {
-                  const m = modules.find((x) => x.id === id)
-                  if (m) update((d) => void d.investment.modules.push(moduleRowFromDef(m, true)))
-                }}
-              >
-                <SelectTrigger className="h-8 w-auto gap-1.5 text-xs font-semibold">
-                  <SelectValue placeholder="Da biblioteca" />
-                </SelectTrigger>
-                <SelectContent>
-                  {available.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            <Button size="sm" variant="outline" onClick={() => setAdding(true)}>
-              <Plus /> Adicionar módulo
-            </Button>
-          </div>
-        }
-      >
-        <div className="@container">
-          <div className="hidden grid-cols-[1.25rem_minmax(0,1fr)_8.5rem_8.5rem_2.25rem] gap-3 px-1 pb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground @xl:grid">
-            <span />
-            <span>Módulo</span>
-            <span>Valor de tabela</span>
-            <span>Negociado</span>
-            <span />
-          </div>
-          <div className="divide-y rounded-lg border">
-            {inv.modules.map((m, i) => (
-              <div
-                key={m.id}
-                className={cn(
-                  'grid grid-cols-[1.25rem_minmax(0,1fr)_2.25rem] items-center gap-x-3 gap-y-2 px-3 py-2.5 transition-colors @xl:grid-cols-[1.25rem_minmax(0,1fr)_8.5rem_8.5rem_2.25rem] @xl:px-1',
-                  m.included && 'bg-brand/[0.04]',
-                )}
-              >
-                <Checkbox
-                  checked={m.included}
-                  aria-label={`Incluir ${m.name}`}
-                  className="@xl:ml-2"
-                  onCheckedChange={(v) => update((d) => void (d.investment.modules[i]!.included = !!v))}
-                />
-                <Input
-                  value={m.name}
-                  aria-label="Nome do módulo"
-                  className={cn('h-9 border-transparent bg-transparent px-2 font-semibold shadow-none hover:border-input', !m.included && 'text-muted-foreground')}
-                  onChange={(e) => update((d) => void (d.investment.modules[i]!.name = e.target.value))}
-                />
-                <div className="col-span-3 col-start-1 row-start-2 grid grid-cols-2 gap-2 pl-8 @xl:contents">
-                  <MoneyInput
-                    aria-label={`Valor de tabela ${m.name}`}
-                    value={m.tablePrice}
-                    onChange={(n) =>
-                      update((d) => {
-                        const row = d.investment.modules[i]!
-                        if (row.negotiatedPrice === row.tablePrice) row.negotiatedPrice = n
-                        row.tablePrice = n
-                      })
-                    }
-                  />
-                  <MoneyInput
-                    aria-label={`Valor negociado ${m.name}`}
-                    value={m.negotiatedPrice}
-                    onChange={(n) => update((d) => void (d.investment.modules[i]!.negotiatedPrice = n))}
-                  />
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="col-start-3 row-start-1 @xl:col-start-auto @xl:row-start-auto"
-                  aria-label={`Remover ${m.name}`}
-                  onClick={() =>
-                    update((d) => {
-                      d.investment.customDiscounts = d.investment.customDiscounts.filter((c) => c.moduleRowId !== m.id)
-                      d.investment.modules.splice(i, 1)
-                    })
-                  }
-                >
-                  <Trash2 className="text-muted-foreground" />
-                </Button>
-              </div>
-            ))}
-          </div>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1 text-sm font-bold">
-            <span>
-              {calc.includedCount} {calc.includedCount === 1 ? 'módulo incluso' : 'módulos inclusos'}
-            </span>
-            <span className="tabular-nums">
-              <span className="font-medium text-muted-foreground">Tabela </span>
-              {formatBRL(calc.monthly.table)}
-              <span className="font-medium text-muted-foreground"> · Negociado </span>
-              {formatBRL(calc.monthly.negotiated)}
-            </span>
-          </div>
-        </div>
-        <AddModuleDialog
-          open={adding}
-          onOpenChange={setAdding}
-          onAdd={(f) =>
-            update((d) =>
-              void d.investment.modules.push({
-                id: uid(),
-                moduleId: null,
-                name: f.name.trim(),
-                description: f.description,
-                tablePrice: f.table,
-                negotiatedPrice: f.negotiated,
-                included: true,
-              }),
-            )
-          }
-        />
-      </Section>
+      <IncludedItems p={p} update={update} />
 
-      <Section title="Mensalidade" description="Desconto aplicado por posto sobre o valor negociado dos módulos.">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="Valor de tabela">
-            <div className="flex h-10 items-center rounded-md border bg-mist px-3 text-sm font-semibold tabular-nums">{formatBRL(calc.monthly.table)}</div>
+      <Section title="Mensalidade" description="Valor cobrado por posto, por mês.">
+        <div className="grid gap-4 @xl:grid-cols-3">
+          <Field label="Valor de tabela por posto" htmlFor="mp">
+            <MoneyInput id="mp" value={inv.monthlyPrice} onChange={(n) => update((d) => void (d.investment.monthlyPrice = n))} />
           </Field>
           <Field label="Desconto" htmlFor="md">
-            <DiscountInput id="md" base={calc.monthly.negotiated} value={inv.monthlyDiscount} onChange={(v) => update((d) => void (d.investment.monthlyDiscount = v))} />
+            <DiscountInput id="md" base={calc.monthly.table} value={inv.monthlyDiscount} onChange={(v) => update((d) => void (d.investment.monthlyDiscount = v))} />
           </Field>
           <Field label="Valor final por posto" htmlFor="mf" hint="Digite o valor fechado e o desconto é calculado.">
-            <MoneyInput
-              id="mf"
-              value={calc.monthly.final}
-              onChange={(n) => update((d) => void (d.investment.monthlyDiscount = discountForFinal(calc.monthly.negotiated, n)))}
-            />
+            <MoneyInput id="mf" value={calc.monthly.final} onChange={(n) => update((d) => void (d.investment.monthlyDiscount = discountForFinal(calc.monthly.table, n)))} />
           </Field>
         </div>
         <div className="grid gap-3 rounded-lg bg-mist p-4 @2xl:grid-cols-2">
           <div>
-            <Line label="Valor de tabela" value={formatBRL(calc.monthly.table)} />
+            <Line label="Valor de tabela" value={`${formatBRL(calc.monthly.table)}/posto`} />
             <Line label="Desconto" value={`- ${formatBRL(calc.monthly.discount)}`} muted />
             <div className="my-1 h-px bg-border" />
             <Line label="Investimento mensal" value={`${formatBRL(calc.monthly.final)}/posto/mês`} strong accent />
@@ -340,36 +292,41 @@ export function InvestmentForm({ p, update, showSummary = true }: FormProps & { 
         </Field>
       </Section>
 
-      <Section title="Implantação" description="Valor único cobrado no início do projeto.">
+      <Section title="Implantação" description="Valor único: um valor para o primeiro posto e outro para cada posto adicional.">
         <label className="flex cursor-pointer items-center gap-3 rounded-lg border bg-mist/60 p-3">
-          <Checkbox
-            checked={inv.implementationFree}
-            onCheckedChange={(v) => update((d) => void (d.investment.implementationFree = !!v))}
-            aria-label="Implantação gratuita"
-          />
+          <Checkbox checked={inv.implementationFree} onCheckedChange={(v) => update((d) => void (d.investment.implementationFree = !!v))} aria-label="Implantação gratuita" />
           <span className="text-sm font-semibold">Implantação gratuita</span>
           {inv.implementationFree && <span className="ml-auto rounded-full bg-brand px-2.5 py-0.5 text-xs font-bold text-white">Implantação: Isenta</span>}
         </label>
-        <div className={cn('grid gap-4 sm:grid-cols-3', inv.implementationFree && 'pointer-events-none opacity-50')}>
-          <Field label="Valor da implantação" htmlFor="ip">
-            <MoneyInput id="ip" value={inv.implementationPrice} onChange={(n) => update((d) => void (d.investment.implementationPrice = n))} />
-          </Field>
-          <Field label="Desconto" htmlFor="idc">
-            <DiscountInput id="idc" base={inv.implementationPrice} value={inv.implementationDiscount} onChange={(v) => update((d) => void (d.investment.implementationDiscount = v))} />
-          </Field>
-          <Field label="Valor final" htmlFor="if">
-            <MoneyInput
-              id="if"
-              value={calc.implementation.final}
-              onChange={(n) => update((d) => void (d.investment.implementationDiscount = discountForFinal(inv.implementationPrice, n)))}
-            />
-          </Field>
+        <div className={cn('space-y-4', inv.implementationFree && 'pointer-events-none opacity-50')}>
+          <div className="grid gap-4 @xl:grid-cols-2">
+            <Field label="1º posto" htmlFor="if1">
+              <MoneyInput id="if1" value={inv.implementationFirst} onChange={(n) => update((d) => void (d.investment.implementationFirst = n))} />
+            </Field>
+            <Field label="Cada posto adicional" htmlFor="ifa">
+              <MoneyInput id="ifa" value={inv.implementationAdditional} onChange={(n) => update((d) => void (d.investment.implementationAdditional = n))} />
+            </Field>
+          </div>
+          <div className="rounded-lg bg-mist p-4">
+            <Line label="1º posto" value={formatBRL(impl.first)} />
+            {impl.additionalStations > 0 && <Line label={`${impl.additionalStations} postos adicionais × ${formatBRL(impl.additional)}`} value={formatBRL(impl.additional * impl.additionalStations)} />}
+            <div className="my-1 h-px bg-border" />
+            <Line label="Implantação de tabela" value={formatBRL(impl.table)} strong />
+          </div>
+          <div className="grid gap-4 @xl:grid-cols-2">
+            <Field label="Desconto" htmlFor="idc">
+              <DiscountInput id="idc" base={impl.table} value={inv.implementationDiscount} onChange={(v) => update((d) => void (d.investment.implementationDiscount = v))} />
+            </Field>
+            <Field label="Valor final" htmlFor="if">
+              <MoneyInput id="if" value={impl.final} onChange={(n) => update((d) => void (d.investment.implementationDiscount = discountForFinal(impl.table, n)))} />
+            </Field>
+          </div>
         </div>
       </Section>
 
       <Section
         title="Descontos personalizados"
-        description="Descontos adicionais aplicados em cascata na implantação, na mensalidade ou em um módulo."
+        description="Descontos adicionais aplicados em cascata na implantação ou na mensalidade."
         action={
           <Button
             size="sm"
@@ -382,7 +339,7 @@ export function InvestmentForm({ p, update, showSummary = true }: FormProps & { 
       >
         {inv.customDiscounts.length === 0 && <p className="text-sm text-muted-foreground">Nenhum desconto adicional.</p>}
         {inv.customDiscounts.map((cd, i) => (
-          <div key={cd.id} className="grid items-end gap-2 rounded-lg border bg-mist/60 p-3 sm:grid-cols-[1fr_150px_1fr_auto]">
+          <div key={cd.id} className="grid items-end gap-2 rounded-lg border bg-mist/60 p-3 @xl:grid-cols-[1fr_150px_1fr_auto]">
             <Field label="Descrição">
               <Input value={cd.label} onChange={(e) => update((d) => void (d.investment.customDiscounts[i]!.label = e.target.value))} />
             </Field>
@@ -394,13 +351,12 @@ export function InvestmentForm({ p, update, showSummary = true }: FormProps & { 
                 <SelectContent>
                   <SelectItem value="monthly">Mensalidade</SelectItem>
                   <SelectItem value="implementation">Implantação</SelectItem>
-                  <SelectItem value="module">Módulo específico</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
             <Field label="Desconto">
               <DiscountInput
-                base={cd.target === 'implementation' ? inv.implementationPrice : calc.monthly.negotiated}
+                base={cd.target === 'implementation' ? impl.table : calc.monthly.table}
                 value={cd}
                 onChange={(v) => update((d) => Object.assign(d.investment.customDiscounts[i]!, v))}
               />
@@ -408,22 +364,6 @@ export function InvestmentForm({ p, update, showSummary = true }: FormProps & { 
             <Button variant="ghost" size="icon" aria-label="Remover desconto" onClick={() => update((d) => void d.investment.customDiscounts.splice(i, 1))}>
               <Trash2 className="text-muted-foreground" />
             </Button>
-            {cd.target === 'module' && (
-              <div className="sm:col-span-4">
-                <Select value={cd.moduleRowId ?? ''} onValueChange={(v) => update((d) => void (d.investment.customDiscounts[i]!.moduleRowId = v))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Escolha o módulo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {inv.modules.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
           </div>
         ))}
       </Section>

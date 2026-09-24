@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { prepareImage } from '../image'
-import { calcInvestment, round2 } from '../pricing'
+import { calcInvestment } from '../pricing'
 import type { AppSettings, CaseDef, CaseMetric, Executive, ModuleDef, Proposal } from '../types'
 import type { Repository } from './types'
 
@@ -65,17 +65,11 @@ function rowToProposal(r: Row): Proposal {
     },
     investment: {
       stations: inv.stations ?? 1,
-      modules: mods.map((m: Row) => ({
-        id: m.id,
-        moduleId: m.module_id,
-        name: m.name,
-        description: m.description,
-        tablePrice: Number(m.table_price),
-        negotiatedPrice: Number(m.final_price),
-        included: m.included,
-      })),
+      items: mods.map((m: Row) => ({ id: m.id, moduleId: m.module_id, name: m.name, included: m.included })),
+      monthlyPrice: Number(inv.monthly_price ?? 0),
       monthlyDiscount: { type: inv.monthly_discount_type ?? 'fixed', value: Number(inv.monthly_discount_value ?? 0) },
-      implementationPrice: Number(inv.implementation_price ?? 0),
+      implementationFirst: Number(inv.implementation_first ?? inv.implementation_price ?? 0),
+      implementationAdditional: Number(inv.implementation_additional ?? 0),
       implementationDiscount: {
         type: inv.implementation_discount_type ?? 'fixed',
         value: Number(inv.implementation_discount_value ?? 0),
@@ -144,13 +138,15 @@ function proposalToPayload(p: Proposal): Row {
     },
     investment: {
       stations: i.stations,
-      implementation_price: i.implementationPrice,
+      implementation_price: calc.implementation.table,
+      implementation_first: i.implementationFirst,
+      implementation_additional: i.implementationAdditional,
       implementation_discount_type: i.implementationDiscount.type,
       implementation_discount_value: i.implementationDiscount.value,
       implementation_discount: calc.implementation.discount,
       implementation_final: calc.implementation.final,
       implementation_free: i.implementationFree,
-      monthly_price: calc.monthly.table,
+      monthly_price: i.monthlyPrice,
       monthly_discount_type: i.monthlyDiscount.type,
       monthly_discount_value: i.monthlyDiscount.value,
       monthly_discount: calc.monthly.discount,
@@ -159,14 +155,15 @@ function proposalToPayload(p: Proposal): Row {
       consumption: i.consumption,
       note: i.note,
     },
-    modules: i.modules.map((m) => ({
+    // itens inclusos (sem preço: a mensalidade é por posto)
+    modules: i.items.map((m) => ({
       id: m.id,
       module_id: m.moduleId ?? '',
       name: m.name,
-      description: m.description,
-      table_price: m.tablePrice,
-      discount: round2(m.tablePrice - m.negotiatedPrice),
-      final_price: m.negotiatedPrice,
+      description: '',
+      table_price: 0,
+      discount: 0,
+      final_price: 0,
       included: m.included,
     })),
     case_ids: p.cases.caseIds,

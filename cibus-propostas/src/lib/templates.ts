@@ -1,4 +1,4 @@
-import type { AppSettings, Executive, ModuleDef, Proposal, ProposalModule, SlideKey } from './types'
+import { MODULE_CATEGORIES, type AppSettings, type Executive, type IncludedItem, type ModuleDef, type Proposal, type SlideKey } from './types'
 
 export const uid = () => crypto.randomUUID()
 export const todayISO = () => {
@@ -40,16 +40,15 @@ export function execSnapshot(e: Executive | null): Proposal['meta']['executive']
   }
 }
 
-export function moduleRowFromDef(m: ModuleDef, included = false): ProposalModule {
-  return {
-    id: uid(),
-    moduleId: m.id,
-    name: m.name,
-    description: m.description,
-    tablePrice: m.defaultPrice,
-    negotiatedPrice: m.defaultPrice,
-    included,
-  }
+export function itemFromModule(m: ModuleDef, included = false): IncludedItem {
+  return { id: uid(), moduleId: m.id, name: m.name, included }
+}
+
+/** Itens ativos da biblioteca, na ordem das categorias. */
+export function libraryItems(modules: ModuleDef[]): ModuleDef[] {
+  return modules
+    .filter((m) => m.active)
+    .sort((a, b) => MODULE_CATEGORIES.indexOf(a.category) - MODULE_CATEGORIES.indexOf(b.category) || a.sortOrder - b.sortOrder)
 }
 
 const defaultTemplate: TemplateDef = {
@@ -58,7 +57,6 @@ const defaultTemplate: TemplateDef = {
   description: 'Capa, cenário atual, projeto, investimentos, ROI, cases e encerramento.',
   build: ({ settings, modules, executive }) => {
     const now = new Date().toISOString()
-    const priced = modules.filter((m) => m.active && m.defaultPrice > 0).sort((a, b) => a.sortOrder - b.sortOrder)
     const d = settings.defaults
     return {
       id: uid(),
@@ -107,9 +105,11 @@ const defaultTemplate: TemplateDef = {
       },
       investment: {
         stations: 1,
-        modules: priced.map((m) => moduleRowFromDef(m, false)),
+        monthlyPrice: d.monthlyPrice,
         monthlyDiscount: { type: 'fixed', value: 0 },
-        implementationPrice: d.implementationPrice,
+        implementationFirst: d.implementationFirst,
+        implementationAdditional: d.implementationAdditional,
+        items: libraryItems(modules).map((m) => itemFromModule(m, false)),
         implementationDiscount: { type: 'fixed', value: 0 },
         implementationFree: false,
         customDiscounts: [],
@@ -150,17 +150,8 @@ export const TEMPLATES: TemplateDef[] = [defaultTemplate]
 export function duplicateProposal(p: Proposal): Proposal {
   const copy: Proposal = structuredClone(p)
   const now = new Date().toISOString()
-  const idMap = new Map<string, string>()
-  copy.investment.modules = copy.investment.modules.map((m) => {
-    const id = uid()
-    idMap.set(m.id, id)
-    return { ...m, id }
-  })
-  copy.investment.customDiscounts = copy.investment.customDiscounts.map((d) => ({
-    ...d,
-    id: uid(),
-    moduleRowId: d.moduleRowId ? idMap.get(d.moduleRowId) : undefined,
-  }))
+  copy.investment.items = copy.investment.items.map((m) => ({ ...m, id: uid() }))
+  copy.investment.customDiscounts = copy.investment.customDiscounts.map((d) => ({ ...d, id: uid() }))
   copy.investment.consumption = copy.investment.consumption.map((c) => ({ ...c, id: uid() }))
   copy.roi.indicators = copy.roi.indicators.map((i) => ({ ...i, id: uid() }))
   return {
@@ -185,10 +176,28 @@ export function normalizeProposal(p: Partial<Proposal>, ctx: TemplateContext): P
     cover: merge(base.cover, p.cover),
     scenario: merge(base.scenario, p.scenario),
     project: merge(base.project, p.project),
-    investment: merge(base.investment, p.investment),
+    investment: merge(base.investment, migrateInvestment(p.investment)),
     roi: merge(base.roi, p.roi),
     cases: merge(base.cases, p.cases),
     closing: merge(base.closing, p.closing),
     sections: merge(base.sections, p.sections),
   } as Proposal
+}
+
+/**
+ * Propostas criadas no modelo antigo (preço por módulo) passam a usar
+ * mensalidade por posto e a lista de itens inclusos.
+ */
+function migrateInvestment(raw: Partial<Proposal['investment']> | undefined): Partial<Proposal['investment']> | undefined {
+  if (!raw) return raw
+  const { modules, implementationPrice, ...inv } = raw as Partial<Proposal['investment']> & LegacyInvestment
+  if (!inv.items && modules) inv.items = modules.map((m) => ({ id: m.id, moduleId: m.moduleId, name: m.name, included: m.included }))
+  if (inv.implementationFirst === undefined && typeof implementationPrice === 'number') inv.implementationFirst = implementationPrice
+  if (inv.customDiscounts) inv.customDiscounts = inv.customDiscounts.filter((c) => c.target === 'monthly' || c.target === 'implementation')
+  return inv
+}
+
+interface LegacyInvestment {
+  modules?: { id: string; moduleId: string | null; name: string; included: boolean }[]
+  implementationPrice?: number
 }

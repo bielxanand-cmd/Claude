@@ -46,6 +46,7 @@ export interface ModuleDef {
   name: string
   description: string
   category: ModuleCategory
+  /** Legado: a precificação é por posto, não por módulo */
   defaultPrice: number
   active: boolean
   sortOrder: number
@@ -70,14 +71,11 @@ export interface CaseDef {
   active: boolean
 }
 
-/** Linha da tabela de investimento (módulo contratado ou não). */
-export interface ProposalModule {
+/** Item da lista "O que está incluso" da proposta. */
+export interface IncludedItem {
   id: string
-  moduleId: string | null // null = módulo personalizado desta proposta
+  moduleId: string | null // null = item personalizado desta proposta
   name: string
-  description: string
-  tablePrice: number
-  negotiatedPrice: number
   included: boolean
 }
 
@@ -93,8 +91,7 @@ export interface CustomDiscount {
   label: string
   type: DiscountType
   value: number
-  target: 'implementation' | 'monthly' | 'module'
-  moduleRowId?: string
+  target: 'implementation' | 'monthly'
 }
 
 export interface RoiIndicator {
@@ -161,11 +158,15 @@ export interface Proposal {
 
   investment: {
     stations: number
-    modules: ProposalModule[]
+    /** Mensalidade de tabela por posto */
+    monthlyPrice: number
     monthlyDiscount: Discount
-    implementationPrice: number
+    /** Implantação: valor do 1º posto + valor de cada posto adicional */
+    implementationFirst: number
+    implementationAdditional: number
     implementationDiscount: Discount
     implementationFree: boolean
+    items: IncludedItem[]
     customDiscounts: CustomDiscount[]
     consumption: ConsumptionItem[]
     note: string
@@ -209,7 +210,9 @@ export interface AppSettings {
     coverSubtitle: string
     proposalTitle: string
     validity: string
-    implementationPrice: number
+    monthlyPrice: number
+    implementationFirst: number
+    implementationAdditional: number
     note: string
     closingTitle: string
   }

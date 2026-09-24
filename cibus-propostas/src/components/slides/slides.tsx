@@ -367,7 +367,7 @@ export function InvestmentSlide(c: Common) {
   const { p } = c
   const inv = p.investment
   const calc = calcInvestment(inv)
-  const rows = calc.rows
+  const items = inv.items.filter((i) => i.included && i.name.trim())
   const hasDiscount = calc.monthly.discount > 0.009
   const consumption = inv.consumption.filter((x) => x.name.trim())
   const impl = calc.implementation
@@ -386,7 +386,7 @@ export function InvestmentSlide(c: Common) {
         <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full border-[26px] border-brand/15" />
         <div className="absolute -right-6 bottom-6 h-24 w-24 rounded-full bg-brand/10 blur-2xl" />
         <div className="relative flex items-center justify-between">
-          <span className="text-[12px] font-bold uppercase tracking-[0.18em] text-white/55">Módulos contratados</span>
+          <span className="text-[12px] font-bold uppercase tracking-[0.18em] text-white/55">Mensalidade</span>
           {hasDiscount && (
             <span className="rounded-full bg-brand px-3 py-1 text-[12px] font-bold text-white">
               -{formatPercent(Math.round(calc.monthly.discountPercent))}
@@ -418,50 +418,53 @@ export function InvestmentSlide(c: Common) {
         </div>
       </div>
 
-      {/* Tabela de módulos */}
-      <div className="absolute left-[536px] right-[72px] top-[196px] flex h-[334px] flex-col rounded-[28px] border border-slate-200 bg-white px-7 py-5">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
-          <span>Módulos</span>
-          <span>Valor de tabela</span>
-        </div>
-        <FitBox id="investment-table" label="Tabela de módulos" max={15} min={10.5} className="min-h-0 flex-1 py-1.5">
-          {rows.map(({ row }) => (
-            <div
-              key={row.id}
-              className={cn('-mx-3 flex h-[2.05em] items-center gap-3 rounded-xl px-3', row.included ? 'bg-brand/[0.06]' : '')}
-            >
-              <span
-                className={cn(
-                  'flex h-[1.3em] w-[1.3em] shrink-0 items-center justify-center rounded-full',
-                  row.included ? 'bg-brand text-white' : 'border-[1.5px] border-slate-300',
-                )}
-              >
-                {row.included && <Check className="h-[0.8em] w-[0.8em]" strokeWidth={3.5} />}
-              </span>
-              <span className={cn('min-w-0 flex-1 truncate', row.included ? 'font-bold text-ink' : 'font-medium text-slate-400')}>{row.name}</span>
-              <span className={cn('tabular-nums', row.included ? 'font-bold text-ink' : 'font-medium text-slate-400')}>{formatBRL(row.tablePrice)}</span>
-            </div>
-          ))}
-        </FitBox>
-        <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-[14px]">
-          <span className="font-semibold text-slate-500">
-            Total de tabela · {calc.includedCount} {calc.includedCount === 1 ? 'módulo' : 'módulos'}
+      {/* O que está incluso */}
+      <div className="absolute left-[536px] right-[72px] top-[196px] flex h-[334px] flex-col rounded-[28px] border border-slate-200 bg-white px-7 py-6">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <span className="text-[12px] font-bold uppercase tracking-[0.18em] text-brand">O que está incluso</span>
+          <span className="text-[12px] font-semibold text-slate-400">
+            {items.length} {items.length === 1 ? 'recurso' : 'recursos'}
           </span>
-          <span className={cn('font-bold tabular-nums', hasDiscount ? 'text-slate-400 line-through' : 'text-ink')}>{formatBRL(calc.monthly.table)}</span>
         </div>
+        <FitBox id="investment-included" label="O que está incluso" max={16} min={11} lineHeight={1.25} className="min-h-0 flex-1 pt-4">
+          <div className={cn('grid gap-x-6 gap-y-[0.7em]', items.length > 5 ? 'grid-cols-2' : 'grid-cols-1')}>
+            {items.map((it) => (
+              <div key={it.id} className="flex min-w-0 items-center gap-[0.65em]">
+                <span className="flex h-[1.35em] w-[1.35em] shrink-0 items-center justify-center rounded-full bg-brand text-white">
+                  <Check className="h-[0.8em] w-[0.8em]" strokeWidth={3.5} />
+                </span>
+                <span className="min-w-0 font-bold text-ink">{it.name}</span>
+              </div>
+            ))}
+          </div>
+        </FitBox>
       </div>
 
       {/* Implantação + consumo */}
       <div className="absolute bottom-[78px] left-[72px] right-[72px] top-[546px] flex gap-4">
-        <div className="flex w-[440px] shrink-0 items-center justify-between rounded-[22px] border border-slate-200 bg-white px-7">
-          <div>
+        <div
+          className={cn(
+            'flex items-center justify-between gap-4 rounded-[22px] border border-slate-200 bg-white px-7',
+            consumption.length ? 'w-[440px] shrink-0' : 'flex-1',
+          )}
+        >
+          <div className="min-w-0">
             <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Implantação</div>
-            <div className="mt-1 text-[13px] font-medium text-slate-500">
-              {impl.free ? 'Setup completo sem custo' : impl.discount > 0 ? `De ${formatBRL(impl.table)}` : 'Pagamento único'}
+            <div className="mt-1 truncate text-[13px] font-medium text-slate-500">
+              {impl.free
+                ? 'Setup completo sem custo'
+                : impl.additionalStations > 0
+                  ? `${formatBRLShort(impl.first)} no 1º posto + ${impl.additionalStations} × ${formatBRLShort(impl.additional)}`
+                  : 'Pagamento único'}
             </div>
           </div>
-          <div className="text-right text-[30px] font-extrabold text-brand" style={{ letterSpacing: '-0.03em' }}>
-            {impl.free ? 'Isenta' : formatBRLShort(impl.final)}
+          <div className="shrink-0 text-right">
+            {!impl.free && impl.discount > 0 && (
+              <div className="text-[13px] font-semibold text-slate-400 line-through decoration-brand/70">{formatBRLShort(impl.table)}</div>
+            )}
+            <div className="text-[30px] font-extrabold leading-none text-brand" style={{ letterSpacing: '-0.03em' }}>
+              {impl.free ? 'Isenta' : formatBRLShort(impl.final)}
+            </div>
           </div>
         </div>
         {consumption.length > 0 && (

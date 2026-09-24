@@ -14,7 +14,6 @@ import { Field, ImageUpload, MoneyInput, RichText, Section } from '@/components/
 import { SlideFrame } from '@/components/slides/frame'
 import { CaseSlide } from '@/components/slides/slides'
 import { useAppData } from '@/lib/app-data'
-import { formatBRL } from '@/lib/pricing'
 import { repo } from '@/lib/repo'
 import { TEMPLATES, uid } from '@/lib/templates'
 import { MODULE_CATEGORIES, SEGMENTS, type AppSettings, type CaseDef, type Executive, type ModuleDef } from '@/lib/types'
@@ -30,7 +29,7 @@ export default function Admin() {
       <Tabs value={tab} onValueChange={(t) => setParams({ tab: t })} className="mt-8">
         <TabsList className="h-auto flex-wrap">
           <TabsTrigger value="modules">
-            <Blocks /> Módulos
+            <Blocks /> Itens inclusos
           </TabsTrigger>
           <TabsTrigger value="cases">
             <BookOpenCheck /> Cases
@@ -98,11 +97,11 @@ function ModulesAdmin() {
   const e = crud.editing
   return (
     <Section
-      title="Biblioteca de módulos"
-      description="Módulos com valor padrão entram automaticamente na tabela de investimento de novas propostas."
+      title="Itens inclusos"
+      description="Recursos da Cibus. Aparecem para seleção em “O que está incluso” (investimento) e em “Módulos do projeto”."
       action={
         <Button onClick={() => crud.setEditing(blank())}>
-          <Plus /> Novo módulo
+          <Plus /> Novo item
         </Button>
       }
     >
@@ -121,7 +120,6 @@ function ModulesAdmin() {
                     </div>
                     <div className="truncate text-sm text-muted-foreground">{m.description}</div>
                   </div>
-                  <div className="text-right text-sm font-bold tabular-nums text-ink">{m.defaultPrice > 0 ? formatBRL(m.defaultPrice) : <span className="font-normal text-muted-foreground">sem valor</span>}</div>
                   <Button variant="ghost" size="icon" aria-label={`Editar ${m.name}`} onClick={() => crud.setEditing(m)}>
                     <Pencil />
                   </Button>
@@ -137,7 +135,7 @@ function ModulesAdmin() {
       <Dialog open={!!e} onOpenChange={(o) => !o && crud.setEditing(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{modules.some((m) => m.id === e?.id) ? 'Editar módulo' : 'Novo módulo'}</DialogTitle>
+            <DialogTitle>{modules.some((m) => m.id === e?.id) ? 'Editar item' : 'Novo item'}</DialogTitle>
           </DialogHeader>
           {e && (
             <div className="space-y-4">
@@ -162,9 +160,6 @@ function ModulesAdmin() {
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="Valor padrão (mensal/posto)">
-                  <MoneyInput value={e.defaultPrice} onChange={(n) => crud.setEditing({ ...e, defaultPrice: n })} />
-                </Field>
               </div>
               <label className="flex items-center gap-3 text-sm font-semibold">
                 <Switch checked={e.active} onCheckedChange={(v) => crud.setEditing({ ...e, active: v })} /> Ativo
@@ -185,7 +180,7 @@ function ModulesAdmin() {
         open={!!crud.deleting}
         onOpenChange={(o) => !o && crud.setDeleting(null)}
         title={`Excluir “${crud.deleting?.name}”?`}
-        description="Propostas existentes mantêm o módulo na tabela de investimento. Para apenas esconder, desative-o."
+        description="Propostas existentes mantêm o item. Para apenas esconder de novas propostas, desative-o."
         confirmLabel="Excluir"
         destructive
         onConfirm={crud.doDelete}
@@ -541,8 +536,14 @@ function SettingsAdmin() {
           <Field label="Subtítulo da capa">
             <Input value={d.coverSubtitle} onChange={(ev) => setD({ coverSubtitle: ev.target.value })} />
           </Field>
-          <Field label="Valor padrão da implantação">
-            <MoneyInput value={d.implementationPrice} onChange={(n) => setD({ implementationPrice: n })} />
+          <Field label="Mensalidade por posto">
+            <MoneyInput value={d.monthlyPrice} onChange={(n) => setD({ monthlyPrice: n })} />
+          </Field>
+          <Field label="Implantação · 1º posto">
+            <MoneyInput value={d.implementationFirst} onChange={(n) => setD({ implementationFirst: n })} />
+          </Field>
+          <Field label="Implantação · cada posto adicional">
+            <MoneyInput value={d.implementationAdditional} onChange={(n) => setD({ implementationAdditional: n })} />
           </Field>
           <Field label="Observação do preço">
             <Input value={d.note} onChange={(ev) => setD({ note: ev.target.value })} />
