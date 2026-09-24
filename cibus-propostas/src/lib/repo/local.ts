@@ -42,7 +42,17 @@ export function createLocalRepository(): Repository {
     saveCase: (c) => upsert('cases', SEED_CASES, c),
     deleteCase: (id) => remove('cases', SEED_CASES, id),
 
-    listExecutives: () => coll<Executive>('executives', SEED_EXECUTIVES),
+    listExecutives: async () => {
+      // Executivos adicionados ao seed depois do primeiro acesso entram uma única vez
+      const list = await coll<Executive>('executives', SEED_EXECUTIVES)
+      const seen = (await get<string[]>('executives:seeded', store)) ?? list.map((e) => e.id)
+      const missing = SEED_EXECUTIVES.filter((e) => !seen.includes(e.id) && !list.some((x) => x.id === e.id))
+      await set('executives:seeded', [...new Set([...seen, ...SEED_EXECUTIVES.map((e) => e.id)])], store)
+      if (!missing.length) return list
+      const next = [...missing, ...list]
+      await set('executives', next, store)
+      return next
+    },
     saveExecutive: (e) => upsert('executives', SEED_EXECUTIVES, e),
     deleteExecutive: (id) => remove('executives', SEED_EXECUTIVES, id),
 

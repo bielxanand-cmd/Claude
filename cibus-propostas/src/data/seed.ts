@@ -83,6 +83,16 @@ export const SEED_CASES: CaseDef[] = [
 
 export const SEED_EXECUTIVES: Executive[] = [
   {
+    id: 'exec-gabriel-bettoni',
+    name: 'Gabriel Bettoni',
+    email: '',
+    phone: '',
+    whatsapp: '',
+    role: 'Executivo de Contas',
+    photo: '',
+    active: true,
+  },
+  {
     id: 'exec-default',
     name: 'Executivo Cibus',
     email: 'comercial@cibus.com.br',

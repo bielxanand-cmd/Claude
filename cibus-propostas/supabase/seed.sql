@@ -2,6 +2,7 @@
 
 insert into settings (id, data) values (1, '{"logo":"","logoDark":"","brandColor":"#FF5C00","inkColor":"#101828","roiUrl":"https://cibus.com.br/calculadora-roi","site":"cibus.com.br","contactEmail":"comercial@cibus.com.br","contactPhone":"","defaults":{"coverTitle":"Transforme cada compra em um *novo motivo para voltar*","coverSubtitle":"Proposta Comercial Cibus","proposalTitle":"Proposta Comercial Cibus Fuel","validity":"Proposta válida por 15 dias","implementationPrice":6000,"note":"Sem taxa por transação.","closingTitle":"Vamos transformar cada compra em um *novo motivo para voltar?*"}}'::jsonb) on conflict (id) do nothing;
 
+insert into executives (id, name, email, phone, whatsapp, role, photo, active) values ('exec-gabriel-bettoni', 'Gabriel Bettoni', '', '', '', 'Executivo de Contas', '', true) on conflict (id) do nothing;
 insert into executives (id, name, email, phone, whatsapp, role, photo, active) values ('exec-default', 'Executivo Cibus', 'comercial@cibus.com.br', '', '', 'Executivo de Contas', '', true) on conflict (id) do nothing;
 
 insert into modules (id, name, description, category, default_price, active, sort_order) values ('mod-pontos', 'Pontos Cibus', 'Programa de pontos com regras flexíveis por produto e forma de pagamento.', 'Fidelidade', 249, true, 0) on conflict (id) do nothing;
