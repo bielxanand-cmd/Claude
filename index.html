@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Rotina de Treinos</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>🏋️ Rotina de Treinos</h1>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-view="hoje">Hoje</button>
+    <button class="tab" data-view="treinos">Treinos</button>
+    <button class="tab" data-view="historico">Histórico</button>
+    <button class="tab" data-view="progresso">Progresso</button>
+  </nav>
+
+  <main id="app">
+    <!-- HOJE -->
+    <section id="view-hoje" class="view active"></section>
+
+    <!-- TREINOS -->
+    <section id="view-treinos" class="view">
+      <div class="section-head">
+        <h2>Meus treinos</h2>
+        <button class="btn primary" id="btn-novo-treino">+ Novo treino</button>
+      </div>
+      <div id="lista-treinos"></div>
+      <div class="card data-tools">
+        <h3>Backup</h3>
+        <p class="muted">Seus dados ficam salvos neste navegador. Exporte para guardar uma cópia.</p>
+        <div class="row">
+          <button class="btn" id="btn-exportar">Exportar JSON</button>
+          <label class="btn">
+            Importar JSON
+            <input type="file" id="input-importar" accept="application/json" hidden />
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- HISTÓRICO -->
+    <section id="view-historico" class="view">
+      <h2>Histórico</h2>
+      <div id="lista-historico"></div>
+    </section>
+
+    <!-- PROGRESSO -->
+    <section id="view-progresso" class="view">
+      <h2>Progresso</h2>
+      <div id="stats" class="stats"></div>
+      <div class="card">
+        <label for="select-exercicio">Exercício</label>
+        <select id="select-exercicio"></select>
+        <div id="grafico"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal de edição de treino -->
+  <dialog id="dlg-treino">
+    <form method="dialog" id="form-treino">
+      <h2 id="dlg-treino-titulo">Novo treino</h2>
+      <label>Nome
+        <input name="nome" required maxlength="60" placeholder="Ex.: Treino A – Peito e Tríceps" />
+      </label>
+      <fieldset class="dias">
+        <legend>Dias da semana</legend>
+        <div id="dias-semana"></div>
+      </fieldset>
+      <h3>Exercícios</h3>
+      <div id="exercicios-form"></div>
+      <button type="button" class="btn" id="btn-add-exercicio">+ Adicionar exercício</button>
+      <div class="row end">
+        <button type="button" class="btn" value="cancel" id="btn-cancelar-treino">Cancelar</button>
+        <button type="submit" class="btn primary" value="save">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Timer de descanso -->
+  <div id="timer" class="timer hidden" aria-live="polite">
+    <span>Descanso</span>
+    <strong id="timer-valor">00:00</strong>
+    <button class="btn small" id="btn-timer-mais">+15s</button>
+    <button class="btn small" id="btn-timer-parar">Pular</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
