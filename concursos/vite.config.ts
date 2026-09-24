@@ -6,6 +6,9 @@ import { defineConfig } from 'vite'
 
 export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
+  // Pré-otimiza o pdf.js: sem isso, o primeiro envio de PDF no `npm run dev`
+  // dispara uma otimização tardia e o Vite recarrega a página.
+  optimizeDeps: { include: ['pdfjs-dist/legacy/build/pdf.mjs', 'pdfjs-dist/legacy/build/pdf.worker.mjs'] },
   // `--mode artifact`: bundle único e caminhos relativos (versão de demonstração publicada)
   ...(mode === 'artifact' && {
     base: './',

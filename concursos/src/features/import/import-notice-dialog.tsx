@@ -152,7 +152,12 @@ export function ImportNoticeDialog({
       setReading('Procurando o conteúdo programático…')
       analyze(pages.join('\n'), { pages, fileName: file.name })
     } catch (err) {
-      setError(err instanceof PdfReadError ? err.message : 'Não foi possível ler o PDF.')
+      console.error('[importar edital]', err)
+      setError(
+        err instanceof PdfReadError
+          ? err.message
+          : `Não foi possível ler o PDF (${err instanceof Error ? `${err.name}: ${err.message}` : String(err)}). Tente “Colar texto”.`,
+      )
     } finally {
       setReading(null)
     }

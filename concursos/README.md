@@ -71,7 +71,7 @@ Todos os canais de entrada (seed, texto colado, PDF e API no futuro) convergem p
 
 Em **Meu concurso → Importar edital**, envie o PDF do edital ou cole o texto:
 
-1. `features/import/pdf-text.ts` extrai o texto do PDF no navegador (pdf.js); nada é enviado a servidores. PDFs escaneados (sem texto) são detectados e o usuário é orientado a colar o texto.
+1. `features/import/pdf-text.ts` extrai o texto do PDF no navegador (build *legacy* do pdf.js, compatível com Safari e navegadores não tão recentes); nada é enviado a servidores. A leitura usa um Web Worker e, se o ambiente bloquear workers, cai automaticamente para a página principal (a versão publicada usa sempre a página principal: `VITE_PDF_MAIN_THREAD=true`). PDFs escaneados (sem texto) são detectados e o usuário é orientado a colar o texto.
 2. `findSyllabusSection` localiza a seção de conteúdos ("Dos objetos de avaliação", "Conteúdo programático", "Conhecimentos exigidos"…) e para no próximo ANEXO.
 3. `parseSyllabus` reconhece disciplinas e assuntos nos formatos das bancas: `1 Item. 2 Item. 4.1 Subitem` (Cebraspe), `1.`/`1)`/`1 –` (FGV, FCC, Vunesp…), títulos sozinhos na linha, várias disciplinas na mesma linha, listas com marcadores e grupos (Bloco I, Conhecimentos básicos). A numeração é validada em sequência, então números de leis (“Lei nº 8.112/1990”) não quebram os itens.
 4. `detectNoticeMetadata` preenche órgão, sigla, ano, banca e esfera.

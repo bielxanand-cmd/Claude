@@ -198,6 +198,27 @@ test('importar edital em PDF identifica disciplinas, assuntos e dados do edital'
   await expect(page.getByRole('link', { name: /Governanca de TI/ })).toHaveCount(0)
 })
 
+test('importar PDF funciona em navegadores sem os recursos mais novos de JavaScript', async ({ page }) => {
+  // Simula Safari/Chrome/Firefox que ainda não têm estes recursos (exigidos pelo build moderno do pdf.js)
+  await page.addInitScript(() => {
+    const drop = (obj: object, key: string) => Reflect.deleteProperty(obj, key)
+    drop(Map.prototype, 'getOrInsertComputed')
+    drop(WeakMap.prototype, 'getOrInsertComputed')
+    drop(Promise, 'withResolvers')
+    drop(Uint8Array.prototype, 'toBase64')
+    drop(Uint8Array, 'fromBase64')
+  })
+  await page.goto('/')
+  await seedUser(page)
+  await page.goto('/concursos?importar=1')
+  await page.locator('#notice-file').setInputFiles({
+    name: 'edital.pdf',
+    mimeType: 'application/pdf',
+    buffer: makePdf(['12 DOS OBJETOS DE AVALIACAO', 'CIENCIA DE DADOS: 1 Estatistica descritiva. 2 Regressao linear.']),
+  })
+  await expect(page.getByText(/Encontramos/)).toContainText('1 disciplinas e 2 assuntos')
+})
+
 test('importar edital colando o texto', async ({ page }) => {
   await page.goto('/')
   await seedUser(page)
