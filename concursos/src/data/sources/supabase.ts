@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { Flashcard } from '@/domain/flashcards'
 import { planNoticeImport } from '@/domain/import-notice'
 import type {
   Career,
@@ -50,6 +51,24 @@ const toUserTopic = (r: Row): UserTopic => ({
   lastAccessedAt: r.last_accessed_at,
 })
 const toSummary = (r: Row): Summary => ({ topicId: r.topic_id, content: r.content, plainText: r.plain_text, updatedAt: r.updated_at })
+const toFlashcard = (r: Row): Flashcard => ({
+  id: r.id,
+  topicId: r.topic_id,
+  front: r.front,
+  back: r.back,
+  context: r.context,
+  kind: r.kind,
+  source: r.source,
+  createdAt: r.created_at,
+  review: {
+    ease: Number(r.ease_factor),
+    intervalDays: r.interval_days,
+    reps: r.reps,
+    lapses: r.lapses,
+    dueAt: r.due_at,
+    lastReviewedAt: r.last_reviewed_at,
+  },
+})
 const toProfile = (r: Row): UserProfile => ({ id: r.id, name: r.name, email: r.email, createdAt: r.created_at })
 
 function must<T>(result: { data: T | null; error: { message: string } | null }): T {
@@ -288,9 +307,45 @@ export function createSupabaseDataSource(url: string, anonKey: string): DataSour
       must(await client.from('summaries').delete().eq('user_id', await userId()).eq('topic_id', topicId))
     },
 
+    async listFlashcards() {
+      const id = await userId()
+      return (await selectAll(client, 'flashcards', '*', (q) => q.eq('user_id', id))).map(toFlashcard)
+    },
+
+    async saveTopicFlashcards(topicId, cards) {
+      const id = await userId()
+      must(await client.from('flashcards').delete().eq('user_id', id).eq('topic_id', topicId))
+      if (cards.length === 0) return []
+      const rows = must<Row[]>(
+        await client
+          .from('flashcards')
+          .insert(
+            cards.map((c) => ({
+              id: c.id,
+              user_id: id,
+              topic_id: topicId,
+              front: c.front,
+              back: c.back,
+              context: c.context,
+              kind: c.kind,
+              source: c.source,
+              created_at: c.createdAt,
+              ease_factor: c.review.ease,
+              interval_days: c.review.intervalDays,
+              reps: c.review.reps,
+              lapses: c.review.lapses,
+              due_at: c.review.dueAt,
+              last_reviewed_at: c.review.lastReviewedAt,
+            })),
+          )
+          .select(),
+      )
+      return rows.map(toFlashcard)
+    },
+
     async resetUserData() {
       const id = await userId()
-      await Promise.all(['user_topics', 'summaries', 'user_positions'].map(async (t) => must(await client.from(t).delete().eq('user_id', id))))
+      await Promise.all(['user_topics', 'summaries', 'user_positions', 'flashcards'].map(async (t) => must(await client.from(t).delete().eq('user_id', id))))
       removeKey(ANON_USER_KEY)
       userIdPromise = null
     },

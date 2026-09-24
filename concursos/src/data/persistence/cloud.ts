@@ -11,6 +11,7 @@ import { emptyCatalog, groupImports, type Change, type ImportRows, type Persiste
  *   data/users/<id>/state                    perfil, concurso atual, histórico
  *   data/users/<id>/progress                 status de cada assunto
  *   data/users/<id>/state/summaries/<assunto> um resumo por documento
+ *   data/users/<id>/state/flashcards/<assunto> os flashcards de um assunto
  *   data/users/<id>/catalog                  carreiras e cargos criados
  *   data/users/<id>/catalog/imports/<edital>  um edital importado por documento
  *
@@ -66,6 +67,7 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
   const progressDoc = db.doc(`${base}/progress`)
   const catalogDoc = db.doc(`${base}/catalog`)
   const summaries = stateDoc.collection('summaries')
+  const flashcards = stateDoc.collection('flashcards')
   const imports = catalogDoc.collection('imports')
 
   /* ---------------------------------------------- fila de gravação por documento */
@@ -132,7 +134,7 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
     async load() {
       const [state, progress, catalog] = await Promise.all([stateDoc.get(), progressDoc.get(), catalogDoc.get()])
       if (!state.exists && !progress.exists && !catalog.exists) return null
-      const [summaryDocs, importDocs] = await Promise.all([summaries.limit(1000).get(), imports.limit(500).get()])
+      const [summaryDocs, importDocs, flashcardDocs] = await Promise.all([summaries.limit(1000).get(), imports.limit(500).get(), flashcards.limit(1000).get()])
 
       const s = (state.data() ?? {}) as Partial<UserState>
       const userState: UserState | null = s.profile
@@ -146,6 +148,12 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
                 .map((d) => d.data() as unknown as UserState['summaries'][string] | undefined)
                 .filter((x): x is UserState['summaries'][string] => !!x?.topicId)
                 .map((x) => [x.topicId, x]),
+            ),
+            flashcards: Object.fromEntries(
+              flashcardDocs.docs
+                .map((d) => d.data() as { topicId?: string; cards?: UserState['flashcards'][string] } | undefined)
+                .filter((x): x is { topicId: string; cards: UserState['flashcards'][string] } => !!x?.topicId && Array.isArray(x.cards))
+                .map((x) => [x.topicId, x.cards]),
             ),
           }
         : null
@@ -177,6 +185,11 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
           write(summaries.doc(safeId(change.topicId)), summary ? ({ ...summary } as unknown as Record<string, unknown>) : null)
           break
         }
+        case 'flashcards': {
+          const cards = snap.user.flashcards[change.topicId]
+          write(flashcards.doc(safeId(change.topicId)), cards?.length ? { topicId: change.topicId, cards, v: 1 } : null)
+          break
+        }
         case 'catalog-meta':
           write(catalogDoc, { careers: snap.catalog.careers, positions: snap.catalog.positions, v: 1 })
           break
@@ -191,12 +204,14 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
       write(progressDoc, { topics: snap.user.topics, v: 1 })
       write(catalogDoc, { careers: snap.catalog.careers, positions: snap.catalog.positions, v: 1 })
       for (const topicId of Object.keys(snap.user.summaries)) persistence.save({ type: 'summary', topicId }, snap)
+      for (const topicId of Object.keys(snap.user.flashcards)) persistence.save({ type: 'flashcards', topicId }, snap)
       for (const rows of groupImports(snap.catalog)) saveImport(rows)
     },
 
     async clear() {
-      const [summaryDocs, importDocs] = await Promise.all([summaries.limit(1000).get(), imports.limit(500).get()])
+      const [summaryDocs, importDocs, flashcardDocs] = await Promise.all([summaries.limit(1000).get(), imports.limit(500).get(), flashcards.limit(1000).get()])
       await Promise.all([
+        ...flashcardDocs.docs.map((d) => flashcards.doc(d.id).delete()),
         stateDoc.delete(),
         progressDoc.delete(),
         catalogDoc.delete(),

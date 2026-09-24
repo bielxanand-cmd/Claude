@@ -13,6 +13,7 @@ import { ProgressBar } from '@/components/ui/progress-bar'
 import { useStudy } from '@/data/queries'
 import { statusOf, subjectProgress } from '@/domain/progress'
 import type { TopicStatus } from '@/domain/types'
+import { SubjectFlashcards } from '@/features/flashcards/subject-flashcards'
 import { useTopicActions } from '@/hooks/use-topic-actions'
 import { percent } from '@/lib/text'
 import { cn } from '@/lib/utils'
@@ -95,6 +96,10 @@ export function SubjectPage() {
           <SourceChips contests={sources} max={6} />
         </div>
       </Card>
+
+      <div className="mt-6">
+        <SubjectFlashcards subject={subject} />
+      </div>
 
       <section className="mt-8" aria-label="Assuntos">
         <div className="mb-3 flex items-center justify-between gap-3">

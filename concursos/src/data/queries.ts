@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { consolidateStudyPlan } from '@/domain/consolidate'
+import type { Flashcard } from '@/domain/flashcards'
 import { toStatusMap } from '@/domain/progress'
 import type {
   Contest,
@@ -26,6 +27,7 @@ export const queryKeys = {
   profile: ['profile'] as const,
   userTopics: ['user-topics'] as const,
   summaries: ['summaries'] as const,
+  flashcards: ['flashcards'] as const,
 }
 
 /* ------------------------------------------------------------------ Catálogo */
@@ -157,6 +159,24 @@ export function useDeleteSummary() {
   return useMutation({
     mutationFn: (topicId: string) => dataSource.deleteSummary(topicId),
     onSuccess: (_v, topicId) => qc.setQueryData<Summary[]>(queryKeys.summaries, (list = []) => list.filter((s) => s.topicId !== topicId)),
+  })
+}
+
+export const useFlashcards = () => useQuery({ queryKey: queryKeys.flashcards, queryFn: () => dataSource.listFlashcards() })
+
+/** Salva o baralho de um assunto com atualização otimista (revisões fluem sem espera). */
+export function useSaveTopicFlashcards() {
+  const qc = useQueryClient()
+  const replace = (list: Flashcard[] = [], topicId: string, cards: Flashcard[]) => [...list.filter((c) => c.topicId !== topicId), ...cards]
+  return useMutation({
+    mutationFn: ({ topicId, cards }: { topicId: string; cards: Flashcard[] }) => dataSource.saveTopicFlashcards(topicId, cards),
+    onMutate: async ({ topicId, cards }) => {
+      await qc.cancelQueries({ queryKey: queryKeys.flashcards })
+      const previous = qc.getQueryData<Flashcard[]>(queryKeys.flashcards)
+      qc.setQueryData<Flashcard[]>(queryKeys.flashcards, (list) => replace(list, topicId, cards))
+      return { previous }
+    },
+    onError: (_e, _v, context) => qc.setQueryData(queryKeys.flashcards, context?.previous),
   })
 }
 

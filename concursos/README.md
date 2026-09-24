@@ -89,6 +89,13 @@ Os testes usam um trecho real do Edital nº 1 – PRF/2021 (`src/domain/__fixtur
 
 A camada `src/data/persistence` carrega tudo uma vez e grava só o documento afetado por cada alteração (perfil/histórico, progresso, um documento por resumo e um por edital importado — cada documento tem limite de 256 KB). Na primeira abertura na conta, o que estava salvo no navegador é migrado automaticamente. **Meus concursos** guarda os concursos já abertos (até 20) para voltar a eles com um clique, sem refazer o cadastro nem reimportar editais.
 
+### Flashcards
+
+Em cada assunto, **Flashcards** (ou “✨ Criar flashcards” no assistente) sugere cartões a partir do resumo (`domain/flashcards.ts`, sem IA):
+trechos em negrito/destaque viram lacunas, “Tema: explicação” vira pergunta, título + lista vira “liste”, e frases de Pontos importantes/Pegadinhas viram verdadeiro ou falso. O usuário escolhe quais adicionar, edita, exclui e cria cartões à mão. Na página publicada, **Gerar com o Claude** (capacidade `sample`, usa a cota do próprio usuário) sugere cartões usando apenas o texto do resumo.
+
+A revisão usa um SM-2 simplificado (Errei 10 min · Difícil 1 h/×1,2 · Acertei 1 → 3 → ×facilidade dias · Fácil). A página da disciplina reúne os cartões de todos os assuntos e mostra quantos estão para revisar.
+
 ### Progresso
 
 - Disciplina = assuntos concluídos ÷ assuntos da disciplina.

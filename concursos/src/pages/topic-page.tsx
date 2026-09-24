@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2, Lightbulb, Network, NotebookPen, Save, SearchX, StickyNote } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2, Layers3, Lightbulb, Network, NotebookPen, Save, SearchX, StickyNote } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useBlocker, useParams } from 'react-router-dom'
@@ -12,10 +12,13 @@ import { FrequencyPill } from '@/components/study/topic-row'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
-import { useSaveSummary, useStudy, type Study } from '@/data/queries'
+import { useFlashcards, useSaveSummary, useStudy, type Study } from '@/data/queries'
+import type { Flashcard } from '@/domain/flashcards'
 import { statusOf } from '@/domain/progress'
 import type { SummaryContent } from '@/domain/types'
 import { AiPanel } from '@/features/ai/ai-panel'
+import { FlashcardsDialog } from '@/features/flashcards/flashcards-dialog'
+import { StudySession } from '@/features/flashcards/study-session'
 import { MindMapDialog } from '@/features/mind-map/mind-map-dialog'
 import { useTopicActions } from '@/hooks/use-topic-actions'
 import { cn, formatRelative, formatTime } from '@/lib/utils'
@@ -73,6 +76,10 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
   const [draft, setDraft] = useState<SummaryContent>(savedContent)
   const [justSaved, setJustSaved] = useState(false)
   const [mindMapOpen, setMindMapOpen] = useState(false)
+  const [flashcardsOpen, setFlashcardsOpen] = useState(false)
+  const [studyCards, setStudyCards] = useState<Flashcard[] | null>(null)
+  const flashcards = useFlashcards()
+  const deckSize = (flashcards.data ?? []).filter((c) => c.topicId === topicId).length
   const mindMapSections = useMemo(
     () => SECTIONS.map(({ key, title }) => ({ key, label: title, color: SECTION_COLORS[key], html: draft[key] })),
     [draft],
@@ -173,6 +180,10 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
             <Button variant="secondary" size="sm" onClick={() => setMindMapOpen(true)}>
               <Network /> Criar mapa mental
             </Button>
+            <Button variant="secondary" size="sm" onClick={() => setFlashcardsOpen(true)}>
+              <Layers3 /> Flashcards
+              {deckSize > 0 && <span className="rounded-full bg-primary px-1.5 text-[11px] font-bold text-white tabular-nums">{deckSize}</span>}
+            </Button>
             <FrequencyPill frequency={planTopic.frequency} total={plan!.contests.length} />
             <SourceChips contests={sources} max={3} />
           </div>
@@ -254,7 +265,7 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
               ))}
             </ul>
           </Card>
-          <AiPanel onAction={{ mind_map: () => setMindMapOpen(true) }} />
+          <AiPanel onAction={{ mind_map: () => setMindMapOpen(true), flashcards: () => setFlashcardsOpen(true) }} />
         </aside>
       </div>
 
@@ -303,6 +314,26 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
       </div>,
         document.body,
       )}
+
+      <FlashcardsDialog
+        open={flashcardsOpen}
+        onOpenChange={setFlashcardsOpen}
+        topicId={topicId}
+        topicName={planTopic.topic.name}
+        subjectName={subject.subject.name}
+        positionName={plan!.position.name}
+        content={draft}
+        onStudy={(cards) => {
+          setFlashcardsOpen(false)
+          setStudyCards(cards)
+        }}
+      />
+      <StudySession
+        open={!!studyCards}
+        onOpenChange={(open) => !open && setStudyCards(null)}
+        cards={studyCards ?? []}
+        title={`Flashcards · ${planTopic.topic.name}`}
+      />
 
       <MindMapDialog
         open={mindMapOpen}

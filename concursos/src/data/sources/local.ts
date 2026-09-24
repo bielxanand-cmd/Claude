@@ -21,6 +21,7 @@ const freshUser = (): UserState => ({
   history: [],
   topics: {},
   summaries: {},
+  flashcards: {},
 })
 
 /**
@@ -252,6 +253,18 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
       delete u.summaries[topicId]
       save({ type: 'summary', topicId })
       return delay(undefined, 0)
+    },
+
+    async listFlashcards() {
+      return delay(Object.values((await user()).flashcards).flat(), 0)
+    },
+
+    async saveTopicFlashcards(topicId, cards) {
+      const u = await user()
+      if (cards.length) u.flashcards[topicId] = cards.map((c) => ({ ...c, topicId }))
+      else delete u.flashcards[topicId]
+      save({ type: 'flashcards', topicId })
+      return delay(u.flashcards[topicId] ?? [], 0)
     },
 
     async resetUserData() {

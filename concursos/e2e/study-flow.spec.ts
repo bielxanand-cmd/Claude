@@ -328,3 +328,73 @@ test('Meus concursos: troca entre concursos já abertos mantendo o progresso', a
   await page.getByRole('link', { name: 'Meu concurso' }).click()
   await expect(page.getByRole('region', { name: 'Meus concursos' }).getByText('Agente de Polícia Federal — PF')).toBeVisible()
 })
+
+test('flashcards: gera do resumo, edita, estuda com revisão espaçada e aparece na disciplina', async ({ page }) => {
+  await page.goto('/')
+  await page.evaluate(() => {
+    const topicId = 'direito-constitucional__remedios-constitucionais'
+    localStorage.setItem(
+      'concursos.user.v1',
+      JSON.stringify({
+        profile: { id: 'e2e', name: 'Ana', email: null, createdAt: new Date().toISOString() },
+        selection: { positionId: 'auditor-fiscal-estadual', sphere: 'estadual', state: 'SP', createdAt: new Date().toISOString() },
+        history: [],
+        topics: {},
+        flashcards: {},
+        summaries: {
+          [topicId]: {
+            topicId,
+            plainText: 'x',
+            updatedAt: new Date().toISOString(),
+            content: {
+              summary:
+                '<h2>Mandado de segurança</h2><ul><li><p>Prazo de <strong>120 dias</strong> para impetrar.</p></li><li><p>Coletivo: partido político ou sindicato</p></li></ul>',
+              keyPoints: '',
+              pitfalls: '<p>Não cabe habeas corpus em punição disciplinar militar.</p>',
+              notes: '',
+            },
+          },
+        },
+      }),
+    )
+  })
+  await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
+  await page.getByRole('button', { name: /^Flashcards/ }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'Flashcards' })
+  await expect(dialog.getByText('Prazo de _____ para impetrar')).toBeVisible()
+  await expect(dialog.getByText('Coletivo', { exact: true })).toBeVisible()
+  // Desmarca uma sugestão e adiciona as outras
+  await dialog.locator('label', { hasText: 'Coletivo' }).getByRole('checkbox').uncheck()
+  await dialog.getByRole('button', { name: /Adicionar 2 ao baralho/ }).click()
+  await expect(page.getByText('2 cartões adicionados')).toBeVisible()
+
+  // Cartão manual
+  await dialog.getByRole('button', { name: /Cartão manual/ }).click()
+  await dialog.getByLabel('Frente (pergunta)').fill('Qual remédio protege a liberdade de locomoção?')
+  await dialog.getByLabel('Verso (resposta)').fill('Habeas corpus')
+  await dialog.getByRole('button', { name: 'Salvar cartão' }).click()
+  await expect(dialog.getByText('Qual remédio protege a liberdade de locomoção?')).toBeVisible()
+
+  // Estudar: 3 cartões vencidos
+  await dialog.getByRole('button', { name: /Estudar 3 cartões/ }).click()
+  const session = page.getByRole('dialog', { name: /Flashcards · Remédios constitucionais/ })
+  await expect(session.getByText('Cartão 1 de 3')).toBeVisible()
+  await session.getByRole('button', { name: 'Mostrar resposta' }).click()
+  await session.getByRole('button', { name: /^Acertei/ }).click()
+  await page.keyboard.press(' ')
+  await page.keyboard.press('1') // Errei: volta ao fim da fila
+  await expect(session.getByText('Cartão 3 de 4')).toBeVisible()
+  await page.keyboard.press(' ')
+  await page.keyboard.press('4')
+  await page.keyboard.press(' ')
+  await page.keyboard.press('3')
+  await expect(session.getByText('4 revisões feitas')).toBeVisible()
+  await session.getByRole('button', { name: 'Concluir' }).click()
+
+  // Persistência + resumo na disciplina
+  await page.reload()
+  await expect(page.getByRole('button', { name: /^Flashcards 3/ })).toBeVisible()
+  await page.goto('/disciplina/direito-constitucional')
+  await expect(page.getByText(/3 cartões em 1 assunto · 0 para revisar agora/)).toBeVisible()
+})

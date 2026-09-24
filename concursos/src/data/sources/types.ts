@@ -1,3 +1,4 @@
+import type { Flashcard } from '@/domain/flashcards'
 import type {
   Career,
   CatalogSnapshot,
@@ -56,5 +57,8 @@ export interface DataSource {
   listSummaries(): Promise<Summary[]>
   saveSummary(topicId: string, content: SummaryContent): Promise<Summary>
   deleteSummary(topicId: string): Promise<void>
+  listFlashcards(): Promise<Flashcard[]>
+  /** Substitui os flashcards de um assunto (inclui o estado de revisão) */
+  saveTopicFlashcards(topicId: string, cards: Flashcard[]): Promise<Flashcard[]>
   resetUserData(): Promise<void>
 }

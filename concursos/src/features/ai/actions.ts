@@ -18,7 +18,7 @@ export interface AiAction {
 export const AI_ACTIONS: AiAction[] = [
   { id: 'summarize', label: 'Resumir conteúdo', description: 'Gera um resumo a partir do assunto e das suas anotações.', icon: Wand2, available: false },
   { id: 'questions', label: 'Criar questões', description: 'Questões no estilo das bancas para o assunto.', icon: FileQuestion, available: false },
-  { id: 'flashcards', label: 'Criar flashcards', description: 'Cartões para revisão espaçada.', icon: Layers3, available: false },
+  { id: 'flashcards', label: 'Criar flashcards', description: 'Cartões do seu resumo, com revisão espaçada.', icon: Layers3, available: true },
   { id: 'explain', label: 'Explicar assunto', description: 'Explicação didática com exemplos.', icon: Lightbulb, available: false },
   { id: 'mind_map', label: 'Criar mapa mental', description: 'Organiza seu resumo em um mapa visual.', icon: BrainCircuit, available: true },
 ]

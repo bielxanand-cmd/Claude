@@ -1,4 +1,5 @@
 import type { Contest, ContestSubject, ContestTopic, Subject, Summary, Topic, UserProfile, UserSelection, UserTopic } from '@/domain/types'
+import type { Flashcard } from '@/domain/flashcards'
 import type { CatalogRows } from '../seed'
 
 /** Tudo o que é do usuário no modo local/nuvem. */
@@ -9,6 +10,8 @@ export interface UserState {
   history: UserSelection[]
   topics: Record<string, UserTopic>
   summaries: Record<string, Summary>
+  /** Flashcards por assunto */
+  flashcards: Record<string, Flashcard[]>
 }
 
 /** Catálogo criado pelo usuário (carreiras/cargos manuais e editais importados). */
@@ -38,6 +41,7 @@ export type Change =
   | { type: 'meta' } // perfil, concurso atual, histórico
   | { type: 'topic'; topicId: string }
   | { type: 'summary'; topicId: string }
+  | { type: 'flashcards'; topicId: string }
   | { type: 'catalog-meta' } // carreiras e cargos manuais
   | { type: 'import'; rows: ImportRows }
 

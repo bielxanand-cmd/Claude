@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { createCard } from '@/domain/flashcards'
 import { parseNoticeSyllabus } from '@/domain/notice-parser'
 import { createLocalDataSource } from '../sources/local'
 import { createCloudPersistence } from './cloud'
@@ -84,6 +85,9 @@ describe('dados salvos na conta (página publicada)', () => {
     const topicId = plan!.contestTopics[0].topicId
     await first.updateUserTopic(topicId, { status: 'completed', completedAt: '2026-09-24T10:00:00Z' })
     await first.saveSummary(topicId, { summary: '<p>CTB: Lei 9.503/1997</p>', keyPoints: '', pitfalls: '', notes: '' })
+    await first.saveTopicFlashcards(topicId, [
+      createCard(topicId, { kind: 'qa', front: 'Lei do CTB?', back: '9.503/1997', context: null }, 'summary', 'card-1'),
+    ])
     await flush()
 
     // Os dados ficam no subárvore privado do usuário
@@ -100,6 +104,7 @@ describe('dados salvos na conta (página publicada)', () => {
     expect(reopened?.contestTopics.some((ct) => ct.details?.includes('Resolução 432'))).toBe(true)
     expect((await second.listUserTopics()).find((t) => t.topicId === topicId)?.status).toBe('completed')
     expect((await second.listSummaries())[0].content.summary).toContain('9.503')
+    expect((await second.listFlashcards()).map((c) => c.front)).toEqual(['Lei do CTB?'])
   })
 
   it('na primeira abertura, leva para a conta o que estava salvo no navegador', { timeout: 15_000 }, async () => {
