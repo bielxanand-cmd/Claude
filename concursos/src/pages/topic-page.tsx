@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2, Lightbulb, NotebookPen, Save, SearchX, StickyNote } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2, Lightbulb, Network, NotebookPen, Save, SearchX, StickyNote } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useBlocker, useParams } from 'react-router-dom'
@@ -16,10 +16,14 @@ import { useSaveSummary, useStudy, type Study } from '@/data/queries'
 import { statusOf } from '@/domain/progress'
 import type { SummaryContent } from '@/domain/types'
 import { AiPanel } from '@/features/ai/ai-panel'
+import { MindMapDialog } from '@/features/mind-map/mind-map-dialog'
 import { useTopicActions } from '@/hooks/use-topic-actions'
 import { cn, formatRelative, formatTime } from '@/lib/utils'
 
 const EMPTY_CONTENT: SummaryContent = { summary: '', keyPoints: '', pitfalls: '', notes: '' }
+
+/** Cor de cada campo no mapa mental. */
+const SECTION_COLORS: Record<keyof SummaryContent, string> = { summary: '#7C3AED', keyPoints: '#D97706', pitfalls: '#DC2626', notes: '#0891B2' }
 
 const SECTIONS: { key: keyof SummaryContent; title: string; hint: string; icon: typeof NotebookPen; minHeight: number; placeholder: string }[] = [
   { key: 'summary', title: 'Meu resumo', hint: 'O essencial do assunto com suas palavras.', icon: NotebookPen, minHeight: 240, placeholder: 'Escreva seu resumo… Use títulos, listas e destaques para organizar.' },
@@ -68,6 +72,11 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
 
   const [draft, setDraft] = useState<SummaryContent>(savedContent)
   const [justSaved, setJustSaved] = useState(false)
+  const [mindMapOpen, setMindMapOpen] = useState(false)
+  const mindMapSections = useMemo(
+    () => SECTIONS.map(({ key, title }) => ({ key, label: title, color: SECTION_COLORS[key], html: draft[key] })),
+    [draft],
+  )
   const saveSummary = useSaveSummary()
   const { setStatus, touch } = useTopicActions()
   const completeRef = useRef<HTMLButtonElement>(null)
@@ -161,6 +170,9 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
             <StatusControl value={status} onChange={(s) => setStatus(topicId, s, s === 'completed' ? completeRef.current : null)} className="w-full sm:w-auto" />
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setMindMapOpen(true)}>
+              <Network /> Criar mapa mental
+            </Button>
             <FrequencyPill frequency={planTopic.frequency} total={plan!.contests.length} />
             <SourceChips contests={sources} max={3} />
           </div>
@@ -242,7 +254,7 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
               ))}
             </ul>
           </Card>
-          <AiPanel />
+          <AiPanel onAction={{ mind_map: () => setMindMapOpen(true) }} />
         </aside>
       </div>
 
@@ -291,6 +303,14 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
       </div>,
         document.body,
       )}
+
+      <MindMapDialog
+        open={mindMapOpen}
+        onOpenChange={setMindMapOpen}
+        title={planTopic.topic.name}
+        subtitle={`${subject.subject.name} · ${plan!.position.name}`}
+        sections={mindMapSections}
+      />
 
       <Dialog open={blocker.state === 'blocked'} onOpenChange={(open) => !open && blocker.state === 'blocked' && blocker.reset()}>
         <DialogContent className="max-w-md">

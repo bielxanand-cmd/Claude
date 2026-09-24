@@ -218,3 +218,45 @@ test('importar edital colando o texto', async ({ page }) => {
   await expect(page.getByText('O que o edital cobra')).toBeVisible()
   await expect(page.getByText('Mínimos quadrados')).toBeVisible()
 })
+
+test('cria mapa mental a partir do resumo do assunto', async ({ page, isMobile }) => {
+  await page.goto('/')
+  await page.evaluate(() => {
+    localStorage.setItem(
+      'concursos.user.v1',
+      JSON.stringify({
+        profile: { id: 'e2e', name: 'Ana', email: null, createdAt: new Date().toISOString() },
+        selection: { positionId: 'auditor-fiscal-estadual', sphere: 'estadual', state: 'SP', createdAt: new Date().toISOString() },
+        topics: {},
+        summaries: {},
+      }),
+    )
+  })
+  await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
+
+  // Sem texto: orienta a escrever primeiro
+  await page.getByRole('button', { name: 'Criar mapa mental' }).first().click()
+  await expect(page.getByText('Escreva seu resumo primeiro')).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  // Texto ainda não salvo já entra no mapa
+  await page.getByRole('textbox', { name: 'Meu resumo' }).click()
+  await page.keyboard.type('Habeas corpus: protege a liberdade de locomoção. Mandado de segurança: direito líquido e certo.')
+  await page.getByRole('textbox', { name: 'Pegadinhas' }).click()
+  await page.keyboard.type('Pessoa jurídica não propõe ação popular')
+
+  await page.getByRole('button', { name: 'Criar mapa mental' }).first().click()
+  const map = page.getByRole('img', { name: 'Mapa mental: Remédios constitucionais' })
+  await expect(map).toBeVisible()
+  for (const text of ['Meu resumo', 'Habeas corpus', 'Mandado de segurança', 'Pegadinhas'])
+    await expect(map.getByText(text, { exact: true })).toHaveCount(1)
+  // textos longos quebram em mais de uma linha dentro do nó
+  await expect(map.getByText(/liberdade de/)).toHaveCount(1)
+  await expect(map.getByText(/Pessoa jurídica/)).toHaveCount(1)
+
+  if (!isMobile) {
+    const download = page.waitForEvent('download')
+    await page.getByRole('button', { name: /Baixar PNG/ }).click()
+    expect((await download).suggestedFilename()).toBe('mapa-mental-remedios-constitucionais.png')
+  }
+})

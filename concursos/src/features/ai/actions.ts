@@ -20,7 +20,7 @@ export const AI_ACTIONS: AiAction[] = [
   { id: 'questions', label: 'Criar questões', description: 'Questões no estilo das bancas para o assunto.', icon: FileQuestion, available: false },
   { id: 'flashcards', label: 'Criar flashcards', description: 'Cartões para revisão espaçada.', icon: Layers3, available: false },
   { id: 'explain', label: 'Explicar assunto', description: 'Explicação didática com exemplos.', icon: Lightbulb, available: false },
-  { id: 'mind_map', label: 'Criar mapa mental', description: 'Estrutura visual dos principais conceitos.', icon: BrainCircuit, available: false },
+  { id: 'mind_map', label: 'Criar mapa mental', description: 'Organiza seu resumo em um mapa visual.', icon: BrainCircuit, available: true },
 ]
 
 /** Contexto enviado ao provedor de IA: tudo que ele precisa sobre o assunto. */
