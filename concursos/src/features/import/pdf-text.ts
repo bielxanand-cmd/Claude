@@ -1,3 +1,5 @@
+import { installPdfPolyfills } from './pdf-polyfills'
+
 /**
  * Extração do texto de um PDF no próprio navegador (pdf.js), sem servidor.
  *
@@ -26,23 +28,9 @@ type PdfWorkerInstance = InstanceType<PdfJs['PDFWorker']>
 
 const WORKER_TIMEOUT = 5000
 
-/** Polyfill mínimo: o pdf.js exige Promise.withResolvers (Safari < 17.4, Chrome < 119). */
-function polyfill() {
-  const P = Promise as unknown as { withResolvers?: () => unknown }
-  P.withResolvers ??= function withResolvers<T>() {
-    let resolve!: (value: T) => void
-    let reject!: (reason?: unknown) => void
-    const promise = new Promise<T>((res, rej) => {
-      resolve = res
-      reject = rej
-    })
-    return { promise, resolve, reject }
-  }
-}
-
 let pdfjsPromise: Promise<PdfJs> | null = null
 const loadPdfJs = () => {
-  polyfill()
+  installPdfPolyfills()
   return (pdfjsPromise ??= import('pdfjs-dist/legacy/build/pdf.mjs'))
 }
 
@@ -56,7 +44,7 @@ async function createWorker(pdfjs: PdfJs): Promise<PdfWorkerInstance | null> {
   if (import.meta.env.VITE_PDF_MAIN_THREAD === 'true' || typeof Worker === 'undefined') return null
   let port: Worker | null = null
   try {
-    const { default: PdfWorker } = await import('pdfjs-dist/legacy/build/pdf.worker.mjs?worker&inline')
+    const { default: PdfWorker } = await import('./pdf-worker?worker&inline')
     port = new PdfWorker()
     const worker = port
     await new Promise<void>((resolve, reject) => {
@@ -98,6 +86,27 @@ async function openDocument(pdfjs: PdfJs, data: Uint8Array) {
   }
 }
 
+type PdfPage = Awaited<ReturnType<Awaited<ReturnType<typeof openDocument>>['doc']['getPage']>>
+
+/**
+ * Texto de uma página. Lê o stream com `getReader()` em vez de
+ * `getTextContent()`, que usa `for await` sobre ReadableStream (quebra no Safari).
+ */
+async function readPageText(page: PdfPage): Promise<string> {
+  const reader = page.streamTextContent().getReader()
+  let text = ''
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    for (const item of value.items) {
+      if (!('str' in item)) continue
+      text += item.str
+      if (item.hasEOL) text += '\n'
+    }
+  }
+  return text
+}
+
 function describe(err: unknown): string {
   if (err instanceof Error) return `${err.name}: ${err.message}`
   return String(err)
@@ -127,14 +136,7 @@ export async function extractPdfText(file: File, onProgress?: (page: number, tot
   try {
     for (let i = 1; i <= doc.numPages; i++) {
       const page = await doc.getPage(i)
-      const content = await page.getTextContent()
-      let text = ''
-      for (const item of content.items) {
-        if (!('str' in item)) continue
-        text += item.str
-        if (item.hasEOL) text += '\n'
-      }
-      pages.push(text)
+      pages.push(await readPageText(page))
       page.cleanup()
       onProgress?.(i, doc.numPages)
     }

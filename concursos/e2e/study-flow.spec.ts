@@ -198,15 +198,18 @@ test('importar edital em PDF identifica disciplinas, assuntos e dados do edital'
   await expect(page.getByRole('link', { name: /Governanca de TI/ })).toHaveCount(0)
 })
 
-test('importar PDF funciona em navegadores sem os recursos mais novos de JavaScript', async ({ page }) => {
+test('importar PDF funciona no Safari e em navegadores sem os recursos mais novos de JavaScript', async ({ page }) => {
   // Simula Safari/Chrome/Firefox que ainda não têm estes recursos (exigidos pelo build moderno do pdf.js)
   await page.addInitScript(() => {
-    const drop = (obj: object, key: string) => Reflect.deleteProperty(obj, key)
+    const drop = (obj: object, key: string | symbol) => Reflect.deleteProperty(obj, key)
     drop(Map.prototype, 'getOrInsertComputed')
     drop(WeakMap.prototype, 'getOrInsertComputed')
     drop(Promise, 'withResolvers')
     drop(Uint8Array.prototype, 'toBase64')
     drop(Uint8Array, 'fromBase64')
+    // Safari não permite percorrer ReadableStream com for await
+    drop(ReadableStream.prototype, Symbol.asyncIterator)
+    drop(ReadableStream.prototype, 'values')
   })
   await page.goto('/')
   await seedUser(page)
