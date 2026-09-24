@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { ArrowRight, BadgeCheck, Check, Globe, Mail, MapPin, MessageCircle, Phone, Sparkles } from 'lucide-react'
-import { defaultCoverImage } from '@/lib/art'
+import appMockup from '@/assets/brand/app-cibus.webp'
 import { calcInvestment, formatBRL, formatBRLShort, formatPercent, formatUnitPrice } from '@/lib/pricing'
 import type { AppSettings, CaseDef, ModuleDef, Proposal, SlideKey } from '@/lib/types'
 import { cn, formatDateShort, initials, textLength } from '@/lib/utils'
@@ -43,7 +43,6 @@ const Footer = ({ p, ctx, page, total, dark, left }: Common & { dark?: boolean; 
  * ======================================================================= */
 
 export function CoverSlide({ p, ctx }: Common) {
-  const image = p.cover.image || defaultCoverImage(ctx.settings.brandColor, ctx.settings.inkColor)
   const info = [
     { k: 'Cliente', v: p.client.company || p.client.contactName || '—' },
     { k: 'Produto', v: p.meta.product || '—' },
@@ -104,8 +103,28 @@ export function CoverSlide({ p, ctx }: Common) {
 
       {/* Imagem */}
       <div className="absolute bottom-[84px] right-[48px] top-[40px] w-[500px] overflow-hidden rounded-t-[36px] bg-ink">
-        <img src={image} alt="" className="h-full w-full object-cover" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ink/40 to-transparent" />
+        {p.cover.image ? (
+          <>
+            <img src={p.cover.image} alt="" className="h-full w-full object-cover" />
+            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ink/40 to-transparent" />
+          </>
+        ) : (
+          <>
+            {/* Arte padrão: o app Cibus */}
+            <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 70% 30%, rgb(var(--brand) / 0.55), transparent 60%)' }} />
+            <div className="absolute -right-24 -top-24 h-[420px] w-[420px] rounded-full border-2 border-brand/30" />
+            <div className="absolute -right-44 -top-44 h-[600px] w-[600px] rounded-full border border-brand/15" />
+            <div
+              className="absolute bottom-10 left-8 h-40 w-40 opacity-40"
+              style={{ backgroundImage: 'radial-gradient(rgb(255 255 255 / 0.35) 1.5px, transparent 1.5px)', backgroundSize: '16px 16px' }}
+            />
+            <img
+              src={appMockup}
+              alt=""
+              className="absolute left-1/2 top-[44px] h-[640px] w-auto max-w-none -translate-x-1/2 drop-shadow-[0_30px_40px_rgba(0,0,0,0.55)]"
+            />
+          </>
+        )}
       </div>
       <div className="absolute bottom-[84px] right-[548px] h-14 w-14 rounded-tl-[22px] bg-brand" />
 

@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import DOMPurify from 'dompurify'
+import logoInk from '@/assets/brand/cibus-logo-ink.png'
+import logoWhite from '@/assets/brand/cibus-logo-white.png'
 import { cn } from '@/lib/utils'
 
 export const SLIDE_W = 1280
@@ -100,22 +102,10 @@ export const stripMarks = (s: string) => s.replace(/\*/g, '')
 
 /* ------------------------------------------------------------------------- */
 
+/** Logo Cibus: o enviado nas configurações ou o oficial (versão escura em fundo claro, branca em fundo escuro). */
 export function CibusLogo({ src, dark, height = 30 }: { src?: string; dark?: boolean; height?: number }) {
   if (src) return <img src={src} alt="Cibus" style={{ height }} className="w-auto object-contain" />
-  return (
-    <div className="flex items-center" style={{ height, gap: height * 0.28 }}>
-      <svg viewBox="0 0 40 40" style={{ height: height * 0.95, width: height * 0.95 }}>
-        <circle cx="19" cy="21" r="12" fill="none" stroke="rgb(var(--brand))" strokeWidth="6.5" />
-        <circle cx="32" cy="8" r="5" fill="rgb(var(--brand))" />
-      </svg>
-      <span
-        className={cn('font-extrabold lowercase', dark ? 'text-white' : 'text-ink')}
-        style={{ fontSize: height * 0.98, letterSpacing: '-0.045em', lineHeight: 1 }}
-      >
-        cibus
-      </span>
-    </div>
-  )
+  return <img src={dark ? logoWhite : logoInk} alt="Cibus" style={{ height: Math.round(height * 0.9) }} className="w-auto" />
 }
 
 export function Slide({ children, className, style }: { children: ReactNode; className?: string; style?: CSSProperties }) {
