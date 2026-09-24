@@ -107,6 +107,28 @@ function volumeSessao(s) {
     tot + ex.series.filter((x) => x.feito).reduce((t, x) => t + x.reps * x.carga, 0), 0);
 }
 
+// Diálogos na própria página (alert/confirm nativos podem ser bloqueados)
+
+function confirmar(mensagem, rotuloOk = 'Confirmar') {
+  const dlgC = $('#dlg-confirmar');
+  $('#dlg-confirmar-msg').textContent = mensagem;
+  $('#dlg-confirmar-ok').textContent = rotuloOk;
+  dlgC.returnValue = '';
+  dlgC.showModal();
+  return new Promise((resolve) => {
+    dlgC.addEventListener('close', () => resolve(dlgC.returnValue === 'ok'), { once: true });
+  });
+}
+
+let avisoTimeout = null;
+function avisar(mensagem) {
+  const el = $('#aviso');
+  el.textContent = mensagem;
+  el.hidden = false;
+  clearTimeout(avisoTimeout);
+  avisoTimeout = setTimeout(() => { el.hidden = true; }, 3500);
+}
+
 // ---------- Navegação ----------
 
 document.querySelectorAll('.tab').forEach((tab) => {
@@ -249,7 +271,7 @@ function iniciarSessao(treinoId) {
   mostrarView('hoje');
 }
 
-$('#view-hoje').addEventListener('click', (ev) => {
+$('#view-hoje').addEventListener('click', async (ev) => {
   const btn = ev.target.closest('[data-acao]');
   if (!btn) return;
   const { acao, id } = btn.dataset;
@@ -270,7 +292,7 @@ $('#view-hoje').addEventListener('click', (ev) => {
   } else if (acao === 'rem-serie') {
     if (s.exercicios[ei].series.length > 1) s.exercicios[ei].series.pop();
   } else if (acao === 'cancelar-sessao') {
-    if (!confirm('Descartar este treino? O progresso desta sessão será perdido.')) return;
+    if (!await confirmar('Descartar este treino? O progresso desta sessão será perdido.', 'Descartar')) return;
     estado.ativa = null;
     pararTimer();
   } else if (acao === 'finalizar') {
@@ -293,10 +315,10 @@ $('#view-hoje').addEventListener('input', (ev) => {
   salvar();
 });
 
-function finalizarSessao() {
+async function finalizarSessao() {
   const s = estado.ativa;
   const feitas = s.exercicios.some((ex) => ex.series.some((x) => x.feito));
-  if (!feitas && !confirm('Nenhuma série foi marcada como feita. Finalizar mesmo assim?')) return;
+  if (!feitas && !await confirmar('Nenhuma série foi marcada como feita. Finalizar mesmo assim?', 'Finalizar')) return;
 
   s.fim = Date.now();
   estado.sessoes.unshift(s);
@@ -317,7 +339,7 @@ function finalizarSessao() {
 
   pararTimer();
   salvar();
-  alert(`Treino concluído! 💪\nVolume total: ${volumeSessao(s).toLocaleString('pt-BR')} kg`);
+  avisar(`Treino concluído! 💪 Volume total: ${volumeSessao(s).toLocaleString('pt-BR')} kg`);
   mostrarView('historico');
 }
 
@@ -346,7 +368,7 @@ function renderTreinos() {
     </div>`).join('');
 }
 
-$('#lista-treinos').addEventListener('click', (ev) => {
+$('#lista-treinos').addEventListener('click', async (ev) => {
   const btn = ev.target.closest('[data-acao]');
   if (!btn) return;
   const t = estado.treinos.find((x) => x.id === btn.dataset.id);
@@ -363,7 +385,7 @@ $('#lista-treinos').addEventListener('click', (ev) => {
     salvar();
     render();
   } else if (btn.dataset.acao === 'excluir') {
-    if (!confirm(`Excluir "${t.nome}"? O histórico de sessões será mantido.`)) return;
+    if (!await confirmar(`Excluir "${t.nome}"? O histórico de sessões será mantido.`, 'Excluir')) return;
     estado.treinos = estado.treinos.filter((x) => x.id !== t.id);
     salvar();
     render();
@@ -421,7 +443,7 @@ form.addEventListener('submit', (ev) => {
   const linhas = [...form.querySelectorAll('.ex-form')];
   if (!nome || !linhas.length) {
     ev.preventDefault();
-    alert('Informe um nome e pelo menos um exercício.');
+    avisar('Informe um nome e pelo menos um exercício.');
     return;
   }
   const treino = {
@@ -473,9 +495,9 @@ function renderHistorico() {
   }).join('');
 }
 
-$('#lista-historico').addEventListener('click', (ev) => {
+$('#lista-historico').addEventListener('click', async (ev) => {
   const btn = ev.target.closest('[data-acao="excluir-sessao"]');
-  if (!btn || !confirm('Excluir este registro do histórico?')) return;
+  if (!btn || !await confirmar('Excluir este registro do histórico?', 'Excluir')) return;
   estado.sessoes = estado.sessoes.filter((s) => s.id !== btn.dataset.id);
   salvar();
   render();
@@ -618,6 +640,16 @@ $('#btn-timer-parar').addEventListener('click', pararTimer);
 
 // ---------- Backup ----------
 
+$('#btn-copiar').addEventListener('click', async () => {
+  const json = JSON.stringify(estado, null, 2);
+  try {
+    await navigator.clipboard.writeText(json);
+    avisar('Dados copiados. Cole em um arquivo .json para guardar.');
+  } catch {
+    avisar('Não foi possível copiar automaticamente. Use "Exportar JSON".');
+  }
+});
+
 $('#btn-exportar').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(estado, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -634,13 +666,13 @@ $('#input-importar').addEventListener('change', async (ev) => {
   try {
     const dados = JSON.parse(await arquivo.text());
     if (!Array.isArray(dados.treinos) || !Array.isArray(dados.sessoes)) throw new Error('formato inválido');
-    if (!confirm('Importar vai substituir todos os dados atuais. Continuar?')) return;
+    if (!await confirmar('Importar vai substituir todos os dados atuais. Continuar?', 'Importar')) return;
     estado = { treinos: dados.treinos, sessoes: dados.sessoes, ativa: dados.ativa ?? null };
     salvar();
     render();
-    alert('Dados importados com sucesso!');
+    avisar('Dados importados com sucesso!');
   } catch (e) {
-    alert(`Não foi possível importar o arquivo: ${e.message}`);
+    avisar(`Não foi possível importar o arquivo: ${e.message}`);
   }
 });
 
