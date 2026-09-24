@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { Session } from '@supabase/supabase-js'
 import { Toaster } from 'sonner'
 import { AppShell } from '@/components/app-shell'
@@ -47,11 +47,14 @@ function AuthGate() {
   return session ? <Routed /> : <Login />
 }
 
+// Build para hospedagem sem controle de rotas (ex.: link de teste no claude.ai)
+const Router = import.meta.env.VITE_ROUTER === 'memory' ? MemoryRouter : BrowserRouter
+
 export default function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <AuthGate />
       <Toaster position="bottom-right" richColors closeButton toastOptions={{ style: { fontFamily: 'inherit' } }} />
-    </BrowserRouter>
+    </Router>
   )
 }

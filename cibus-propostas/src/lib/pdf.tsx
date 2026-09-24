@@ -79,13 +79,36 @@ export function pdfFileName(p: Proposal) {
   return `Proposta Cibus - ${who} - ${p.meta.date || ''}`.trim().replace(/[\\/:*?"<>|]/g, '') + '.pdf'
 }
 
-export function downloadBlob(blob: Blob, name: string) {
+type ClaudeDownloads = { save: (r: { filename: string; data: Blob }) => Promise<{ status: string }> }
+type ClaudeHost = { use?: (name: string) => Promise<unknown> }
+
+/**
+ * Entrega o arquivo ao usuário. Dentro do visualizador de Artifacts do claude.ai
+ * o download direto é bloqueado, então usamos a capability `downloads`.
+ * Retorna false se o usuário recusou.
+ */
+export async function downloadBlob(blob: Blob, name: string): Promise<boolean> {
+  const filename = name || `${slugify('proposta')}.pdf`
+  const host = (window as unknown as { claude?: ClaudeHost }).claude
+  if (host?.use) {
+    const downloads = (await host.use('downloads').catch(() => null)) as ClaudeDownloads | null
+    if (downloads) {
+      try {
+        await downloads.save({ filename, data: blob })
+        return true
+      } catch (e) {
+        if ((e as { code?: string }).code === 'declined') return false
+        throw new Error((e as { message?: string }).message || 'Download indisponível')
+      }
+    }
+  }
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = name || `${slugify('proposta')}.pdf`
+  a.download = filename
   document.body.appendChild(a)
   a.click()
   a.remove()
   setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  return true
 }

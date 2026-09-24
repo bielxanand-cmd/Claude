@@ -24,8 +24,9 @@ export function usePdfExport() {
           },
         })
         const name = pdfFileName(p)
-        downloadBlob(blob, name)
-        toast.success('PDF gerado com sucesso', { id: t, description: name })
+        const saved = await downloadBlob(blob, name)
+        if (saved) toast.success('PDF gerado com sucesso', { id: t, description: name })
+        else toast.info('Download cancelado', { id: t })
         return blob
       } catch (e) {
         console.error(e)
