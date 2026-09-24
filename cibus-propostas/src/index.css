@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand: 255 92 0;
+    --ink: 16 24 40;
+    --background: 216 33% 97%;
+    --foreground: 221 43% 11%;
+    --border: 220 16% 90%;
+    --input: 220 16% 86%;
+    --secondary: 220 20% 95%;
+    --secondary-foreground: 221 43% 11%;
+    --muted: 220 20% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 220 20% 95%;
+    --accent-foreground: 221 43% 11%;
+    --destructive: 0 72% 51%;
+  }
+  * { @apply border-border; }
+  html { -webkit-font-smoothing: antialiased; }
+  body { @apply bg-background text-foreground font-sans; font-feature-settings: 'ss01', 'cv11'; }
+  ::selection { background: rgb(var(--brand) / 0.2); }
+}
+
+/* Conteúdo vindo do editor rico — usado no app e nos slides */
+.rich p { margin: 0 0 .6em; }
+.rich p:last-child { margin-bottom: 0; }
+.rich ul, .rich ol { margin: 0 0 .6em; padding-left: 1.2em; }
+.rich ul { list-style: none; padding-left: 0; }
+.rich ul li { position: relative; padding-left: 1.1em; }
+.rich ul li::before { content: ''; position: absolute; left: 0; top: .62em; width: .42em; height: .42em; border-radius: 99px; background: rgb(var(--brand)); }
+.rich ol { list-style: decimal; }
+.rich li { margin-bottom: .25em; }
+.rich li p { margin: 0; }
+.rich strong { font-weight: 700; }
+.rich h2, .rich h3 { font-weight: 700; margin: 0 0 .4em; font-size: 1.1em; }
+
+/* Editor tiptap */
+.tiptap { outline: none; min-height: inherit; }
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder); float: left; height: 0; pointer-events: none; color: hsl(var(--muted-foreground));
+}
+
+.scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: hsl(220 14% 84%); border-radius: 99px; }
