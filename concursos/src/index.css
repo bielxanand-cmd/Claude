@@ -1,0 +1,236 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------- Tokens */
+:root {
+  --background: #f5f5f7;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --foreground: #09090b;
+  --muted: #71717a;
+  --subtle: #a1a1aa;
+  --border: #e9e9ee;
+  --border-strong: #d4d4d8;
+  --primary: #7c3aed;
+  --primary-strong: #5b21b6;
+  --primary-soft: #a78bfa;
+  --primary-tint: #f3eeff;
+  --primary-foreground: #ffffff;
+  --success: #22c55e;
+  --success-strong: #15803d;
+  --success-tint: #e8f9ee;
+  --danger: #ef4444;
+  --danger-tint: #fdecec;
+  --warning: #f59e0b;
+  --warning-tint: #fef5e3;
+  --sidebar: #09090b;
+  --sidebar-foreground: #e4e4e7;
+  --sidebar-muted: #8b8b94;
+  --sidebar-border: #1c1c21;
+  --ring: rgb(124 58 237 / 0.45);
+  --shadow-color: 240 10% 4%;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #09090b;
+  --surface: #131316;
+  --surface-2: #18181c;
+  --foreground: #fafafa;
+  --muted: #a1a1aa;
+  --subtle: #71717a;
+  --border: #232329;
+  --border-strong: #34343c;
+  --primary: #8b5cf6;
+  --primary-strong: #a78bfa;
+  --primary-soft: #a78bfa;
+  --primary-tint: rgb(139 92 246 / 0.14);
+  --success-tint: rgb(34 197 94 / 0.14);
+  --success-strong: #4ade80;
+  --danger-tint: rgb(239 68 68 / 0.14);
+  --warning-tint: rgb(245 158 11 / 0.14);
+  --sidebar: #0c0c0f;
+  --sidebar-border: #1c1c21;
+  --shadow-color: 0 0% 0%;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-tint: var(--primary-tint);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-success: var(--success);
+  --color-success-strong: var(--success-strong);
+  --color-success-tint: var(--success-tint);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-ring: var(--ring);
+
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --shadow-soft: 0 1px 2px hsl(var(--shadow-color) / 0.04), 0 1px 3px hsl(var(--shadow-color) / 0.03);
+  --shadow-lift: 0 1px 2px hsl(var(--shadow-color) / 0.04), 0 8px 24px -8px hsl(var(--shadow-color) / 0.1);
+  --shadow-pop: 0 12px 40px -12px hsl(var(--shadow-color) / 0.25);
+
+  --animate-fade-in: fade-in 0.35s ease-out backwards;
+  --animate-pop: pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* ---------------------------------------------------------------- Base */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: rgb(124 58 237 / 0.2);
+  }
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------------------------------------------------------------- Editor rico */
+.rich-content {
+  @apply text-[15px] leading-7 text-foreground;
+}
+.rich-content > * + * {
+  margin-top: 0.6em;
+}
+.rich-content h2 {
+  @apply text-lg font-bold tracking-tight;
+  margin-top: 1em;
+}
+.rich-content h3 {
+  @apply text-base font-semibold;
+  margin-top: 0.9em;
+}
+.rich-content ul:not([data-type='taskList']) {
+  @apply list-disc pl-5;
+}
+.rich-content ol {
+  @apply list-decimal pl-5;
+}
+.rich-content li > p {
+  margin: 0;
+}
+.rich-content blockquote {
+  @apply border-l-[3px] border-primary-soft pl-4 text-muted italic;
+}
+.rich-content mark {
+  @apply rounded-[3px] bg-[#fde68a] px-0.5 text-inherit dark:bg-[#854d0e] dark:text-[#fef3c7];
+}
+.rich-content a {
+  @apply text-primary underline underline-offset-2;
+}
+.rich-content code {
+  @apply rounded bg-surface-2 px-1 py-0.5 text-[0.9em];
+}
+.rich-content ul[data-type='taskList'] {
+  @apply list-none pl-0;
+}
+.rich-content ul[data-type='taskList'] li {
+  @apply flex items-start gap-2;
+}
+.rich-content ul[data-type='taskList'] li > label {
+  @apply mt-[5px] flex shrink-0;
+}
+.rich-content ul[data-type='taskList'] li > label input {
+  @apply size-4 accent-[var(--primary)];
+}
+.rich-content ul[data-type='taskList'] li[data-checked='true'] > div {
+  @apply text-muted line-through;
+}
+.rich-content ul[data-type='taskList'] li > div {
+  @apply flex-1;
+}
+.ProseMirror {
+  outline: none;
+  min-height: inherit;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  @apply pointer-events-none float-left h-0 text-subtle;
+}
+
+/* ---------------------------------------------------------------- Confete */
+.confetti-piece {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 100;
+  animation: confetti 900ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+@keyframes confetti {
+  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
+}
+
+@keyframes sheet-in {
+  from { transform: translateX(-100%); }
+  to { transform: none; }
+}
+
+@keyframes route-progress {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}

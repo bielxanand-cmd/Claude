@@ -29,3 +29,9 @@ python3 -m http.server 8000
 | `index.html` | Estrutura da página e modal de treino        |
 | `styles.css` | Estilos (mobile-first, com tema escuro automático) |
 | `app.js`     | Lógica, persistência, timer e gráfico        |
+
+---
+
+## 📚 Aprova — Estudos para Concursos
+
+Este repositório também contém, na pasta [`concursos/`](concursos/), um app React + TypeScript + Supabase para organizar estudos de concursos públicos. Veja o [README do app](concursos/README.md).

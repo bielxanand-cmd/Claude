@@ -1,0 +1,87 @@
+# Aprova — Estudos para Concursos
+
+Aplicativo web para organizar a preparação para concursos públicos. O usuário escolhe **carreira → esfera (federal/estadual/municipal) → estado → cargo**, e o app monta o plano de estudos **consolidando os editais anteriores** do cargo: disciplinas, assuntos, frequência de cada assunto e a fonte (edital) de cada item. Em cada assunto é possível escrever resumos num editor rico, marcar status e acompanhar o progresso por disciplina e geral.
+
+> ⚠️ **Dados demonstrativos.** Os editais do seed (`origin = 'demo'`) são ilustrativos e **não reproduzem editais oficiais**. A interface sinaliza isso com o selo “Dados demonstrativos”. Para usar dados reais, importe editais (texto do conteúdo programático) ou cadastre a base oficial no Supabase.
+
+## Como rodar
+
+```bash
+cd concursos
+npm install
+npm run dev          # http://localhost:5173
+```
+
+Sem configuração nenhuma o app funciona em **modo local**: catálogo vindo do seed e dados do usuário no `localStorage`.
+
+### Com Supabase
+
+1. Crie um projeto no Supabase e aplique `supabase/migrations/*.sql` (SQL Editor ou `supabase db push`).
+2. Rode `supabase/seed.sql` para carregar carreiras, cargos e editais demonstrativos.
+3. Copie `.env.example` para `.env` e preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
+
+Enquanto não há autenticação, o app cria um usuário anônimo (id salvo no navegador) e as políticas RLS são permissivas (`prototype_*`). Ao ativar o Supabase Auth, o id do usuário passa a ser `auth.uid()` automaticamente; troque as políticas pelas de exemplo no fim da migration.
+
+## Scripts
+
+| Comando | O que faz |
+| --- | --- |
+| `npm run dev` | Servidor de desenvolvimento |
+| `npm run build` | Typecheck + build de produção |
+| `npm test` | Testes unitários (consolidação, progresso, parser de edital) e validação do schema SQL num Postgres embutido (PGlite) |
+| `npm run test:e2e` | Fluxo completo no navegador (desktop e mobile) com Playwright |
+| `npm run db:seed-sql` | Regera `supabase/seed.sql` a partir do seed TypeScript |
+| `npm run lint` | oxlint |
+
+## Arquitetura
+
+```
+src/
+  domain/          regras puras (sem React): tipos, consolidação de editais,
+                   cálculo de progresso, parser de edital, busca, rótulos
+  data/
+    seed/          dados demonstrativos (fonte única para o app e o seed.sql)
+    sources/       contrato DataSource + implementações local e Supabase
+    queries.ts     hooks TanStack Query (cache, atualização otimista)
+  components/
+    ui/            componentes base no estilo shadcn/ui (Button, Card, Dialog…)
+    layout/        sidebar, topbar, menu mobile, busca global (Ctrl+K)
+    study/         cards de disciplina, linhas de assunto, status, fontes…
+    editor/        editor rico (TipTap)
+    charts/        gráficos de progresso
+  features/
+    ai/            registro de ações de IA + contrato AiProvider (botões “em breve”)
+    import/        importação de edital por texto
+    questions/     tipos do futuro módulo de questões
+  pages/           uma página por rota (carregadas sob demanda)
+supabase/
+  migrations/      schema completo (catálogo, dados do usuário, tabelas futuras)
+  seed.sql         gerado automaticamente
+e2e/               testes Playwright do fluxo de ponta a ponta
+```
+
+### Como o plano de estudos é montado
+
+`careers → positions → contests` (editais) → `contest_subjects` / `contest_topics`.
+`consolidateStudyPlan` une as disciplinas e os assuntos de todos os editais do cargo, calcula peso médio, nº médio de questões e **frequência** (em quantos editais cada assunto apareceu), e guarda os editais-fonte de cada item. No banco há também a view `position_topic_frequency`.
+
+Todos os canais de entrada (seed, texto colado, PDF e API no futuro) convergem para o formato `NoticeImport` e para `planNoticeImport`, que reaproveita disciplinas/assuntos existentes (comparação sem acento/caixa) e registra a origem (`notice_origin`).
+
+### Progresso
+
+- Disciplina = assuntos concluídos ÷ assuntos da disciplina.
+- Geral = assuntos concluídos ÷ todos os assuntos do cargo.
+- Status: `not_started` (cinza), `in_progress` (roxo), `completed` (verde). A atualização é otimista, então as barras mudam na hora.
+- Resumos e status ficam ligados a **usuário + assunto**; o mesmo assunto em outro cargo reaproveita seu resumo.
+
+### Preparado para evoluir
+
+- **IA**: `features/ai/actions.ts` lista as ações (resumir, questões, flashcards, explicar, mapa mental). Basta implementar `AiProvider` e marcar `available: true`. A tabela `ai_generations` guarda os resultados.
+- **Questões/simulados**: tabelas `questions`, `question_attempts` e `exam_boards` (bancas) já existem, ligadas a assunto, disciplina, edital e banca; `features/questions/types.ts` tem os tipos e o cálculo de desempenho.
+- **Flashcards / revisão espaçada**: tabela `flashcards` com campos SM-2.
+- **PDF**: `contests.source_file_path`/`raw_syllabus`; extraia o texto e reutilize `parseNoticeSyllabus`.
+- **Autenticação**: `users` + RLS por usuário (exemplo na migration).
+
+## Rotas
+
+`/` · `/onboarding` · `/dashboard` · `/disciplinas` · `/disciplina/:id` · `/assunto/:id` · `/resumos` · `/progresso` · `/concursos` (meu concurso + importar edital) · `/carreiras` · `/cargos` · `/cargo/:id` · `/configuracoes`
