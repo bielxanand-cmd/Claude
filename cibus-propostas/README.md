@@ -76,6 +76,16 @@ Trocar o produto no campo *Produto* muda na hora as cores e a unidade de todos o
 5. **Modo apresentação:** slides em tela cheia; navegação pelas setas ou pelo teclado (←/→).
 6. **Revisão e PDF:** liga/desliga de cada página do PDF (Capa, Cenário, Projeto, Investimentos, ROI, Cases, Encerramento), com as pendências de cada uma. Pendências são avisos e não impedem a geração: o vendedor completa a página ou a retira do PDF.
 
+## Imagem da capa
+
+O espaço da imagem na capa é vertical (cerca de 5:6). Tamanho ideal para preenchê-lo: **1000 × 1200 px**. Em *Ajuste da imagem*:
+
+- **Automático** (padrão): imagem vertical ou quase quadrada preenche o espaço. Imagem horizontal, como um print de tela, aparece inteira numa moldura de janela, sem cortes.
+- **Preencher:** ocupa todo o espaço (as bordas podem ser cortadas).
+- **Imagem inteira:** sempre na moldura.
+
+A proporção da imagem é medida no envio e fica na proposta (`cover.imageRatio`; no Supabase, `proposals.cover_layout`, migração `0006`).
+
 ## Bureau de Marketing
 
 Logo depois de "O projeto" entra a página do **Bureau de Marketing Cibus**, a agência interna. Ela mostra a apresentação do Bureau, as colunas *Planejamos*, *Criamos* e *Orientamos* e a observação sobre o que não está incluso. O texto vem pronto, é editável por proposta (etapa Projeto ou editor visual) e pode ser restaurado ao padrão. Como as outras páginas, pode ser ligada ou desligada na revisão.

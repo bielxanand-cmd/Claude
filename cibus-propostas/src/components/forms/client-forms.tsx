@@ -1,12 +1,14 @@
+import { useEffect } from 'react'
 import type { Draft } from 'immer'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAppData } from '@/lib/app-data'
 import { applyProductDefaults, execSnapshot } from '@/lib/templates'
 import { profileOf } from '@/lib/products'
-import { PRODUCTS, SEGMENTS, type Proposal, type SlideKey } from '@/lib/types'
+import { PRODUCTS, SEGMENTS, type CoverImageFit, type Proposal, type SlideKey } from '@/lib/types'
 import { CharCount, Field, ImageUpload, NumberInput, Section } from './fields'
 import { Switch } from '@/components/ui/switch'
+import { cn } from '@/lib/utils'
 
 export type Update = (fn: (d: Draft<Proposal>) => void) => void
 export interface FormProps {
@@ -190,7 +192,36 @@ export function ProposalMetaForm({ p, update }: FormProps) {
   )
 }
 
+const COVER_FITS: { value: CoverImageFit; label: string; hint: string }[] = [
+  { value: 'auto', label: 'Automático', hint: 'Vertical preenche o espaço; horizontal aparece inteira numa moldura' },
+  { value: 'fill', label: 'Preencher', hint: 'Ocupa todo o espaço (as bordas podem ser cortadas)' },
+  { value: 'fit', label: 'Imagem inteira', hint: 'Mostra a imagem toda, numa moldura' },
+]
+
+/** Largura ÷ altura de uma imagem. */
+function imageRatio(src: string) {
+  return new Promise<number | undefined>((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve(img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : undefined)
+    img.onerror = () => resolve(undefined)
+    img.src = src
+  })
+}
+
 export function CoverForm({ p, update }: FormProps) {
+  // guarda a proporção da imagem para o layout da capa (também nas imagens antigas)
+  const { image, imageRatio: ratio } = p.cover
+  useEffect(() => {
+    if (!image || ratio) return
+    let alive = true
+    imageRatio(image).then((r) => {
+      if (alive && r) update((d) => void (d.cover.image === image && (d.cover.imageRatio = Math.round(r * 1000) / 1000)))
+    })
+    return () => {
+      alive = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [image, ratio])
   return (
     <Section title="Capa" description="Use *asteriscos* para destacar um trecho em laranja.">
       <Field label="Título da capa" htmlFor="ctitle" aside={<CharCount value={p.cover.title} max={70} />}>
@@ -199,9 +230,42 @@ export function CoverForm({ p, update }: FormProps) {
       <Field label="Subtítulo" htmlFor="csub">
         <Input id="csub" value={p.cover.subtitle} onChange={(e) => update((d) => void (d.cover.subtitle = e.target.value))} />
       </Field>
-      <Field label="Imagem da capa" hint="Sem imagem, usamos a arte padrão Cibus. Formato vertical funciona melhor.">
-        <ImageUpload value={p.cover.image} onChange={(v) => update((d) => void (d.cover.image = v))} aspect="h-44" />
+      <Field
+        label="Imagem da capa"
+        hint="Sem imagem, usamos a arte padrão Cibus. Tamanho ideal para preencher o espaço: 1000 × 1200 px (vertical). Imagens horizontais, como prints de tela, aparecem inteiras numa moldura."
+      >
+        <ImageUpload
+          value={p.cover.image}
+          onChange={(v) =>
+            update((d) => {
+              d.cover.image = v
+              d.cover.imageRatio = undefined
+            })
+          }
+          aspect="h-44"
+          fit="contain"
+        />
       </Field>
+      {p.cover.image && (
+        <Field label="Ajuste da imagem">
+          <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+            {COVER_FITS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                title={f.hint}
+                onClick={() => update((d) => void (d.cover.imageFit = f.value))}
+                className={cn(
+                  'rounded-md px-2 py-1.5 text-xs font-semibold transition-colors',
+                  (p.cover.imageFit ?? 'auto') === f.value ? 'bg-white text-ink shadow-sm' : 'text-muted-foreground hover:text-ink',
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </Field>
+      )}
     </Section>
   )
 }

@@ -47,7 +47,13 @@ function rowToProposal(r: Row): Proposal {
       executiveId: r.executive_id,
       executive: r.executive,
     },
-    cover: { title: r.cover_title, subtitle: r.cover_subtitle, image: r.cover_image },
+    cover: {
+      title: r.cover_title,
+      subtitle: r.cover_subtitle,
+      image: r.cover_image,
+      imageRatio: r.cover_layout?.ratio ?? undefined,
+      imageFit: r.cover_layout?.fit ?? 'auto',
+    },
     scenario: {
       title: sc.title ?? '',
       subtitle: sc.subtitle ?? '',
@@ -118,6 +124,7 @@ function proposalToPayload(p: Proposal): Row {
     cover_title: p.cover.title,
     cover_subtitle: p.cover.subtitle,
     cover_image: p.cover.image,
+    cover_layout: { ratio: p.cover.imageRatio ?? null, fit: p.cover.imageFit ?? 'auto' },
     cases_title: p.cases.title,
     cases_subtitle: p.cases.subtitle,
     roi: p.roi,

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode, type SyntheticEvent } from 'react'
 import { ArrowRight, BadgeCheck, Check, Compass, Gift, MessagesSquare, Palette, Globe, Mail, MapPin, MessageCircle, Phone, Sparkles, Star, Store } from 'lucide-react'
 import appMockup from '@/assets/brand/app-cibus.webp'
 import { calcInvestment, formatBRL, formatBRLShort, formatPercent, formatUnitPrice } from '@/lib/pricing'
@@ -105,10 +105,7 @@ export function CoverSlide({ p, ctx }: Common) {
       {/* Imagem */}
       <div className="absolute bottom-[84px] right-[48px] top-[40px] w-[500px] overflow-hidden rounded-t-[36px] bg-ink">
         {p.cover.image ? (
-          <>
-            <img src={p.cover.image} alt="" className="h-full w-full object-cover" />
-            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ink/40 to-transparent" />
-          </>
+          <CoverImage cover={p.cover} />
         ) : (
           <>
             {/* Arte padrão: o app Cibus */}
@@ -157,6 +154,57 @@ export function CoverSlide({ p, ctx }: Common) {
 }
 
 /** Arte padrão da capa do Cibus Partner: o balcão premiando quem indica a compra. */
+/** Espaço da imagem da capa: 500×596. */
+const COVER_BOX = { w: 500, h: 596 }
+
+/**
+ * Imagem da capa. Vertical (ou quase) preenche o espaço; horizontal, como um
+ * print de tela, aparece inteira numa moldura para não ser cortada.
+ */
+function CoverImage({ cover }: { cover: Proposal['cover'] }) {
+  const [measured, setMeasured] = useState<{ src: string; ratio: number } | null>(null)
+  const ratio = cover.imageRatio ?? (measured?.src === cover.image ? measured.ratio : undefined)
+  const fit = cover.imageFit ?? 'auto'
+  const framed = fit === 'fit' || (fit === 'auto' && ratio !== undefined && ratio > COVER_BOX.w / COVER_BOX.h + 0.25)
+  const onLoad = (e: SyntheticEvent<HTMLImageElement>) => {
+    const { naturalWidth: w, naturalHeight: h } = e.currentTarget
+    if (!cover.imageRatio && w && h) setMeasured({ src: cover.image, ratio: w / h })
+  }
+
+  if (!framed)
+    return (
+      <>
+        <img src={cover.image} alt="" onLoad={onLoad} className="h-full w-full object-cover" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ink/40 to-transparent" />
+      </>
+    )
+
+  // moldura: largura máxima de 452 px, sem passar de 470 px de altura
+  const r = ratio ?? 16 / 10
+  const w = Math.min(452, 470 * r)
+  const h = w / r
+  return (
+    <>
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 70% 25%, rgb(var(--brand) / 0.5), transparent 62%)' }} />
+      <div
+        className="absolute bottom-10 left-8 h-40 w-40 opacity-40"
+        style={{ backgroundImage: 'radial-gradient(rgb(255 255 255 / 0.35) 1.5px, transparent 1.5px)', backgroundSize: '16px 16px' }}
+      />
+      <div
+        className="absolute left-1/2 overflow-hidden rounded-[14px] bg-white shadow-[0_30px_60px_-20px_rgba(0,0,0,0.7)] ring-1 ring-white/15"
+        style={{ width: w, top: (COVER_BOX.h - h - 22) / 2, transform: 'translateX(-50%)' }}
+      >
+        <div className="flex h-[22px] items-center gap-1.5 bg-slate-100 px-3">
+          <span className="h-2 w-2 rounded-full bg-slate-300" />
+          <span className="h-2 w-2 rounded-full bg-slate-300" />
+          <span className="h-2 w-2 rounded-full bg-slate-300" />
+        </div>
+        <img src={cover.image} alt="" onLoad={onLoad} className="block w-full" style={{ height: h }} />
+      </div>
+    </>
+  )
+}
+
 function PartnerCoverArt() {
   return (
     <>

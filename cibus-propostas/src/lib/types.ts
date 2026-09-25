@@ -37,6 +37,8 @@ export interface PersonRef {
   name: string
 }
 
+export type CoverImageFit = 'auto' | 'fill' | 'fit'
+
 export interface Executive {
   id: string
   name: string
@@ -146,6 +148,10 @@ export interface Proposal {
     title: string // *trecho* = destaque em laranja
     subtitle: string
     image: string
+    /** largura ÷ altura da imagem (medida no envio) */
+    imageRatio?: number
+    /** auto = vertical preenche, horizontal aparece inteira numa moldura */
+    imageFit?: CoverImageFit
   }
 
   scenario: {
