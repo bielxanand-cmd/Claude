@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Field } from '@/components/forms/fields'
-import { CibusLogo } from '@/components/slides/primitives'
+import { BrandWatermark, CibusLogo } from '@/components/slides/primitives'
 import { supabase } from '@/lib/repo'
 
 export default function Login() {
@@ -14,7 +14,7 @@ export default function Login() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden overflow-hidden bg-ink p-12 text-white lg:flex lg:flex-col">
-        <div className="absolute -right-32 -top-32 h-[480px] w-[480px] rounded-full border-[50px] border-brand/10" />
+        <BrandWatermark variant="logo" className="-bottom-10 -right-20 h-[260px]" opacity={0.05} />
         <CibusLogo dark height={34} />
         <div className="mt-auto max-w-md">
           <h1 className="text-5xl font-extrabold leading-[1.05] tracking-[-0.04em]">

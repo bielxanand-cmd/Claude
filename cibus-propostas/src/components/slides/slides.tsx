@@ -5,7 +5,7 @@ import { calcInvestment, formatBRL, formatBRLShort, formatPercent, formatUnitPri
 import type { AppSettings, CaseDef, ModuleDef, Proposal, SlideKey } from '@/lib/types'
 import { cn, formatDateShort, initials, textLength } from '@/lib/utils'
 import { productKeyOf, productThemeVars, profileOf } from '@/lib/products'
-import { CibusLogo, FitBox, Highlight, RichHtml, Slide, SlideFooter, SlideHeader, SlideLink, SlideThemeContext } from './primitives'
+import { BrandWatermark, CibusLogo, FitBox, Highlight, RichHtml, Slide, SlideFooter, SlideHeader, SlideLink, SlideThemeContext } from './primitives'
 
 export interface DeckContext {
   settings: AppSettings
@@ -113,8 +113,7 @@ export function CoverSlide({ p, ctx }: Common) {
           <>
             {/* Arte padrão: o app Cibus */}
             <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 70% 30%, rgb(var(--brand) / 0.55), transparent 60%)' }} />
-            <div className="absolute -right-24 -top-24 h-[420px] w-[420px] rounded-full border-2 border-brand/30" />
-            <div className="absolute -right-44 -top-44 h-[600px] w-[600px] rounded-full border border-brand/15" />
+            <BrandWatermark className="-right-10 -top-6 h-[380px]" opacity={0.07} />
             <div
               className="absolute bottom-10 left-8 h-40 w-40 opacity-40"
               style={{ backgroundImage: 'radial-gradient(rgb(255 255 255 / 0.35) 1.5px, transparent 1.5px)', backgroundSize: '16px 16px' }}
@@ -281,7 +280,7 @@ export function ScenarioSlide(c: Common) {
               hasBody ? 'w-[420px]' : 'flex-1',
             )}
           >
-            <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full border-[18px] border-brand/20" />
+            <BrandWatermark className="-bottom-10 -right-4 h-[220px]" opacity={0.06} />
             <div className="text-[12px] font-bold uppercase tracking-[0.18em] text-brand">Principais desafios</div>
             <FitBox id="scenario-challenges" label="Principais desafios" max={18} min={14} lineHeight={1.3} className="mt-4 min-h-0 flex-1">
               <ul className={cn('space-y-[0.75em]', !hasBody && 'grid grid-cols-2 gap-x-8 space-y-0 gap-y-[0.75em]')}>
@@ -369,7 +368,7 @@ export function ProjectSlide(c: Common) {
                 dark ? 'bg-ink text-white' : 'border border-slate-200 bg-mist',
               )}
             >
-              {dark && <div className="absolute -bottom-20 -right-20 h-52 w-52 rounded-full border-[20px] border-brand/15" />}
+              {dark && <BrandWatermark className="-bottom-12 -right-2 h-[200px]" opacity={0.06} />}
               <div className="flex items-center gap-3">
                 <span className="text-[30px] font-extrabold tabular-nums leading-none text-brand" style={{ letterSpacing: '-0.04em' }}>
                   {String(i + 1).padStart(2, '0')}
@@ -448,7 +447,7 @@ export function InvestmentSlide(c: Common) {
 
       {/* Card escuro principal */}
       <div className="absolute left-[72px] top-[196px] flex h-[334px] w-[440px] flex-col overflow-hidden rounded-[28px] bg-ink p-8 text-white shadow-[0_30px_60px_-30px_rgba(16,24,40,.6)]">
-        <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full border-[26px] border-brand/15" />
+        <BrandWatermark className="-right-6 -top-10 h-[250px]" opacity={0.06} />
         <div className="absolute -right-6 bottom-6 h-24 w-24 rounded-full bg-brand/10 blur-2xl" />
         <div className="relative flex items-center justify-between">
           <span className="text-[12px] font-bold uppercase tracking-[0.18em] text-white/55">Mensalidade</span>
@@ -570,8 +569,7 @@ export function RoiSlide(c: Common) {
   const inds = r.indicators.filter((i) => i.label.trim()).slice(0, 4)
   return (
     <Slide className="bg-ink">
-      <div className="absolute -right-44 -top-44 h-[560px] w-[560px] rounded-full border-[46px] border-brand/10" />
-      <div className="absolute -right-10 -top-10 h-[300px] w-[300px] rounded-full border-[2px] border-brand/25" />
+      <BrandWatermark variant="logo" className="-bottom-16 -left-10 h-[230px]" opacity={0.035} />
       <div className="absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-brand/10 blur-3xl" />
 
       <SlideHeader index={c.index} kicker="ROI" title={r.title} subtitle={r.subtitle} dark />
@@ -593,7 +591,7 @@ export function RoiSlide(c: Common) {
       </div>
 
       <div className="absolute bottom-[78px] right-[72px] top-[222px] flex w-[420px] flex-col overflow-hidden rounded-[28px] bg-brand p-9 text-white">
-        <div className="absolute -bottom-16 -right-16 h-56 w-56 rounded-full border-[22px] border-white/15" />
+        <BrandWatermark className="-bottom-14 right-4 h-[230px]" opacity={0.16} />
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15">
           <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 17l6-6 4 4 8-8" />
@@ -643,7 +641,7 @@ function CaseVisual({ cs, className }: { cs: CaseDef; className?: string }) {
   if (cs.image) return <img src={cs.image} alt="" className={cn('h-full w-full object-cover', className)} />
   return (
     <div className={cn('relative flex h-full w-full items-center justify-center overflow-hidden bg-ink', className)}>
-      <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full border-[30px] border-brand/15" />
+      <BrandWatermark className="-bottom-8 -left-6 h-[300px]" opacity={0.05} />
       <div className="absolute -bottom-24 -right-16 h-80 w-80 rounded-full bg-brand/15 blur-2xl" />
       {cs.logo ? (
         <img src={cs.logo} alt="" className="relative max-h-[40%] max-w-[60%] object-contain" />
@@ -793,7 +791,7 @@ export function ClosingSlide(c: Common) {
 
   return (
     <Slide className="bg-ink">
-      <div className="absolute -left-52 -top-52 h-[620px] w-[620px] rounded-full border-[60px] border-brand/[0.08]" />
+      <BrandWatermark variant="logo" className="-bottom-24 -left-16 h-[300px]" opacity={0.04} />
       <div className="absolute bottom-[-180px] right-[380px] h-96 w-96 rounded-full bg-brand/15 blur-3xl" />
 
       <div className="absolute left-[72px] top-[56px]">

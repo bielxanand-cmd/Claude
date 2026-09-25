@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useLayoutEffect, useRef, type CSS
 import DOMPurify from 'dompurify'
 import logoInk from '@/assets/brand/cibus-logo-ink.png'
 import logoWhite from '@/assets/brand/cibus-logo-white.png'
+import cifraoWhite from '@/assets/brand/cibus-cifrao-white.png'
 import { cn } from '@/lib/utils'
 
 export const SLIDE_W = 1280
@@ -128,6 +129,35 @@ export function CibusLogo({ src, dark, height = 30, showProduct = true }: { src?
         Partner
       </span>
     </div>
+  )
+}
+
+/**
+ * Marca d'água da Cibus: o cifrão do logo ou o logo inteiro, em baixa opacidade.
+ * `tone="dark"` escurece a marca para uso sobre fundos claros.
+ */
+export function BrandWatermark({
+  variant = 'cifrao',
+  tone = 'light',
+  opacity = 0.08,
+  className,
+  style,
+}: {
+  variant?: 'cifrao' | 'logo'
+  tone?: 'light' | 'dark'
+  opacity?: number
+  className?: string
+  style?: CSSProperties
+}) {
+  const src = variant === 'logo' ? (tone === 'dark' ? logoInk : logoWhite) : cifraoWhite
+  return (
+    <img
+      src={src}
+      alt=""
+      aria-hidden="true"
+      className={cn('pointer-events-none absolute max-w-none select-none', className)}
+      style={{ opacity, filter: tone === 'dark' && variant === 'cifrao' ? 'brightness(0)' : undefined, ...style }}
+    />
   )
 }
 

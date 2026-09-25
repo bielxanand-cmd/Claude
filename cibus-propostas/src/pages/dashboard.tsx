@@ -37,6 +37,7 @@ import { PRODUCT_PROFILES, productSettings, profileOf, unitCount, type ProductKe
 import { repo } from '@/lib/repo'
 import { TEMPLATES, duplicateProposal, normalizeProposal } from '@/lib/templates'
 import { STATUS_LABEL, type Proposal, type ProposalStatus } from '@/lib/types'
+import { BrandWatermark } from '@/components/slides/primitives'
 import { cn, formatDateBR, relativeTime } from '@/lib/utils'
 
 const STATUS_VARIANT: Record<ProposalStatus, 'muted' | 'warning' | 'info' | 'success' | 'danger'> = {
@@ -157,7 +158,7 @@ export default function Dashboard() {
           <div className="text-sm text-muted-foreground">em mensalidades</div>
         </div>
         <div className="relative overflow-hidden rounded-xl bg-ink p-5 text-white shadow-soft">
-          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full border-[14px] border-brand/20" />
+          <BrandWatermark className="-bottom-6 right-3 h-[120px]" opacity={0.08} />
           <div className="text-xs font-bold uppercase tracking-[0.14em] text-white/55">Aprovadas</div>
           <div className="mt-2 text-3xl font-extrabold tracking-tight text-brand">{formatBRL(stats.approvedValue)}</div>
           <div className="text-sm text-white/60">
@@ -364,7 +365,7 @@ function ProposalActions(props: {
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-ink px-8 py-14 text-center text-white">
-      <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full border-[36px] border-brand/15" />
+      <BrandWatermark variant="logo" className="-bottom-12 -right-10 h-[200px]" opacity={0.05} />
       <div className="absolute -bottom-24 -left-10 h-60 w-60 rounded-full bg-brand/15 blur-3xl" />
       <div className="relative mx-auto max-w-lg">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand">

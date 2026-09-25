@@ -16,6 +16,7 @@ import { useAppData } from '@/lib/app-data'
 import { calcInvestment } from '@/lib/pricing'
 import { STATUS_LABEL, type ProposalStatus, type SlideKey } from '@/lib/types'
 import { validateProposal, type StepKey } from '@/lib/validation'
+import { BrandWatermark } from '@/components/slides/primitives'
 import { cn } from '@/lib/utils'
 
 const STEPS: { key: StepKey; label: string; slide?: SlideKey; title: string; description: string }[] = [
@@ -229,7 +230,7 @@ function Review({
       <div className="grid gap-8 lg:grid-cols-[420px_minmax(0,1fr)]">
         <div className="space-y-4">
           <div className={cn('relative overflow-hidden rounded-2xl p-7', ready ? 'bg-ink text-white' : 'border bg-white')}>
-            {ready && <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full border-[22px] border-brand/20" />}
+            {ready && <BrandWatermark className="-bottom-10 -right-2 h-[170px]" opacity={0.07} />}
             <div className={cn('flex h-12 w-12 items-center justify-center rounded-2xl', ready ? 'bg-brand' : 'bg-amber-100 text-amber-700')}>
               {ready ? <PartyPopper className="h-6 w-6" /> : <AlertCircle className="h-6 w-6" />}
             </div>
