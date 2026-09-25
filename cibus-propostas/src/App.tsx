@@ -13,6 +13,7 @@ const Wizard = lazy(() => import('@/pages/wizard'))
 const Editor = lazy(() => import('@/pages/editor'))
 const Present = lazy(() => import('@/pages/present'))
 const Admin = lazy(() => import('@/pages/admin'))
+const Team = lazy(() => import('@/pages/team'))
 
 function Routed() {
   return (
@@ -22,6 +23,7 @@ function Routed() {
           <Route element={<AppShell />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/equipe" element={<Team />} />
           </Route>
           <Route path="/propostas/:id" element={<Wizard />} />
           <Route path="/propostas/:id/editor" element={<Editor />} />

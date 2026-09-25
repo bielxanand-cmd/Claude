@@ -83,6 +83,8 @@ function rowToProposal(r: Row): Proposal {
     roi: r.roi,
     cases: { title: r.cases_title, subtitle: r.cases_subtitle, caseIds: cases.map((c: Row) => c.case_id) },
     bureau: r.bureau && Object.keys(r.bureau).length ? r.bureau : defaultBureau(),
+    createdBy: r.created_by ?? undefined,
+    updatedBy: r.updated_by ?? undefined,
     closing: r.closing,
     sections: r.sections,
   }
@@ -120,6 +122,8 @@ function proposalToPayload(p: Proposal): Row {
     cases_subtitle: p.cases.subtitle,
     roi: p.roi,
     bureau: p.bureau,
+    created_by: p.createdBy ?? null,
+    updated_by: p.updatedBy ?? null,
     closing: p.closing,
     sections: p.sections,
     created_at: p.createdAt,
@@ -300,5 +304,12 @@ export function createSupabaseRepository(sb: SupabaseClient): Repository {
       check(await sb.storage.from('assets').upload(path, blob, { contentType: blob.type, upsert: false }))
       return sb.storage.from('assets').getPublicUrl(path).data.publicUrl
     },
+
+    async whoAmI() {
+      const { data } = await sb.auth.getUser()
+      return data.user ? { id: data.user.id, name: data.user.email ?? '' } : null
+    },
+    // Sem diretório de pessoas: o nome guardado na proposta (e-mail do login) é usado.
+    resolvePeople: async () => ({}),
   }
 }

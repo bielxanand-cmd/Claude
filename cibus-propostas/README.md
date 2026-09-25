@@ -16,6 +16,20 @@ npm run build      # typecheck + build de produção
 
 Sem variáveis de ambiente, o app roda em **modo local**: os dados ficam no IndexedDB do navegador, com módulos, cases e configurações iniciais já cadastrados. Serve para testar e demonstrar; nada é compartilhado entre computadores.
 
+## Link de teste com banco compartilhado
+
+O build do link de teste no claude.ai (`VITE_SHARED=artifact`) usa o banco do próprio link. Todas as pessoas com acesso ao link veem e editam as mesmas propostas, cases, itens, executivos e configurações. Cada proposta registra quem a criou e quem fez a última alteração.
+
+- **Minhas propostas:** alterna entre *Minhas* e *Toda a equipe*.
+- **Painel da equipe:** resumo por pessoa (quantidade de propostas, valor em negociação e aprovado, última atividade) e a tabela de todas as propostas, com filtros por pessoa, produto e status.
+- **Propostas antigas:** as que estavam só no navegador aparecem num aviso *Enviar para a equipe*, que as copia para o banco compartilhado junto com cases, executivos e configurações.
+
+Nesse modo o link é interno: cada colega precisa ser convidado pelo botão *Share* do link.
+
+```bash
+VITE_ROUTER=memory VITE_SHARED=artifact npx vite build --base ./ --outDir dist-artifact
+```
+
 ## Conectando ao Supabase
 
 1. Crie um projeto no Supabase.
@@ -29,7 +43,7 @@ Com o Supabase configurado, o app exige login e todas as tabelas ficam restritas
 
 | Tabela | Conteúdo |
 | --- | --- |
-| `proposals` | dados do cliente, da proposta, da capa, do ROI, do encerramento e das seções ativas |
+| `proposals` | dados do cliente, da proposta, da capa, do ROI, do encerramento, das seções ativas e quem criou/alterou |
 | `proposal_scenarios` | operação atual, texto do cenário, desafios, oportunidades |
 | `proposal_projects` | objetivo, estratégia, "como o Cibus ajuda", módulos do projeto |
 | `proposal_modules` | itens da lista "O que está incluso" (marcados ou não) |

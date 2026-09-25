@@ -1,4 +1,4 @@
-import { LogOut, Settings2, LayoutGrid } from 'lucide-react'
+import { LogOut, Settings2, LayoutGrid, Users } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { CibusLogo } from '@/components/slides/primitives'
 import { useAppData } from '@/lib/app-data'
@@ -24,6 +24,9 @@ export function AppShell() {
             <NavLink to="/" end className={link}>
               <LayoutGrid /> <span className="hidden sm:inline">Minhas propostas</span>
             </NavLink>
+            <NavLink to="/equipe" className={link}>
+              <Users /> <span className="hidden sm:inline">Painel da equipe</span>
+            </NavLink>
             <NavLink to="/admin" className={link}>
               <Settings2 /> <span className="hidden sm:inline">Configurações</span>
             </NavLink>
@@ -36,9 +39,9 @@ export function AppShell() {
         </div>
       </header>
       <Outlet />
-      {repo.mode === 'local' && (
+      {repo.mode !== 'supabase' && (
         <div className="pointer-events-none fixed bottom-3 left-3 z-30 rounded-full border bg-white/90 px-3 py-1 text-[11px] font-medium text-muted-foreground shadow-sm">
-          Modo local · dados salvos neste navegador
+          {repo.mode === 'shared' ? 'Banco compartilhado · a equipe vê as mesmas propostas' : 'Modo local · dados salvos neste navegador'}
         </div>
       )}
     </div>

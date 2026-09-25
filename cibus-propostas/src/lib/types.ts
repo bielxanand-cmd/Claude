@@ -30,6 +30,13 @@ export interface Discount {
   value: number
 }
 
+export interface PersonRef {
+  /** Identificador estável da pessoa (id do visualizador ou do usuário Supabase) */
+  id: string | null
+  /** Nome de referência, usado só quando não dá para resolver pelo id */
+  name: string
+}
+
 export interface Executive {
   id: string
   name: string
@@ -107,6 +114,9 @@ export interface Proposal {
   createdAt: string
   updatedAt: string
   templateId: string
+  /** Quem criou e quem alterou por último (id da pessoa no modo compartilhado) */
+  createdBy?: PersonRef
+  updatedBy?: PersonRef
 
   client: {
     contactName: string

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { DEFAULT_SETTINGS } from '@/data/seed'
-import { repo } from './repo'
+import { initRepo, repo } from './repo'
 import type { AppSettings, CaseDef, Executive, ModuleDef } from './types'
 import { hexToRgbTriplet } from './utils'
 
@@ -25,6 +25,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   })
 
   const reload = useCallback(async () => {
+    await initRepo()
     const [settings, modules, cases, executives] = await Promise.all([
       repo.getSettings(),
       repo.listModules(),

@@ -13,6 +13,7 @@ import {
   Plus,
   Search,
   Trash2,
+  Users,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -35,6 +36,8 @@ import { useAppData } from '@/lib/app-data'
 import { calcInvestment, formatBRL } from '@/lib/pricing'
 import { PRODUCT_PROFILES, productSettings, profileOf, unitCount, type ProductKey } from '@/lib/products'
 import { repo } from '@/lib/repo'
+import { importLocalData, localDataSummary } from '@/lib/repo/shared'
+import { personName, useMe, usePeople } from '@/hooks/use-people'
 import { TEMPLATES, duplicateProposal, normalizeProposal } from '@/lib/templates'
 import { STATUS_LABEL, type Proposal, type ProposalStatus } from '@/lib/types'
 import { BrandWatermark } from '@/components/slides/primitives'
@@ -68,6 +71,13 @@ export default function Dashboard() {
   const [toDelete, setToDelete] = useState<Proposal | null>(null)
   const pdf = usePdfExport()
   const [pdfId, setPdfId] = useState<string | null>(null)
+  const me = useMe()
+  const people = usePeople(list)
+  const [scope, setScope] = useState<'mine' | 'all' | null>(null)
+  const canFilterMine = !!me?.id
+  const effectiveScope = scope ?? (canFilterMine ? 'mine' : 'all')
+  const [localPending, setLocalPending] = useState(0)
+  const [importing, setImporting] = useState(false)
 
   const load = () =>
     repo
@@ -85,21 +95,28 @@ export default function Dashboard() {
       })
 
   useEffect(() => {
-    if (ready) load()
+    if (!ready) return
+    load()
+    if (repo.mode === 'shared') localDataSummary(repo).then((ps) => setLocalPending(ps.length), () => undefined)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready])
 
+  const scoped = useMemo(
+    () => (list ?? []).filter((p) => effectiveScope === 'all' || !me?.id || p.createdBy?.id === me.id),
+    [list, effectiveScope, me],
+  )
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase()
-    return (list ?? []).filter(
+    return scoped.filter(
       (p) =>
         (status === 'all' || p.status === status) &&
         (!term || [p.client.contactName, p.client.company, p.meta.executive.name, p.meta.title].some((s) => s?.toLowerCase().includes(term))),
     )
-  }, [list, q, status])
+  }, [scoped, q, status])
 
   const stats = useMemo(() => {
-    const ps = list ?? []
+    const ps = scoped
     const open = ps.filter((p) => ['draft', 'review', 'sent'].includes(p.status))
     const mrr = (arr: Proposal[]) => arr.reduce((s, p) => s + calcInvestment(p.investment).monthlyNetwork.final, 0)
     return {
@@ -109,7 +126,7 @@ export default function Dashboard() {
       approvedValue: mrr(ps.filter((p) => p.status === 'approved')),
       approvedCount: ps.filter((p) => p.status === 'approved').length,
     }
-  }, [list])
+  }, [scoped])
 
   const createFrom = async (templateId: string, product: ProductKey) => {
     const t = TEMPLATES.find((x) => x.id === templateId)!
@@ -137,7 +154,7 @@ export default function Dashboard() {
       {/* Cabeçalho */}
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-[34px] font-extrabold tracking-[-0.03em] text-ink">Minhas propostas</h1>
+          <h1 className="text-[34px] font-extrabold tracking-[-0.03em] text-ink">{effectiveScope === 'all' && canFilterMine ? 'Propostas da equipe' : 'Minhas propostas'}</h1>
           <p className="mt-1 text-base text-muted-foreground">Crie propostas comerciais personalizadas para seus clientes.</p>
         </div>
         <Button size="lg" onClick={() => setCreating(true)}>
@@ -167,9 +184,56 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Propostas que existem só neste navegador */}
+      {localPending > 0 && (
+        <div className="mt-6 flex flex-col gap-3 rounded-xl border border-brand/30 bg-brand/[0.05] p-4 sm:flex-row sm:items-center">
+          <div className="min-w-0 flex-1 text-sm">
+            <div className="font-bold text-ink">
+              {localPending === 1 ? '1 proposta está salva só neste navegador' : `${localPending} propostas estão salvas só neste navegador`}
+            </div>
+            <div className="text-muted-foreground">Envie para o banco compartilhado para a equipe ver. Cases, executivos e configurações também são enviados.</div>
+          </div>
+          <Button
+            disabled={importing}
+            onClick={async () => {
+              setImporting(true)
+              try {
+                const n = await importLocalData(repo)
+                toast.success(n === 1 ? '1 proposta enviada para a equipe' : `${n} propostas enviadas para a equipe`)
+                setLocalPending(0)
+                await data.reload()
+                load()
+              } catch (e) {
+                toast.error(`Não foi possível enviar: ${(e as Error).message}`)
+              } finally {
+                setImporting(false)
+              }
+            }}
+          >
+            {importing ? <Loader2 className="animate-spin" /> : <Users />} Enviar para a equipe
+          </Button>
+        </div>
+      )}
+
       {/* Filtros */}
       <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {canFilterMine && (
+            <div className="mr-2 flex rounded-full bg-ink/[0.06] p-0.5">
+              {(['mine', 'all'] as const).map((sc) => (
+                <button
+                  key={sc}
+                  onClick={() => setScope(sc)}
+                  className={cn(
+                    'h-7 rounded-full px-3 text-[13px] font-semibold transition-colors',
+                    effectiveScope === sc ? 'bg-white text-ink shadow-sm' : 'text-ink/60 hover:text-ink',
+                  )}
+                >
+                  {sc === 'mine' ? 'Minhas' : 'Toda a equipe'}
+                </button>
+              ))}
+            </div>
+          )}
           {(['all', 'draft', 'review', 'sent', 'approved', 'lost'] as const).map((s) => (
             <button
               key={s}
@@ -236,7 +300,15 @@ export default function Dashboard() {
                   <div className="col-start-2 row-start-1 flex items-center gap-2 lg:hidden">
                     <StatusBadge status={p.status} />
                   </div>
-                  <div className="truncate text-sm text-ink/80 max-lg:hidden">{p.meta.executive.name || '—'}</div>
+                  <div className="min-w-0 text-sm text-ink/80 max-lg:hidden">
+                    <div className="truncate">{p.meta.executive.name || '—'}</div>
+                    {p.createdBy && (
+                      <div className="truncate text-xs text-muted-foreground">
+                        criada por {personName(p.createdBy, people)}
+                        {me?.id && p.createdBy.id === me.id ? ' (você)' : ''}
+                      </div>
+                    )}
+                  </div>
                   <div className="text-sm tabular-nums text-ink/80 max-lg:hidden">{formatDateBR(p.meta.date)}</div>
                   <div className="max-lg:col-span-2 max-lg:flex max-lg:gap-3 max-lg:text-sm">
                     <span className="font-bold tabular-nums text-ink">{formatBRL(calc.monthlyNetwork.final)}</span>

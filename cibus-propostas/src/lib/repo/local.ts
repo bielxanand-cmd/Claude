@@ -60,5 +60,8 @@ export function createLocalRepository(): Repository {
     saveSettings: (s) => set('settings', s, store),
 
     uploadImage: async (file) => blobToDataURL(await prepareImage(file)),
+
+    whoAmI: async () => null,
+    resolvePeople: async () => ({}),
   }
 }

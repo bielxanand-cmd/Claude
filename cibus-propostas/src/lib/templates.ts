@@ -191,6 +191,8 @@ export function duplicateProposal(p: Proposal): Proposal {
     status: 'draft',
     createdAt: now,
     updatedAt: now,
+    createdBy: undefined,
+    updatedBy: undefined,
     meta: { ...copy.meta, date: todayISO() },
   }
 }
