@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { ArrowRight, BadgeCheck, Check, Gift, Globe, Mail, MapPin, MessageCircle, Phone, Sparkles, Star, Store } from 'lucide-react'
+import { ArrowRight, BadgeCheck, Check, Compass, Gift, MessagesSquare, Palette, Globe, Mail, MapPin, MessageCircle, Phone, Sparkles, Star, Store } from 'lucide-react'
 import appMockup from '@/assets/brand/app-cibus.webp'
 import { calcInvestment, formatBRL, formatBRLShort, formatPercent, formatUnitPrice } from '@/lib/pricing'
 import type { AppSettings, CaseDef, ModuleDef, Proposal, SlideKey } from '@/lib/types'
@@ -423,6 +423,96 @@ export function ProjectSlide(c: Common) {
 }
 
 /* =========================================================================
+ * BUREAU DE MARKETING
+ * ======================================================================= */
+
+const BUREAU_ICONS = [Compass, Palette, MessagesSquare]
+
+export function BureauSlide(c: Common) {
+  const b = c.p.bureau
+  const cols = b.columns.filter((col) => col.title.trim() || col.items.some((i) => i.trim())).slice(0, 3)
+  return (
+    <Slide className="bg-mist">
+      {/* faixa escura inferior */}
+      <div className="absolute inset-x-0 bottom-0 top-[468px] bg-ink">
+        <BrandWatermark variant="logo" className="-bottom-10 -right-10 h-[170px]" opacity={0.05} />
+      </div>
+
+      <div className="absolute left-[72px] top-[52px] w-[560px]">
+        <div className="flex items-center gap-3 text-[13px] font-bold uppercase tracking-[0.18em] text-brand">
+          <span className="tabular-nums">{String(c.index).padStart(2, '0')}</span>
+          <span className="h-[2px] w-7 rounded-full bg-brand" />
+          <span>Bureau de Marketing</span>
+        </div>
+        <FitBox id="bureau-title" label="Título do Bureau" max={42} min={30} lineHeight={1.08} className="mt-4 h-[140px] font-extrabold text-ink" style={{ letterSpacing: '-0.03em' }}>
+          <Highlight text={b.title} />
+        </FitBox>
+      </div>
+
+      <FitBox
+        id="bureau-intro"
+        label="Texto do Bureau"
+        max={16.5}
+        min={13}
+        lineHeight={1.55}
+        className="absolute left-[680px] right-[72px] top-[84px] h-[160px] text-slate-600"
+      >
+        <p>
+          <Highlight text={b.intro} className="font-bold" />
+        </p>
+      </FitBox>
+
+      <div
+        className="absolute left-[72px] right-[72px] top-[284px] grid gap-5"
+        style={{ gridTemplateColumns: `repeat(${Math.max(1, cols.length)}, minmax(0, 1fr))` }}
+      >
+        {cols.map((col, i) => {
+          const Icon = BUREAU_ICONS[i] ?? Sparkles
+          return (
+            <div key={i} className="relative h-[246px] rounded-[24px] border border-slate-200 bg-white px-7 pb-6 pt-11 shadow-[0_24px_48px_-24px_rgba(16,24,40,.35)]">
+              <div className="absolute -top-5 left-6 inline-flex h-11 items-center gap-2.5 rounded-2xl bg-brand pl-3 pr-5 text-[18px] font-extrabold text-white shadow-[0_10px_20px_-8px_rgb(var(--brand)/.7)]">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20">
+                  <Icon className="h-4 w-4" />
+                </span>
+                {col.title}
+              </div>
+              <FitBox id={`bureau-col-${i}`} label={`Coluna ${col.title}`} max={15} min={12.5} lineHeight={1.4} className="h-full">
+                <ul className="space-y-[0.85em]">
+                  {col.items
+                    .filter((it) => it.trim())
+                    .map((it, j) => (
+                      <li key={j} className="flex items-start gap-3 font-medium text-ink">
+                        <span className="mt-[0.5em] h-[0.45em] w-[0.45em] shrink-0 rounded-full bg-brand" />
+                        <span className="min-w-0 flex-1 pr-2" style={{ textWrap: 'balance' }}>
+                          {it}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              </FitBox>
+            </div>
+          )
+        })}
+      </div>
+
+      {b.note.trim() && (
+        <FitBox
+          id="bureau-note"
+          label="Observação do Bureau"
+          max={14.5}
+          min={12}
+          lineHeight={1.5}
+          className="absolute left-[120px] right-[120px] top-[560px] h-[60px] text-center font-medium text-white/75"
+        >
+          {b.note}
+        </FitBox>
+      )}
+      <Footer {...c} dark />
+    </Slide>
+  )
+}
+
+/* =========================================================================
  * 04 — INVESTIMENTOS
  * ======================================================================= */
 
@@ -822,6 +912,7 @@ export function buildDeck(p: Proposal, ctx: DeckContext): DeckSlide[] {
   if (on('cover')) specs.push({ key: 'cover', id: 'cover', label: 'Capa', render: (c) => <CoverSlide {...c} /> })
   if (on('scenario')) specs.push({ key: 'scenario', id: 'scenario', label: 'Cenário atual', render: (c) => <ScenarioSlide {...c} /> })
   if (on('project')) specs.push({ key: 'project', id: 'project', label: 'O projeto', render: (c) => <ProjectSlide {...c} /> })
+  if (on('bureau')) specs.push({ key: 'bureau', id: 'bureau', label: 'Bureau de Marketing', render: (c) => <BureauSlide {...c} /> })
   if (on('investment')) specs.push({ key: 'investment', id: 'investment', label: 'Investimentos', render: (c) => <InvestmentSlide {...c} /> })
   if (on('roi')) specs.push({ key: 'roi', id: 'roi', label: 'ROI', render: (c) => <RoiSlide {...c} /> })
   if (on('cases')) {

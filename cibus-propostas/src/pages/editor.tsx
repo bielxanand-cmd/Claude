@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ClientForm, ClosingForm, CoverForm, ProposalMetaForm } from '@/components/forms/client-forms'
-import { CasesForm, ProjectForm, RoiForm, ScenarioForm } from '@/components/forms/content-forms'
+import { BureauForm, CasesForm, ProjectForm, RoiForm, ScenarioForm } from '@/components/forms/content-forms'
 import { InvestmentForm } from '@/components/forms/investment-form'
 import { OverflowWarnings, ProposalTopBar } from '@/components/proposal-chrome'
 import { OverflowScope, SlideFit, SlideFrame, useOverflowCollector } from '@/components/slides/frame'
@@ -133,6 +133,7 @@ export default function Editor() {
           )}
           {section === 'scenario' && <ScenarioForm {...props} />}
           {section === 'project' && <ProjectForm {...props} />}
+          {section === 'bureau' && <BureauForm {...props} />}
           {section === 'investment' && <InvestmentForm {...props} />}
           {section === 'roi' && <RoiForm {...props} />}
           {section === 'cases' && <CasesForm {...props} />}

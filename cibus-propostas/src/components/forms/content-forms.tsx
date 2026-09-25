@@ -1,13 +1,13 @@
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Check, GripVertical, ImageOff, Plus, Trash2, X } from 'lucide-react'
+import { Check, GripVertical, ImageOff, Plus, RotateCcw, Trash2, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input, Textarea } from '@/components/ui/input'
 import { useAppData } from '@/lib/app-data'
-import { uid } from '@/lib/templates'
+import { defaultBureau, uid } from '@/lib/templates'
 import { MODULE_CATEGORIES, type CaseDef } from '@/lib/types'
 import { cn, initials } from '@/lib/utils'
 import { SectionToggle, type FormProps } from './client-forms'
@@ -159,6 +159,52 @@ function ModulePicker({ p, update }: FormProps) {
           )
         })}
       </div>
+    </Section>
+  )
+}
+
+/* ------------------------------------------------------------------- Bureau */
+
+export function BureauForm({ p, update }: FormProps) {
+  const b = p.bureau
+  return (
+    <Section
+      title="Bureau de Marketing Cibus"
+      description="Página que apresenta a agência interna da Cibus. O texto já vem pronto; ajuste se precisar."
+      action={<SectionToggle p={p} update={update} k="bureau" />}
+    >
+      <Field label="Título" htmlFor="btitle" hint="Use *asteriscos* para destacar um trecho na cor da marca." aside={<CharCount value={b.title} max={70} />}>
+        <Input id="btitle" value={b.title} onChange={(e) => update((d) => void (d.bureau.title = e.target.value))} />
+      </Field>
+      <Field label="Apresentação" htmlFor="bintro" aside={<CharCount value={b.intro} max={380} />}>
+        <Textarea id="bintro" rows={4} value={b.intro} onChange={(e) => update((d) => void (d.bureau.intro = e.target.value))} />
+      </Field>
+      <div className="grid gap-4 @2xl:grid-cols-3">
+        {b.columns.map((col, i) => (
+          <div key={i} className="space-y-2 rounded-lg border bg-mist/60 p-3">
+            <Input
+              aria-label={`Título da coluna ${i + 1}`}
+              className="font-bold"
+              value={col.title}
+              onChange={(e) => update((d) => void (d.bureau.columns[i]!.title = e.target.value))}
+            />
+            <ListEditor
+              items={col.items}
+              onChange={(v) => update((d) => void (d.bureau.columns[i]!.items = v))}
+              addLabel="Item"
+              placeholder="Novo item"
+              maxItems={4}
+              maxChars={70}
+            />
+          </div>
+        ))}
+      </div>
+      <Field label="Observação (faixa escura)" htmlFor="bnote" aside={<CharCount value={b.note} max={220} />}>
+        <Textarea id="bnote" rows={3} value={b.note} onChange={(e) => update((d) => void (d.bureau.note = e.target.value))} />
+      </Field>
+      <Button type="button" variant="outline" size="sm" onClick={() => update((d) => void (d.bureau = defaultBureau()))}>
+        <RotateCcw /> Restaurar texto padrão
+      </Button>
     </Section>
   )
 }

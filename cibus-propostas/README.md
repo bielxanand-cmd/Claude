@@ -61,6 +61,10 @@ Trocar o produto no campo *Produto* muda na hora as cores e a unidade de todos o
 5. **Modo apresentação:** slides em tela cheia; navegação pelas setas ou pelo teclado (←/→).
 6. **Revisão e PDF:** liga/desliga de cada página do PDF (Capa, Cenário, Projeto, Investimentos, ROI, Cases, Encerramento), com as pendências de cada uma. Pendências são avisos e não impedem a geração: o vendedor completa a página ou a retira do PDF.
 
+## Bureau de Marketing
+
+Logo depois de "O projeto" entra a página do **Bureau de Marketing Cibus**, a agência interna. Ela mostra a apresentação do Bureau, as colunas *Planejamos*, *Criamos* e *Orientamos* e a observação sobre o que não está incluso. O texto vem pronto, é editável por proposta (etapa Projeto ou editor visual) e pode ser restaurado ao padrão. Como as outras páginas, pode ser ligada ou desligada na revisão.
+
 ## Como o PDF é gerado
 
 Cada página é um componente de layout fixo de **1280×720**, com a fonte **Roboto** (o sistema usa Plus Jakarta Sans) (`src/components/slides/slides.tsx`). A mesma página aparece na prévia, no editor, no modo apresentação e no PDF. Na exportação, cada slide é renderizado fora da tela, capturado a 3200×1800 e colocado em uma página 16:9 do jsPDF. O botão "Simular ROI" e os contatos do encerramento continuam clicáveis no PDF.

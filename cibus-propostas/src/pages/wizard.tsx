@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ClientForm, ClosingForm, CoverForm, ProposalMetaForm } from '@/components/forms/client-forms'
-import { CasesForm, ProjectForm, RoiForm, ScenarioForm } from '@/components/forms/content-forms'
+import { BureauForm, CasesForm, ProjectForm, RoiForm, ScenarioForm } from '@/components/forms/content-forms'
 import { FinancialSummary, InvestmentForm } from '@/components/forms/investment-form'
 import { OverflowWarnings, ProposalTopBar } from '@/components/proposal-chrome'
 import { OverflowScope, SlideFrame, useOverflowCollector } from '@/components/slides/frame'
@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils'
 const STEPS: { key: StepKey; label: string; slide?: SlideKey; title: string; description: string }[] = [
   { key: 'client', label: 'Cliente', slide: 'cover', title: 'Dados do cliente', description: 'Quem é o cliente e como a capa vai ficar.' },
   { key: 'scenario', label: 'Cenário', slide: 'scenario', title: 'Cenário atual', description: 'O momento do cliente, desafios e oportunidades.' },
-  { key: 'project', label: 'Projeto', slide: 'project', title: 'O projeto', description: 'Objetivo, estratégia e módulos Cibus da solução.' },
+  { key: 'project', label: 'Projeto', slide: 'project', title: 'O projeto', description: 'Objetivo, estratégia, módulos Cibus e o Bureau de Marketing.' },
   { key: 'investment', label: 'Investimento', slide: 'investment', title: 'Investimentos', description: 'Módulos, valores, descontos e custos sob consumo.' },
   { key: 'roi', label: 'ROI', slide: 'roi', title: 'O retorno do Cibus', description: 'Indicadores e chamada para o simulador de ROI.' },
   { key: 'cases', label: 'Cases', slide: 'cases', title: 'Cases', description: 'Resultados de clientes que reforçam a proposta.' },
@@ -52,7 +52,7 @@ export default function Wizard() {
   if (!p) return <Loading />
 
   const cur = STEPS[idx]!
-  const stepSlides = cur.slide ? deck.filter((s) => s.key === cur.slide) : []
+  const stepSlides = cur.slide ? deck.filter((s) => s.key === cur.slide || (cur.slide === 'project' && s.key === 'bureau')) : []
   const hiddenSection = cur.slide && !p.sections[cur.slide]
   const stepState = (k: StepKey) => {
     const c = checks.filter((x) => x.step === k)
@@ -136,7 +136,12 @@ export default function Wizard() {
               </>
             )}
             {step === 'scenario' && <ScenarioForm {...props} />}
-            {step === 'project' && <ProjectForm {...props} />}
+            {step === 'project' && (
+              <>
+                <ProjectForm {...props} />
+                <BureauForm {...props} />
+              </>
+            )}
             {step === 'investment' && <InvestmentForm {...props} showSummary={false} />}
             {step === 'roi' && <RoiForm {...props} />}
             {step === 'cases' && <CasesForm {...props} />}
@@ -223,6 +228,7 @@ function Review({
     { key: 'cover', label: 'Capa', step: 'client' },
     { key: 'scenario', label: 'Cenário atual', step: 'scenario' },
     { key: 'project', label: 'O projeto', step: 'project' },
+    { key: 'bureau', label: 'Bureau de Marketing', step: 'project' },
     { key: 'investment', label: 'Investimentos', step: 'investment' },
     { key: 'roi', label: 'ROI', step: 'roi' },
     { key: 'cases', label: 'Cases', step: 'cases' },

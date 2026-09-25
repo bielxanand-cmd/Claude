@@ -21,7 +21,7 @@ export const MODULE_CATEGORIES = [
 ] as const
 export type ModuleCategory = (typeof MODULE_CATEGORIES)[number]
 
-export type SlideKey = 'cover' | 'scenario' | 'project' | 'investment' | 'roi' | 'cases' | 'closing'
+export type SlideKey = 'cover' | 'scenario' | 'project' | 'bureau' | 'investment' | 'roi' | 'cases' | 'closing'
 
 export type DiscountType = 'percent' | 'fixed'
 
@@ -186,6 +186,14 @@ export interface Proposal {
     title: string
     subtitle: string
     caseIds: string[] // em ordem
+  }
+
+  /** Bureau de Marketing Cibus (agência interna) */
+  bureau: {
+    title: string // *trecho* = destaque na cor da marca
+    intro: string // *trecho* = destaque
+    columns: { title: string; items: string[] }[]
+    note: string
   }
 
   closing: {

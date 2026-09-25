@@ -11,6 +11,7 @@ export const SLIDES: { key: SlideKey; label: string; short: string }[] = [
   { key: 'cover', label: 'Capa', short: 'Capa' },
   { key: 'scenario', label: 'Cenário atual', short: 'Cenário' },
   { key: 'project', label: 'O projeto', short: 'Projeto' },
+  { key: 'bureau', label: 'Bureau de Marketing', short: 'Bureau' },
   { key: 'investment', label: 'Investimentos', short: 'Investimento' },
   { key: 'roi', label: 'ROI', short: 'ROI' },
   { key: 'cases', label: 'Cases', short: 'Cases' },
@@ -52,6 +53,30 @@ export function libraryItems(modules: ModuleDef[]): ModuleDef[] {
   return modules
     .filter((m) => m.active)
     .sort((a, b) => MODULE_CATEGORIES.indexOf(a.category) - MODULE_CATEGORIES.indexOf(b.category) || a.sortOrder - b.sortOrder)
+}
+
+/** Conteúdo padrão do slide do Bureau de Marketing Cibus. */
+export function defaultBureau(): Proposal['bureau'] {
+  return {
+    title: 'Estratégia para transformar *o aplicativo em recorrência*',
+    intro:
+      'O *Bureau de Marketing Cibus* é uma consultoria estratégica e criativa especializada na ativação do programa de fidelidade. Com planejamento, comunicação e materiais personalizados, ajudamos sua empresa a utilizar cashback ou pontos de forma mais estratégica, estimulando o cadastro, o uso do aplicativo e o retorno do cliente.',
+    columns: [
+      {
+        title: 'Planejamos',
+        items: ['Estratégia personalizada de ativação e recorrência', 'Conceito criativo das campanhas', 'Diretrizes de comunicação online e offline'],
+      },
+      {
+        title: 'Criamos',
+        items: ['Kit de conteúdos personalizados para redes sociais', 'Materiais gráficos para utilização no estabelecimento', 'Banners promocionais para o aplicativo'],
+      },
+      {
+        title: 'Orientamos',
+        items: ['Abordagem e comunicação da campanha', 'Direcionamento para execução das ações', 'Acompanhamento estratégico durante a campanha'],
+      },
+    ],
+    note: 'A execução é realizada pela equipe ou agência da empresa. Não estão inclusos gestão de anúncios, publicação nas redes sociais, operação diária das campanhas e execução de ações presenciais.',
+  }
 }
 
 const defaultTemplate: TemplateDef = {
@@ -143,8 +168,9 @@ const defaultTemplate: TemplateDef = {
         subtitle: 'Resultados reais de clientes Cibus.',
         caseIds: [],
       },
+      bureau: defaultBureau(),
       closing: { title: ps.closingTitle, cta: 'Vamos começar?' },
-      sections: { cover: true, scenario: true, project: true, investment: true, roi: true, cases: true, closing: true },
+      sections: { cover: true, scenario: true, project: true, bureau: true, investment: true, roi: true, cases: true, closing: true },
     }
   },
 }
@@ -184,6 +210,7 @@ export function normalizeProposal(p: Partial<Proposal>, ctx: TemplateContext): P
     investment: merge(base.investment, migrateInvestment(p.investment)),
     roi: merge(base.roi, p.roi),
     cases: merge(base.cases, p.cases),
+    bureau: merge(base.bureau, p.bureau),
     closing: merge(base.closing, p.closing),
     sections: merge(base.sections, p.sections),
   } as Proposal
