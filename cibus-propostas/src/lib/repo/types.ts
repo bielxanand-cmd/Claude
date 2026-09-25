@@ -6,6 +6,12 @@ export interface PersonProfile {
   color: string | null
 }
 
+/** Com qual executivo a pessoa do link se identificou. */
+export interface Identity {
+  executiveId: string | null
+  name: string
+}
+
 export interface Repository {
   /** local = só neste navegador; shared = banco do link compartilhado; supabase = banco próprio */
   mode: 'local' | 'shared' | 'supabase'
@@ -36,4 +42,7 @@ export interface Repository {
   whoAmI(): Promise<PersonRef | null>
   /** Nomes e avatares atuais das pessoas, pelo id. */
   resolvePeople(ids: string[]): Promise<Record<string, PersonProfile>>
+  /** Identificação da pessoa (só no banco compartilhado do link). */
+  getIdentity?(): Promise<Identity | null>
+  setIdentity?(i: Identity): Promise<void>
 }

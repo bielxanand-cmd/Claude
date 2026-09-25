@@ -2,13 +2,14 @@ import { DEFAULT_SETTINGS, SEED_CASES, SEED_EXECUTIVES, SEED_MODULES } from '@/d
 import { blobToDataURL, prepareImage } from '../image'
 import type { AppSettings, CaseDef, Executive, ModuleDef, Proposal } from '../types'
 import { createLocalRepository } from './local'
-import type { PersonProfile, Repository } from './types'
+import type { Identity, PersonProfile, Repository } from './types'
 
 /*
  * Banco compartilhado do link de teste (capability `db` do visualizador de
  * Artifacts do claude.ai). Todos que abrem o link leem e gravam os mesmos
  * documentos: proposals/<id>, cases/<id>, modules/<id>, executives/<id> e
- * config/settings. As bibliotecas começam com os dados padrão e só são
+ * config/settings. people/<id do usuário> guarda com qual executivo cada
+ * pessoa se identificou (nome usado como autor das propostas). As bibliotecas começam com os dados padrão e só são
  * gravadas na primeira alteração.
  */
 
@@ -104,6 +105,16 @@ export async function createSharedRepository(): Promise<Repository | null> {
   }
 
   let myId: Promise<string | null> | null = null
+  const myUserId = () => (myId ??= user ? user.id().catch(() => null) : Promise.resolve(null))
+  const identities = new Map<string, Identity | null>()
+  const readIdentity = async (id: string) => {
+    if (!identities.has(id)) {
+      const snap = await db.collection('people').doc(id).get().catch(() => null)
+      const d = snap?.exists ? (snap.data() as Partial<Identity>) : null
+      identities.set(id, d?.name ? { executiveId: d.executiveId ?? null, name: d.name } : null)
+    }
+    return identities.get(id) ?? null
+  }
 
   return {
     mode: 'shared',
@@ -147,16 +158,36 @@ export async function createSharedRepository(): Promise<Repository | null> {
     },
 
     whoAmI: async () => {
-      myId ??= user ? user.id() : Promise.resolve(null)
-      const id = await myId
-      return id ? { id, name: '' } : null
+      const id = await myUserId()
+      if (!id) return null
+      const ident = await readIdentity(id)
+      return { id, name: ident?.name ?? '' }
     },
     resolvePeople: async (ids) => {
-      if (!user || !ids.length) return {}
-      const ps = await user.profiles(ids)
+      if (!ids.length) return {}
+      const [profiles, known] = await Promise.all([
+        user ? user.profiles(ids).catch(() => ({}) as Awaited<ReturnType<UserNs['profiles']>>) : Promise.resolve({}),
+        all<Identity & { id: string }>('people').catch(() => []),
+      ])
       const out: Record<string, PersonProfile> = {}
-      for (const [id, p] of Object.entries(ps)) out[id] = { name: p.name, avatarUrl: p.avatarUrl, color: p.color }
+      for (const id of ids) {
+        const p = (profiles as Record<string, { name: string; avatarUrl: string; color: string }>)[id]
+        const ident = known.find((k) => k.id === id)
+        // o nome escolhido no "Quem é você?" vale mais que o da conta
+        const name = ident?.name || p?.name || ''
+        if (name || p) out[id] = { name, avatarUrl: p?.avatarUrl ?? null, color: p?.color ?? null }
+      }
       return out
+    },
+    getIdentity: async () => {
+      const id = await myUserId()
+      return id ? readIdentity(id) : null
+    },
+    setIdentity: async (ident) => {
+      const id = await myUserId()
+      if (!id) throw new Error('Não foi possível identificar sua conta neste link.')
+      await db.collection('people').doc(id).set(clean({ id, ...ident, updatedAt: new Date().toISOString() }))
+      identities.set(id, ident)
     },
   }
 }

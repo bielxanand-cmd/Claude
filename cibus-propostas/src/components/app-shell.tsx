@@ -1,5 +1,6 @@
 import { LogOut, Settings2, LayoutGrid, Users } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { IdentityButton } from '@/components/identity-dialog'
 import { CibusLogo } from '@/components/slides/primitives'
 import { useAppData } from '@/lib/app-data'
 import { repo, supabase } from '@/lib/repo'
@@ -30,6 +31,7 @@ export function AppShell() {
             <NavLink to="/admin" className={link}>
               <Settings2 /> <span className="hidden sm:inline">Configurações</span>
             </NavLink>
+            <IdentityButton />
             {supabase && (
               <button className={link({ isActive: false })} onClick={() => supabase!.auth.signOut()} title="Sair">
                 <LogOut />

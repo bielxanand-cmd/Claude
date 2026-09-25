@@ -37,7 +37,7 @@ import { calcInvestment, formatBRL } from '@/lib/pricing'
 import { PRODUCT_PROFILES, productSettings, profileOf, unitCount, type ProductKey } from '@/lib/products'
 import { repo } from '@/lib/repo'
 import { importLocalData, localDataSummary } from '@/lib/repo/shared'
-import { personName, useMe, usePeople } from '@/hooks/use-people'
+import { personName, useIdentity, useMe, usePeople } from '@/hooks/use-people'
 import { TEMPLATES, duplicateProposal, normalizeProposal } from '@/lib/templates'
 import { STATUS_LABEL, type Proposal, type ProposalStatus } from '@/lib/types'
 import { BrandWatermark } from '@/components/slides/primitives'
@@ -72,6 +72,7 @@ export default function Dashboard() {
   const pdf = usePdfExport()
   const [pdfId, setPdfId] = useState<string | null>(null)
   const me = useMe()
+  const { identity } = useIdentity()
   const people = usePeople(list)
   const [scope, setScope] = useState<'mine' | 'all' | null>(null)
   const canFilterMine = !!me?.id
@@ -130,7 +131,7 @@ export default function Dashboard() {
 
   const createFrom = async (templateId: string, product: ProductKey) => {
     const t = TEMPLATES.find((x) => x.id === templateId)!
-    const exec = executives.find((e) => e.active) ?? null
+    const exec = executives.find((e) => e.id === identity?.executiveId) ?? executives.find((e) => e.active) ?? null
     const p = t.build({ settings, modules, executive: exec, product })
     await repo.saveProposal(p)
     nav(`/propostas/${p.id}`)

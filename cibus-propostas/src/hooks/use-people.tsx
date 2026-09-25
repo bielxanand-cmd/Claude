@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { useAppData } from '@/lib/app-data'
 import { repo } from '@/lib/repo'
-import type { PersonProfile } from '@/lib/repo/types'
+import type { Identity, PersonProfile } from '@/lib/repo/types'
 import type { PersonRef, Proposal } from '@/lib/types'
 import { cn, initials } from '@/lib/utils'
 
@@ -13,6 +13,41 @@ export function useMe() {
     if (ready) repo.whoAmI().then(setMe, () => setMe(null))
   }, [ready])
   return me
+}
+
+/*
+ * Identificação no link compartilhado: cada pessoa diz uma vez com qual
+ * executivo ela corresponde. O nome vira o autor das propostas e o executivo
+ * vira o padrão das propostas novas.
+ */
+type IdentityState = { loaded: boolean; supported: boolean; identity: Identity | null }
+let identityState: IdentityState = { loaded: false, supported: false, identity: null }
+let identityLoading: Promise<void> | null = null
+const identityListeners = new Set<() => void>()
+const emitIdentity = (next: IdentityState) => {
+  identityState = next
+  identityListeners.forEach((l) => l())
+}
+
+export function useIdentity() {
+  const { ready } = useAppData()
+  const state = useSyncExternalStore(
+    (l) => (identityListeners.add(l), () => identityListeners.delete(l)),
+    () => identityState,
+  )
+  useEffect(() => {
+    if (!ready || identityLoading) return
+    identityLoading = (async () => {
+      if (!repo.getIdentity) return emitIdentity({ loaded: true, supported: false, identity: null })
+      const [identity, me] = await Promise.all([repo.getIdentity().catch(() => null), repo.whoAmI().catch(() => null)])
+      emitIdentity({ loaded: true, supported: !!me?.id, identity })
+    })()
+  }, [ready])
+  const save = async (identity: Identity) => {
+    await repo.setIdentity!(identity)
+    emitIdentity({ ...identityState, identity })
+  }
+  return { ...state, save }
 }
 
 /** Resolve nomes e avatares atuais das pessoas citadas nas propostas. */

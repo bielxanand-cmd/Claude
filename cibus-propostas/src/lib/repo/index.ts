@@ -15,7 +15,8 @@ function withAuthorship(base: Repository): Repository {
     ...base,
     async saveProposal(p) {
       const me = await base.whoAmI()
-      await base.saveProposal(me ? { ...p, createdBy: p.createdBy ?? me, updatedBy: me } : p)
+      const createdBy = !p.createdBy || (p.createdBy.id === me?.id && !p.createdBy.name) ? (me ?? p.createdBy) : p.createdBy
+      await base.saveProposal(me ? { ...p, createdBy: createdBy ?? undefined, updatedBy: me } : p)
     },
   }
 }

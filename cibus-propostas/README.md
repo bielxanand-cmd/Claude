@@ -20,6 +20,7 @@ Sem variáveis de ambiente, o app roda em **modo local**: os dados ficam no Inde
 
 O build do link de teste no claude.ai (`VITE_SHARED=artifact`) usa o banco do próprio link. Todas as pessoas com acesso ao link veem e editam as mesmas propostas, cases, itens, executivos e configurações. Cada proposta registra quem a criou e quem fez a última alteração.
 
+- **Quem é você?:** no primeiro acesso, cada pessoa escolhe o seu nome na lista de executivos (ou cadastra o nome, em *Não estou na lista*). Esse nome aparece como autor das propostas que ela cria ou altera, e ela passa a ser o executivo responsável das propostas novas. Dá para trocar pelo botão com o nome, no canto superior direito. A escolha fica em `people/<id da pessoa>` no banco e vale também para as propostas que ela já tinha criado.
 - **Minhas propostas:** alterna entre *Minhas* e *Toda a equipe*.
 - **Painel da equipe:** resumo por pessoa (quantidade de propostas, valor em negociação e aprovado, última atividade) e a tabela de todas as propostas, com filtros por pessoa, produto e status.
 - **Propostas antigas:** as que estavam só no navegador aparecem num aviso *Enviar para a equipe*, que as copia para o banco compartilhado junto com cases, executivos e configurações.
