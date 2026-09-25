@@ -9,6 +9,8 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"Plus Jakarta Sans Variable"', 'system-ui', 'sans-serif'],
+        // Fonte das propostas (slides e PDF)
+        slide: ['"Roboto Variable"', 'Roboto', 'Arial', 'sans-serif'],
       },
       colors: {
         brand: {

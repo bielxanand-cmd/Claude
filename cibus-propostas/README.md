@@ -63,7 +63,7 @@ Trocar o produto no campo *Produto* muda na hora as cores e a unidade de todos o
 
 ## Como o PDF é gerado
 
-Cada página é um componente de layout fixo de **1280×720** (`src/components/slides/slides.tsx`). A mesma página aparece na prévia, no editor, no modo apresentação e no PDF. Na exportação, cada slide é renderizado fora da tela, capturado a 3200×1800 e colocado em uma página 16:9 do jsPDF. O botão "Simular ROI" e os contatos do encerramento continuam clicáveis no PDF.
+Cada página é um componente de layout fixo de **1280×720**, com a fonte **Roboto** (o sistema usa Plus Jakarta Sans) (`src/components/slides/slides.tsx`). A mesma página aparece na prévia, no editor, no modo apresentação e no PDF. Na exportação, cada slide é renderizado fora da tela, capturado a 3200×1800 e colocado em uma página 16:9 do jsPDF. O botão "Simular ROI" e os contatos do encerramento continuam clicáveis no PDF.
 
 - Os textos longos passam pelo `FitBox`, que reduz a fonte até um tamanho mínimo legível. Se ainda não couber, a página mostra um aviso no editor e na revisão.
 - Listas longas (desafios, oportunidades, itens sob consumo) são limitadas ao que cabe no layout, e o formulário avisa quando esse limite é ultrapassado.

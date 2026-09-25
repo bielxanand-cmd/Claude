@@ -165,7 +165,7 @@ export function Slide({ children, className, style }: { children: ReactNode; cla
   const theme = useContext(SlideThemeContext)
   return (
     <div
-      className={cn('relative overflow-hidden font-sans text-ink antialiased', className)}
+      className={cn('relative overflow-hidden font-slide text-ink antialiased', className)}
       style={{ width: SLIDE_W, height: SLIDE_H, ...(theme?.vars as CSSProperties), ...style }}
       data-slide
     >
