@@ -480,10 +480,11 @@ function SettingsAdmin() {
   useEffect(() => setS(settings), [settings])
   const d = s.defaults
   const setD = (patch: Partial<AppSettings['defaults']>) => setS({ ...s, defaults: { ...d, ...patch } })
+  const setP = (patch: Partial<AppSettings['partner']>) => setS({ ...s, partner: { ...s.partner, ...patch } })
 
   return (
     <div className="space-y-5">
-      <Section title="Identidade visual">
+      <Section title="Identidade visual" description="Logo e cores do Cibus Fuel (e do sistema).">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Logo Cibus (fundo claro)" hint="Em branco usa o logotipo padrão.">
             <ImageUpload value={s.logo} onChange={(v) => setS({ ...s, logo: v })} aspect="h-28" fit="contain" label="Enviar logo" />
@@ -506,6 +507,44 @@ function SettingsAdmin() {
           ))}
         </div>
       </Section>
+      <Section title="Cibus Partner" description="Identidade e padrões das propostas do Cibus Partner (lojas). Os campos acima e abaixo valem para o Cibus Fuel.">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {(
+            [
+              ['brandColor', 'Cor principal (verde)'],
+              ['inkColor', 'Cor escura (preto)'],
+            ] as const
+          ).map(([k, label]) => (
+            <Field key={k} label={label}>
+              <div className="flex gap-2">
+                <input type="color" value={s.partner[k]} onChange={(ev) => setP({ [k]: ev.target.value })} className="h-10 w-12 cursor-pointer rounded-md border bg-white p-1" aria-label={label} />
+                <Input value={s.partner[k]} onChange={(ev) => setP({ [k]: ev.target.value })} className="font-mono uppercase" />
+              </div>
+            </Field>
+          ))}
+          <Field label="Título da capa" className="sm:col-span-2" hint="Use *asteriscos* para destacar na cor principal.">
+            <Input value={s.partner.coverTitle} onChange={(ev) => setP({ coverTitle: ev.target.value })} />
+          </Field>
+          <Field label="Subtítulo da capa">
+            <Input value={s.partner.coverSubtitle} onChange={(ev) => setP({ coverSubtitle: ev.target.value })} />
+          </Field>
+          <Field label="Título da proposta">
+            <Input value={s.partner.proposalTitle} onChange={(ev) => setP({ proposalTitle: ev.target.value })} />
+          </Field>
+          <Field label="Título do encerramento" className="sm:col-span-2">
+            <Input value={s.partner.closingTitle} onChange={(ev) => setP({ closingTitle: ev.target.value })} />
+          </Field>
+          <Field label="Mensalidade por loja">
+            <MoneyInput value={s.partner.monthlyPrice} onChange={(n) => setP({ monthlyPrice: n })} />
+          </Field>
+          <Field label="Implantação · 1ª loja">
+            <MoneyInput value={s.partner.implementationFirst} onChange={(n) => setP({ implementationFirst: n })} />
+          </Field>
+          <Field label="Implantação · cada loja adicional">
+            <MoneyInput value={s.partner.implementationAdditional} onChange={(n) => setP({ implementationAdditional: n })} />
+          </Field>
+        </div>
+      </Section>
       <Section title="Contato e links">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="URL da calculadora de ROI" className="sm:col-span-2" hint="Aberta pelo botão “Simular ROI” (inclusive no PDF).">
@@ -522,7 +561,7 @@ function SettingsAdmin() {
           </Field>
         </div>
       </Section>
-      <Section title="Padrões de novas propostas">
+      <Section title="Padrões de novas propostas · Cibus Fuel">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Título da proposta">
             <Input value={d.proposalTitle} onChange={(ev) => setD({ proposalTitle: ev.target.value })} />

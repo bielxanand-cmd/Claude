@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAppData } from '@/lib/app-data'
 import { calcInvestment, discountAmount, discountForFinal, formatBRL, formatPercent, type InvestmentCalc } from '@/lib/pricing'
 import { itemFromModule, libraryItems, uid } from '@/lib/templates'
+import { profileOf } from '@/lib/products'
 import { MODULE_CATEGORIES, type Discount } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { SectionToggle, type FormProps } from './client-forms'
@@ -55,7 +56,8 @@ function Line({ label, value, strong, accent, muted }: { label: string; value: s
   )
 }
 
-export function FinancialSummary({ calc, className }: { calc: InvestmentCalc; className?: string }) {
+export function FinancialSummary({ calc, className, product }: { calc: InvestmentCalc; className?: string; product?: string }) {
+  const u = profileOf(product).unit
   return (
     <div className={cn('overflow-hidden rounded-xl bg-ink text-white shadow-lift', className)}>
       <div className="p-5">
@@ -63,10 +65,10 @@ export function FinancialSummary({ calc, className }: { calc: InvestmentCalc; cl
         <div className="mt-3 flex items-end gap-1.5">
           <span className="text-4xl font-extrabold tracking-tight text-brand">{formatBRL(calc.monthly.final)}</span>
         </div>
-        <div className="text-sm text-white/70">/mês por posto</div>
+        <div className="text-sm text-white/70">/mês {u.per}</div>
         {calc.stations > 1 && (
           <div className="mt-1 text-sm font-semibold text-white">
-            {formatBRL(calc.monthlyNetwork.final)}/mês <span className="font-normal text-white/60">· rede com {calc.stations} postos</span>
+            {formatBRL(calc.monthlyNetwork.final)}/mês <span className="font-normal text-white/60">· rede com {calc.stations} {u.many}</span>
           </div>
         )}
       </div>
@@ -232,11 +234,12 @@ export function InvestmentForm({ p, update, showSummary = true }: FormProps & { 
   const inv = p.investment
   const calc = calcInvestment(inv)
   const impl = calc.implementation
+  const u = profileOf(p.meta.product).unit
 
   return (
     <>
-      <Section title="Investimento por posto" description="Mensalidade por posto e implantação escalonada. Tudo é calculado automaticamente." action={<SectionToggle p={p} update={update} k="investment" />}>
-        <Field label="Quantidade de postos" htmlFor="inv-stations">
+      <Section title={`Investimento ${u.per}`} description={`Mensalidade ${u.per} e implantação escalonada. Tudo é calculado automaticamente.`} action={<SectionToggle p={p} update={update} k="investment" />}>
+        <Field label={`Quantidade de ${u.many}`} htmlFor="inv-stations">
           <div className="flex flex-wrap items-center gap-2">
             {QUICK_STATIONS.map((n) => (
               <button
@@ -258,31 +261,31 @@ export function InvestmentForm({ p, update, showSummary = true }: FormProps & { 
 
       <IncludedItems p={p} update={update} />
 
-      <Section title="Mensalidade" description="Valor cobrado por posto, por mês.">
+      <Section title="Mensalidade" description={`Valor cobrado ${u.per}, por mês.`}>
         <div className="grid gap-4 @xl:grid-cols-3">
-          <Field label="Valor de tabela por posto" htmlFor="mp">
+          <Field label={`Valor de tabela ${u.per}`} htmlFor="mp">
             <MoneyInput id="mp" value={inv.monthlyPrice} onChange={(n) => update((d) => void (d.investment.monthlyPrice = n))} />
           </Field>
           <Field label="Desconto" htmlFor="md">
             <DiscountInput id="md" base={calc.monthly.table} value={inv.monthlyDiscount} onChange={(v) => update((d) => void (d.investment.monthlyDiscount = v))} />
           </Field>
-          <Field label="Valor final por posto" htmlFor="mf" hint="Digite o valor fechado e o desconto é calculado.">
+          <Field label={`Valor final ${u.per}`} htmlFor="mf" hint="Digite o valor fechado e o desconto é calculado.">
             <MoneyInput id="mf" value={calc.monthly.final} onChange={(n) => update((d) => void (d.investment.monthlyDiscount = discountForFinal(calc.monthly.table, n)))} />
           </Field>
         </div>
         <div className="grid gap-3 rounded-lg bg-mist p-4 @2xl:grid-cols-2">
           <div>
-            <Line label="Valor de tabela" value={`${formatBRL(calc.monthly.table)}/posto`} />
+            <Line label="Valor de tabela" value={`${formatBRL(calc.monthly.table)}/${u.one}`} />
             <Line label="Desconto" value={`- ${formatBRL(calc.monthly.discount)}`} muted />
             <div className="my-1 h-px bg-border" />
-            <Line label="Investimento mensal" value={`${formatBRL(calc.monthly.final)}/posto/mês`} strong accent />
+            <Line label="Investimento mensal" value={`${formatBRL(calc.monthly.final)}/${u.one}/mês`} strong accent />
           </div>
           {calc.stations > 1 && (
             <div className="rounded-md border bg-white p-3 @2xl:self-center">
               <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total da rede</div>
               <div className="text-xl font-extrabold tabular-nums text-ink">{formatBRL(calc.monthlyNetwork.final)} / mês</div>
               <div className="text-xs text-muted-foreground">
-                {calc.stations} postos × {formatBRL(calc.monthly.final)}
+                {calc.stations} {u.many} × {formatBRL(calc.monthly.final)}
               </div>
             </div>
           )}
@@ -292,7 +295,7 @@ export function InvestmentForm({ p, update, showSummary = true }: FormProps & { 
         </Field>
       </Section>
 
-      <Section title="Implantação" description="Valor único: um valor para o primeiro posto e outro para cada posto adicional.">
+      <Section title="Implantação" description={`Valor único: um valor para a primeira unidade (${u.first}) e outro para cada ${u.additional}.`}>
         <label className="flex cursor-pointer items-center gap-3 rounded-lg border bg-mist/60 p-3">
           <Checkbox checked={inv.implementationFree} onCheckedChange={(v) => update((d) => void (d.investment.implementationFree = !!v))} aria-label="Implantação gratuita" />
           <span className="text-sm font-semibold">Implantação gratuita</span>
@@ -300,16 +303,16 @@ export function InvestmentForm({ p, update, showSummary = true }: FormProps & { 
         </label>
         <div className={cn('space-y-4', inv.implementationFree && 'pointer-events-none opacity-50')}>
           <div className="grid gap-4 @xl:grid-cols-2">
-            <Field label="1º posto" htmlFor="if1">
+            <Field label={u.first} htmlFor="if1">
               <MoneyInput id="if1" value={inv.implementationFirst} onChange={(n) => update((d) => void (d.investment.implementationFirst = n))} />
             </Field>
-            <Field label="Cada posto adicional" htmlFor="ifa">
+            <Field label={`Cada ${u.additional}`} htmlFor="ifa">
               <MoneyInput id="ifa" value={inv.implementationAdditional} onChange={(n) => update((d) => void (d.investment.implementationAdditional = n))} />
             </Field>
           </div>
           <div className="rounded-lg bg-mist p-4">
-            <Line label="1º posto" value={formatBRL(impl.first)} />
-            {impl.additionalStations > 0 && <Line label={`${impl.additionalStations} postos adicionais × ${formatBRL(impl.additional)}`} value={formatBRL(impl.additional * impl.additionalStations)} />}
+            <Line label={u.first} value={formatBRL(impl.first)} />
+            {impl.additionalStations > 0 && <Line label={`${impl.additionalStations} ${impl.additionalStations === 1 ? u.additional : u.additionalMany} × ${formatBRL(impl.additional)}`} value={formatBRL(impl.additional * impl.additionalStations)} />}
             <div className="my-1 h-px bg-border" />
             <Line label="Implantação de tabela" value={formatBRL(impl.table)} strong />
           </div>
@@ -397,7 +400,7 @@ export function InvestmentForm({ p, update, showSummary = true }: FormProps & { 
         )}
       </Section>
 
-      {showSummary && <FinancialSummary calc={calc} />}
+      {showSummary && <FinancialSummary calc={calc} product={p.meta.product} />}
     </>
   )
 }

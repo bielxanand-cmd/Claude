@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
-import { ArrowRight, BadgeCheck, Check, Globe, Mail, MapPin, MessageCircle, Phone, Sparkles } from 'lucide-react'
+import { ArrowRight, BadgeCheck, Check, Gift, Globe, Mail, MapPin, MessageCircle, Phone, Sparkles, Star, Store } from 'lucide-react'
 import appMockup from '@/assets/brand/app-cibus.webp'
 import { calcInvestment, formatBRL, formatBRLShort, formatPercent, formatUnitPrice } from '@/lib/pricing'
 import type { AppSettings, CaseDef, ModuleDef, Proposal, SlideKey } from '@/lib/types'
 import { cn, formatDateShort, initials, textLength } from '@/lib/utils'
-import { CibusLogo, FitBox, Highlight, RichHtml, Slide, SlideFooter, SlideHeader, SlideLink } from './primitives'
+import { productKeyOf, productThemeVars, profileOf } from '@/lib/products'
+import { CibusLogo, FitBox, Highlight, RichHtml, Slide, SlideFooter, SlideHeader, SlideLink, SlideThemeContext } from './primitives'
 
 export interface DeckContext {
   settings: AppSettings
@@ -118,11 +119,15 @@ export function CoverSlide({ p, ctx }: Common) {
               className="absolute bottom-10 left-8 h-40 w-40 opacity-40"
               style={{ backgroundImage: 'radial-gradient(rgb(255 255 255 / 0.35) 1.5px, transparent 1.5px)', backgroundSize: '16px 16px' }}
             />
-            <img
-              src={appMockup}
-              alt=""
-              className="absolute left-1/2 top-[44px] h-[640px] w-auto max-w-none -translate-x-1/2 drop-shadow-[0_30px_40px_rgba(0,0,0,0.55)]"
-            />
+            {productKeyOf(p.meta.product) === 'partner' ? (
+              <PartnerCoverArt />
+            ) : (
+              <img
+                src={appMockup}
+                alt=""
+                className="absolute left-1/2 top-[44px] h-[640px] w-auto max-w-none -translate-x-1/2 drop-shadow-[0_30px_40px_rgba(0,0,0,0.55)]"
+              />
+            )}
           </>
         )}
       </div>
@@ -149,6 +154,65 @@ export function CoverSlide({ p, ctx }: Common) {
         <div className="text-[14px] font-semibold text-white/60">{ctx.settings.site}</div>
       </div>
     </Slide>
+  )
+}
+
+/** Arte padrão da capa do Cibus Partner: o balcão premiando quem indica a compra. */
+function PartnerCoverArt() {
+  return (
+    <>
+      {/* card principal */}
+      <div className="absolute left-1/2 top-[118px] w-[318px] -translate-x-1/2 rounded-[28px] bg-white p-6 shadow-[0_40px_70px_-20px_rgba(0,0,0,0.7)]">
+        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
+          <span className="flex items-center gap-1.5">
+            <Store className="h-3.5 w-3.5 text-brand" /> Balcão · Loja Centro
+          </span>
+          <span>Hoje</span>
+        </div>
+        <div className="mt-5 flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand text-[17px] font-extrabold text-white">CM</div>
+          <div>
+            <div className="text-[16px] font-extrabold text-ink">Carlos Mendes</div>
+            <div className="text-[12.5px] font-semibold text-slate-400">Parceiro · indicou 3 compras</div>
+          </div>
+        </div>
+        <div className="mt-5 rounded-2xl bg-brand/10 px-5 py-4">
+          <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-brand">Pontos creditados</div>
+          <div className="mt-1 text-[40px] font-extrabold leading-none text-ink" style={{ letterSpacing: '-0.04em' }}>
+            +350
+          </div>
+        </div>
+        <div className="mt-5">
+          <div className="flex justify-between text-[12px] font-semibold text-slate-500">
+            <span>Próximo prêmio</span>
+            <span className="text-ink">2.800 / 3.500</span>
+          </div>
+          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full w-[80%] rounded-full bg-brand" />
+          </div>
+        </div>
+      </div>
+      {/* flutuantes */}
+      <div className="absolute right-6 top-[62px] flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_20px_40px_-12px_rgba(0,0,0,0.6)]">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-white">
+          <Gift className="h-[18px] w-[18px]" />
+        </span>
+        <div>
+          <div className="text-[13px] font-extrabold text-ink">Prêmio resgatado</div>
+          <div className="text-[11px] font-semibold text-slate-400">Vale-compra R$ 100</div>
+        </div>
+      </div>
+      <div className="absolute bottom-[70px] left-7 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_20px_40px_-12px_rgba(0,0,0,0.6)]">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink text-brand">
+          <Star className="h-[18px] w-[18px] fill-current" />
+        </span>
+        <div>
+          <div className="text-[13px] font-extrabold text-ink">Parceiro Ouro</div>
+          <div className="text-[11px] font-semibold text-slate-400">Ranking do mês · 1º lugar</div>
+        </div>
+      </div>
+      <div className="absolute bottom-[150px] right-7 rounded-full bg-brand px-4 py-2 text-[13px] font-extrabold text-white shadow-lg">+ 18% de indicações</div>
+    </>
   )
 }
 
@@ -368,6 +432,7 @@ export function InvestmentSlide(c: Common) {
   const inv = p.investment
   const calc = calcInvestment(inv)
   const items = inv.items.filter((i) => i.included && i.name.trim())
+  const u = profileOf(p.meta.product).unit
   const hasDiscount = calc.monthly.discount > 0.009
   const consumption = inv.consumption.filter((x) => x.name.trim())
   const impl = calc.implementation
@@ -377,8 +442,8 @@ export function InvestmentSlide(c: Common) {
       <SlideHeader
         index={c.index}
         kicker="Investimentos"
-        title="Investimento *por posto*"
-        subtitle={calc.stations > 1 ? `Condição para a rede com ${calc.stations} postos` : p.meta.product ? `${p.meta.product}` : undefined}
+        title={`Investimento *${u.per}*`}
+        subtitle={calc.stations > 1 ? `Condição para a rede com ${calc.stations} ${u.many}` : p.meta.product ? `${p.meta.product}` : undefined}
       />
 
       {/* Card escuro principal */}
@@ -404,10 +469,10 @@ export function InvestmentSlide(c: Common) {
               {formatBRLShort(calc.monthly.final)}
             </span>
           </div>
-          <div className="mt-2 text-[17px] font-semibold text-white/80">/mês por posto</div>
+          <div className="mt-2 text-[17px] font-semibold text-white/80">/mês {u.per}</div>
           {calc.stations > 1 && (
             <div className="mt-4 border-t border-white/10 pt-4 text-[15px] font-semibold text-white/70">
-              <span className="text-white">{formatBRL(calc.monthlyNetwork.final)}</span>/mês · total da rede ({calc.stations} postos)
+              <span className="text-white">{formatBRL(calc.monthlyNetwork.final)}</span>/mês · total da rede ({calc.stations} {u.many})
             </div>
           )}
           {inv.note && (
@@ -454,7 +519,7 @@ export function InvestmentSlide(c: Common) {
               {impl.free
                 ? 'Setup completo sem custo'
                 : impl.additionalStations > 0
-                  ? `${formatBRLShort(impl.first)} no 1º posto + ${impl.additionalStations} × ${formatBRLShort(impl.additional)}`
+                  ? `${formatBRLShort(impl.first)} ${u.first.startsWith('1ª') ? 'na' : 'no'} ${u.first} + ${impl.additionalStations} × ${formatBRLShort(impl.additional)}`
                   : 'Pagamento único'}
             </div>
           </div>
@@ -787,6 +852,12 @@ export function ClosingSlide(c: Common) {
  * Montagem do deck
  * ======================================================================= */
 
+/** Aplica as cores e a marca do produto da proposta (Fuel / Partner) aos slides. */
+export function ThemedSlide({ p, ctx, children }: { p: Proposal; ctx: Pick<DeckContext, 'settings'>; children: ReactNode }) {
+  const key = productKeyOf(p.meta.product)
+  return <SlideThemeContext.Provider value={{ productKey: key, vars: productThemeVars(ctx.settings, key) }}>{children}</SlideThemeContext.Provider>
+}
+
 export function selectedCases(p: Proposal, ctx: DeckContext): CaseDef[] {
   return p.cases.caseIds.map((id) => ctx.cases.find((c) => c.id === id)).filter((c): c is CaseDef => !!c)
 }
@@ -823,6 +894,10 @@ export function buildDeck(p: Proposal, ctx: DeckContext): DeckSlide[] {
     id: s.id,
     key: s.key,
     label: s.label,
-    element: s.render({ p, ctx, page: i + 1, total, index: sectionOrder.indexOf(s.key) + 1 }),
+    element: (
+      <ThemedSlide p={p} ctx={ctx}>
+        {s.render({ p, ctx, page: i + 1, total, index: sectionOrder.indexOf(s.key) + 1 })}
+      </ThemedSlide>
+    ),
   }))
 }

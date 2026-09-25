@@ -33,7 +33,12 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     ])
     setState({
       ready: true,
-      settings: { ...DEFAULT_SETTINGS, ...settings, defaults: { ...DEFAULT_SETTINGS.defaults, ...settings?.defaults } },
+      settings: {
+        ...DEFAULT_SETTINGS,
+        ...settings,
+        defaults: { ...DEFAULT_SETTINGS.defaults, ...settings?.defaults },
+        partner: { ...DEFAULT_SETTINGS.partner, ...settings?.partner },
+      },
       modules: [...modules].sort((a, b) => a.sortOrder - b.sortOrder),
       cases,
       executives,

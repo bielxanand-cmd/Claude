@@ -1,3 +1,4 @@
+import { profileOf } from './products'
 import { calcInvestment } from './pricing'
 import type { Proposal } from './types'
 import { textLength } from './utils'
@@ -55,7 +56,7 @@ export function validateProposal(p: Proposal): CheckItem[] {
   }
 
   if (s.investment) {
-    const missing = [calc.monthly.table <= 0 && 'informe a mensalidade por posto', calc.includedCount === 0 && 'marque o que está incluso'].filter(Boolean)
+    const missing = [calc.monthly.table <= 0 && `informe a mensalidade ${profileOf(p.meta.product).unit.per}`, calc.includedCount === 0 && 'marque o que está incluso'].filter(Boolean)
     items.push({
       step: 'investment',
       label: 'Investimentos',

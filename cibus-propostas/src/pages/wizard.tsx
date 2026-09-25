@@ -160,7 +160,7 @@ export default function Wizard() {
               <OverflowWarnings items={warnings} />
               <div className="scrollbar-thin max-h-[calc(100vh-150px)] space-y-4 overflow-y-auto pb-6 pr-1">
                 <Preview slides={stepSlides} makeReporter={makeReporter} hidden={!!hiddenSection} />
-                {step === 'investment' && <FinancialSummary calc={calcInvestment(p.investment)} />}
+                {step === 'investment' && <FinancialSummary calc={calcInvestment(p.investment)} product={p.meta.product} />}
               </div>
             </div>
           </aside>

@@ -216,4 +216,19 @@ export interface AppSettings {
     note: string
     closingTitle: string
   }
+  /** Identidade e padrões do Cibus Partner (o Fuel usa os campos acima) */
+  partner: ProductSettings
+}
+
+/** Padrões que variam por produto */
+export interface ProductSettings {
+  brandColor: string
+  inkColor: string
+  coverTitle: string
+  coverSubtitle: string
+  proposalTitle: string
+  closingTitle: string
+  monthlyPrice: number
+  implementationFirst: number
+  implementationAdditional: number
 }

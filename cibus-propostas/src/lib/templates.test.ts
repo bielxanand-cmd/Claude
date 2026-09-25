@@ -29,3 +29,26 @@ describe('normalizeProposal', () => {
     expect('modules' in p.investment).toBe(false)
   })
 })
+
+describe('produtos', () => {
+  const ctx = { settings: DEFAULT_SETTINGS, modules: SEED_MODULES, executive: null }
+  it('nova proposta Partner usa textos e unidade do Partner', async () => {
+    const { TEMPLATES } = await import('./templates')
+    const p = TEMPLATES[0]!.build({ ...ctx, product: 'partner' })
+    expect(p.meta.product).toBe('Cibus Partner')
+    expect(p.cover.title).toBe(DEFAULT_SETTINGS.partner.coverTitle)
+    expect(p.client.segment).toBe('Loja')
+  })
+  it('trocar o produto troca o que ainda está no padrão e mantém o que foi editado', async () => {
+    const { TEMPLATES, applyProductDefaults } = await import('./templates')
+    const fuel = TEMPLATES[0]!.build(ctx)
+    const edited = { ...fuel, closing: { ...fuel.closing, title: 'Título do vendedor' } }
+    const partner = applyProductDefaults(edited, 'Cibus Partner', DEFAULT_SETTINGS)
+    expect(partner.meta.product).toBe('Cibus Partner')
+    expect(partner.cover.title).toBe(DEFAULT_SETTINGS.partner.coverTitle)
+    expect(partner.meta.title).toBe(DEFAULT_SETTINGS.partner.proposalTitle)
+    expect(partner.closing.title).toBe('Título do vendedor')
+    const back = applyProductDefaults(partner, 'Cibus Fuel', DEFAULT_SETTINGS)
+    expect(back.cover.title).toBe(DEFAULT_SETTINGS.defaults.coverTitle)
+  })
+})

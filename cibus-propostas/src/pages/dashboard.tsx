@@ -6,7 +6,6 @@ import {
   Eye,
   FileDown,
   FileText,
-  LayoutTemplate,
   Loader2,
   MoreHorizontal,
   PanelsTopLeft,
@@ -30,10 +29,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SlideFrame } from '@/components/slides/frame'
-import { CoverSlide } from '@/components/slides/slides'
+import { CoverSlide, ThemedSlide } from '@/components/slides/slides'
 import { usePdfExport } from '@/hooks/use-pdf'
 import { useAppData } from '@/lib/app-data'
 import { calcInvestment, formatBRL } from '@/lib/pricing'
+import { PRODUCT_PROFILES, productSettings, profileOf, unitCount, type ProductKey } from '@/lib/products'
 import { repo } from '@/lib/repo'
 import { TEMPLATES, duplicateProposal, normalizeProposal } from '@/lib/templates'
 import { STATUS_LABEL, type Proposal, type ProposalStatus } from '@/lib/types'
@@ -110,10 +110,10 @@ export default function Dashboard() {
     }
   }, [list])
 
-  const createFrom = async (templateId: string) => {
+  const createFrom = async (templateId: string, product: ProductKey) => {
     const t = TEMPLATES.find((x) => x.id === templateId)!
     const exec = executives.find((e) => e.active) ?? null
-    const p = t.build({ settings, modules, executive: exec })
+    const p = t.build({ settings, modules, executive: exec, product })
     await repo.saveProposal(p)
     nav(`/propostas/${p.id}`)
   }
@@ -220,7 +220,9 @@ export default function Dashboard() {
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="hidden w-[92px] shrink-0 overflow-hidden rounded-md border sm:block">
                       <SlideFrame rounded={false}>
-                        <CoverSlide p={p} ctx={data} page={1} total={1} index={0} />
+                        <ThemedSlide p={p} ctx={data}>
+                          <CoverSlide p={p} ctx={data} page={1} total={1} index={0} />
+                        </ThemedSlide>
                       </SlideFrame>
                     </div>
                     <div className="min-w-0">
@@ -238,7 +240,7 @@ export default function Dashboard() {
                   <div className="max-lg:col-span-2 max-lg:flex max-lg:gap-3 max-lg:text-sm">
                     <span className="font-bold tabular-nums text-ink">{formatBRL(calc.monthlyNetwork.final)}</span>
                     <span className="block text-xs text-muted-foreground max-lg:inline">
-                      {calc.stations > 1 ? `${calc.stations} postos` : 'por mês'}
+                      {calc.stations > 1 ? unitCount(calc.stations, p.meta.product) : 'por mês'}
                     </span>
                     <span className="text-xs text-muted-foreground lg:hidden">· {p.meta.executive.name} · {relativeTime(p.updatedAt)}</span>
                   </div>
@@ -390,42 +392,62 @@ function NewProposalDialog({
   open: boolean
   onOpenChange: (o: boolean) => void
   proposals: Proposal[]
-  onTemplate: (id: string) => Promise<void>
+  onTemplate: (id: string, product: ProductKey) => Promise<void>
   onDuplicate: (p: Proposal) => void
 }) {
-  const [busy, setBusy] = useState(false)
+  const data = useAppData()
+  const [busy, setBusy] = useState<ProductKey | null>(null)
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl">Nova proposta</DialogTitle>
-          <DialogDescription>Comece por um template ou reaproveite uma proposta anterior.</DialogDescription>
+          <DialogDescription>Escolha o produto: cores, capa e textos da proposta seguem o produto. Ou reaproveite uma proposta anterior.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
-          {TEMPLATES.map((t) => (
-            <button
-              key={t.id}
-              disabled={busy}
-              onClick={async () => {
-                setBusy(true)
-                try {
-                  await onTemplate(t.id)
-                } finally {
-                  setBusy(false)
-                }
-              }}
-              className="group flex w-full items-center gap-4 rounded-xl border-2 border-brand/30 bg-brand/[0.03] p-4 text-left transition-all hover:border-brand hover:bg-brand/[0.06]"
-            >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand text-white">
-                <LayoutTemplate className="h-6 w-6" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="font-bold text-ink">{t.name}</div>
-                <div className="text-sm text-muted-foreground">{t.description}</div>
-              </div>
-              {busy ? <Loader2 className="h-5 w-5 animate-spin text-brand" /> : <ArrowRight className="h-5 w-5 text-brand transition-transform group-hover:translate-x-1" />}
-            </button>
-          ))}
+        <div className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Escolha o produto</div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(Object.keys(PRODUCT_PROFILES) as ProductKey[]).map((key) => {
+            const profile = PRODUCT_PROFILES[key]
+            const color = productSettings(data.settings, key).brandColor
+            const sample = TEMPLATES[0]!.build({ settings: data.settings, modules: data.modules, executive: null, product: key })
+            return (
+              <button
+                key={key}
+                disabled={busy !== null}
+                onClick={async () => {
+                  setBusy(key)
+                  try {
+                    await onTemplate(TEMPLATES[0]!.id, key)
+                  } finally {
+                    setBusy(null)
+                  }
+                }}
+                style={{ borderColor: `${color}55` }}
+                className="group overflow-hidden rounded-xl border-2 bg-white text-left transition-all hover:-translate-y-0.5 hover:shadow-lift"
+                aria-label={`Nova proposta ${profile.name}`}
+              >
+                <div className="pointer-events-none border-b">
+                  <SlideFrame rounded={false}>
+                    <ThemedSlide p={sample} ctx={data}>
+                      <CoverSlide p={{ ...sample, client: { ...sample.client, company: 'Seu cliente' } }} ctx={data} page={1} total={1} index={0} />
+                    </ThemedSlide>
+                  </SlideFrame>
+                </div>
+                <div className="flex items-center gap-3 p-4">
+                  <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: color }} />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-ink">{profile.name}</div>
+                    <div className="text-xs text-muted-foreground">{profile.description}</div>
+                  </div>
+                  {busy === key ? (
+                    <Loader2 className="h-5 w-5 animate-spin" style={{ color }} />
+                  ) : (
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" style={{ color }} />
+                  )}
+                </div>
+              </button>
+            )
+          })}
         </div>
         {proposals.length > 0 && (
           <div>
@@ -444,7 +466,7 @@ function NewProposalDialog({
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold text-ink">{p.client.company || 'Sem empresa'}</div>
                     <div className="truncate text-xs text-muted-foreground">
-                      {p.meta.product} · {formatBRL(calcInvestment(p.investment).monthly.final)}/posto · {formatDateBR(p.meta.date)}
+                      {p.meta.product} · {formatBRL(calcInvestment(p.investment).monthly.final)}/{profileOf(p.meta.product).unit.one} · {formatDateBR(p.meta.date)}
                     </div>
                   </div>
                   <StatusBadge status={p.status} />

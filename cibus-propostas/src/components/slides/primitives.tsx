@@ -18,6 +18,13 @@ export const OverflowContext = createContext<OverflowReport | null>(null)
 /** Contexto do link clicável (slides no app x PDF). */
 export const SlideModeContext = createContext<'screen' | 'export'>('screen')
 
+/** Tema do produto (Fuel / Partner) aplicado a cada slide. */
+export interface SlideTheme {
+  vars: Record<string, string>
+  productKey: 'fuel' | 'partner'
+}
+export const SlideThemeContext = createContext<SlideTheme | null>(null)
+
 /**
  * Caixa que reduz a fonte automaticamente até o conteúdo caber.
  * Se ainda assim não couber no tamanho mínimo, reporta o excesso.
@@ -103,16 +110,33 @@ export const stripMarks = (s: string) => s.replace(/\*/g, '')
 /* ------------------------------------------------------------------------- */
 
 /** Logo Cibus: o enviado nas configurações ou o oficial (versão escura em fundo claro, branca em fundo escuro). */
-export function CibusLogo({ src, dark, height = 30 }: { src?: string; dark?: boolean; height?: number }) {
-  if (src) return <img src={src} alt="Cibus" style={{ height }} className="w-auto object-contain" />
-  return <img src={dark ? logoWhite : logoInk} alt="Cibus" style={{ height: Math.round(height * 0.9) }} className="w-auto" />
+export function CibusLogo({ src, dark, height = 30, showProduct = true }: { src?: string; dark?: boolean; height?: number; showProduct?: boolean }) {
+  const theme = useContext(SlideThemeContext)
+  const logo = src ? (
+    <img src={src} alt="Cibus" style={{ height }} className="w-auto object-contain" />
+  ) : (
+    <img src={dark ? logoWhite : logoInk} alt="Cibus" style={{ height: Math.round(height * 0.9) }} className="w-auto" />
+  )
+  if (!showProduct || theme?.productKey !== 'partner') return logo
+  return (
+    <div className="flex items-center" style={{ gap: height * 0.3 }}>
+      {logo}
+      <span
+        className="rounded-full bg-brand font-extrabold uppercase text-white"
+        style={{ fontSize: Math.max(8, height * 0.36), padding: `${height * 0.1}px ${height * 0.28}px`, letterSpacing: '0.14em' }}
+      >
+        Partner
+      </span>
+    </div>
+  )
 }
 
 export function Slide({ children, className, style }: { children: ReactNode; className?: string; style?: CSSProperties }) {
+  const theme = useContext(SlideThemeContext)
   return (
     <div
       className={cn('relative overflow-hidden font-sans text-ink antialiased', className)}
-      style={{ width: SLIDE_W, height: SLIDE_H, ...style }}
+      style={{ width: SLIDE_W, height: SLIDE_H, ...(theme?.vars as CSSProperties), ...style }}
       data-slide
     >
       {children}

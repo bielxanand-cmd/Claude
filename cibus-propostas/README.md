@@ -39,6 +39,19 @@ Com o Supabase configurado, o app exige login e todas as tabelas ficam restritas
 
 A proposta inteira é gravada em uma única transação pela função `save_proposal(jsonb)`. `supabase/seed.sql` é gerado a partir de `src/data/seed.ts` com `npx vite-node scripts/gen-seed-sql.ts`.
 
+## Produtos: Cibus Fuel e Cibus Partner
+
+Ao criar uma nova proposta, o vendedor escolhe o produto. O produto define:
+
+| | Cibus Fuel | Cibus Partner |
+| --- | --- | --- |
+| Cores | laranja `#FF5C00` + azul-escuro `#101828` | verde `#00B35F` + preto `#111111` |
+| Capa | "Transforme cada compra em um novo motivo para voltar" + app Cibus | "Fidelize que influencia sua compra no Balcão" + arte do balcão |
+| Unidade | posto (mensalidade por posto, "1º posto") | loja (mensalidade por loja, "1ª loja") |
+| Logo | Cibus | Cibus + selo "Partner" |
+
+Trocar o produto no campo *Produto* muda na hora as cores e a unidade de todos os slides, e troca os textos e preços que ainda estão no padrão do produto anterior. O que o vendedor editou é mantido. Cores, textos e preços de cada produto são configurados em *Configurações › Geral* (`src/lib/products.ts`).
+
 ## Fluxo
 
 1. **Minhas propostas:** lista com cliente, empresa, executivo, data, valor mensal, status e última atualização. Ações: editar, editor visual, visualizar, duplicar, gerar PDF, mudar status e excluir.

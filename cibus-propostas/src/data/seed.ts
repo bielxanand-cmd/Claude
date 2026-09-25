@@ -124,4 +124,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
     note: 'Sem taxa por transação.',
     closingTitle: 'Vamos transformar cada compra em um *novo motivo para voltar?*',
   },
+  partner: {
+    brandColor: '#00B35F',
+    inkColor: '#111111',
+    coverTitle: 'Fidelize que influencia sua compra *no Balcão*',
+    coverSubtitle: 'Proposta Comercial Cibus Partner',
+    proposalTitle: 'Proposta Comercial Cibus Partner',
+    closingTitle: 'Vamos fidelizar quem influencia a compra *no seu balcão?*',
+    monthlyPrice: 540,
+    implementationFirst: 6000,
+    implementationAdditional: 600,
+  },
 }

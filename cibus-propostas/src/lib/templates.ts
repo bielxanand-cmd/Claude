@@ -1,3 +1,4 @@
+import { PRODUCT_PROFILES, productKeyOf, productSettings, type ProductKey } from './products'
 import { MODULE_CATEGORIES, type AppSettings, type Executive, type IncludedItem, type ModuleDef, type Proposal, type SlideKey } from './types'
 
 export const uid = () => crypto.randomUUID()
@@ -27,6 +28,8 @@ export interface TemplateContext {
   settings: AppSettings
   modules: ModuleDef[]
   executive: Executive | null
+  /** Produto da nova proposta (padrão: Fuel) */
+  product?: ProductKey
 }
 
 export function execSnapshot(e: Executive | null): Proposal['meta']['executive'] {
@@ -55,9 +58,11 @@ const defaultTemplate: TemplateDef = {
   id: 'cibus-default',
   name: 'Template padrão Cibus',
   description: 'Capa, cenário atual, projeto, investimentos, ROI, cases e encerramento.',
-  build: ({ settings, modules, executive }) => {
+  build: ({ settings, modules, executive, product = 'fuel' }) => {
     const now = new Date().toISOString()
     const d = settings.defaults
+    const ps = productSettings(settings, product)
+    const profile = PRODUCT_PROFILES[product]
     return {
       id: uid(),
       status: 'draft',
@@ -72,21 +77,21 @@ const defaultTemplate: TemplateDef = {
         city: '',
         stations: 1,
         cnpjs: 1,
-        segment: 'Posto de combustível',
+        segment: profile.defaultSegment,
         contactRole: '',
         email: '',
         phone: '',
         logo: '',
       },
       meta: {
-        title: d.proposalTitle,
-        product: 'Cibus Fuel',
+        title: ps.proposalTitle,
+        product: profile.name,
         date: todayISO(),
         validity: d.validity,
         executiveId: executive?.id ?? null,
         executive: execSnapshot(executive),
       },
-      cover: { title: d.coverTitle, subtitle: d.coverSubtitle, image: '' },
+      cover: { title: ps.coverTitle, subtitle: ps.coverSubtitle, image: '' },
       scenario: {
         title: 'Cenário atual',
         subtitle: 'Entendendo o momento atual do cliente',
@@ -105,10 +110,10 @@ const defaultTemplate: TemplateDef = {
       },
       investment: {
         stations: 1,
-        monthlyPrice: d.monthlyPrice,
+        monthlyPrice: ps.monthlyPrice,
         monthlyDiscount: { type: 'fixed', value: 0 },
-        implementationFirst: d.implementationFirst,
-        implementationAdditional: d.implementationAdditional,
+        implementationFirst: ps.implementationFirst,
+        implementationAdditional: ps.implementationAdditional,
         items: libraryItems(modules).map((m) => itemFromModule(m, false)),
         implementationDiscount: { type: 'fixed', value: 0 },
         implementationFree: false,
@@ -138,7 +143,7 @@ const defaultTemplate: TemplateDef = {
         subtitle: 'Resultados reais de clientes Cibus.',
         caseIds: [],
       },
-      closing: { title: d.closingTitle, cta: 'Vamos começar?' },
+      closing: { title: ps.closingTitle, cta: 'Vamos começar?' },
       sections: { cover: true, scenario: true, project: true, investment: true, roi: true, cases: true, closing: true },
     }
   },
@@ -200,4 +205,33 @@ function migrateInvestment(raw: Partial<Proposal['investment']> | undefined): Pa
 interface LegacyInvestment {
   modules?: { id: string; moduleId: string | null; name: string; included: boolean }[]
   implementationPrice?: number
+}
+
+/**
+ * Ao trocar o produto de uma proposta, troca também os textos e preços que
+ * ainda estão no padrão do produto anterior (o que o vendedor editou fica).
+ */
+export function applyProductDefaults(p: Proposal, product: string, settings: AppSettings): Proposal {
+  const from = productSettings(settings, productKeyOf(p.meta.product))
+  const toKey = productKeyOf(product)
+  const to = productSettings(settings, toKey)
+  const fromProfile = PRODUCT_PROFILES[productKeyOf(p.meta.product)]
+  const swap = <T,>(cur: T, a: T, b: T) => (cur === a ? b : cur)
+  return {
+    ...p,
+    meta: { ...p.meta, product, title: swap(p.meta.title, from.proposalTitle, to.proposalTitle) },
+    client: { ...p.client, segment: swap(p.client.segment, fromProfile.defaultSegment, PRODUCT_PROFILES[toKey].defaultSegment) },
+    cover: {
+      ...p.cover,
+      title: swap(p.cover.title, from.coverTitle, to.coverTitle),
+      subtitle: swap(p.cover.subtitle, from.coverSubtitle, to.coverSubtitle),
+    },
+    closing: { ...p.closing, title: swap(p.closing.title, from.closingTitle, to.closingTitle) },
+    investment: {
+      ...p.investment,
+      monthlyPrice: swap(p.investment.monthlyPrice, from.monthlyPrice, to.monthlyPrice),
+      implementationFirst: swap(p.investment.implementationFirst, from.implementationFirst, to.implementationFirst),
+      implementationAdditional: swap(p.investment.implementationAdditional, from.implementationAdditional, to.implementationAdditional),
+    },
+  }
 }

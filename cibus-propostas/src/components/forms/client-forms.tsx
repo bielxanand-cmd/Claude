@@ -2,7 +2,8 @@ import type { Draft } from 'immer'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAppData } from '@/lib/app-data'
-import { execSnapshot } from '@/lib/templates'
+import { applyProductDefaults, execSnapshot } from '@/lib/templates'
+import { profileOf } from '@/lib/products'
 import { PRODUCTS, SEGMENTS, type Proposal, type SlideKey } from '@/lib/types'
 import { CharCount, Field, ImageUpload, NumberInput, Section } from './fields'
 import { Switch } from '@/components/ui/switch'
@@ -92,7 +93,7 @@ export function ClientForm({ p, update }: FormProps) {
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Qtd. de postos" htmlFor="stations">
+          <Field label={`Qtd. de ${profileOf(p.meta.product).unit.many}`} htmlFor="stations">
             <NumberInput
               id="stations"
               min={1}
@@ -128,7 +129,7 @@ export function ClientForm({ p, update }: FormProps) {
 }
 
 export function ProposalMetaForm({ p, update }: FormProps) {
-  const { executives } = useAppData()
+  const { executives, settings } = useAppData()
   const m = p.meta
   return (
     <Section title="Dados da proposta" description="Aparecem na capa e no encerramento.">
@@ -137,7 +138,7 @@ export function ProposalMetaForm({ p, update }: FormProps) {
           <Input id="ptitle" value={m.title} onChange={(e) => update((d) => void (d.meta.title = e.target.value))} />
         </Field>
         <Field label="Produto *">
-          <Select value={m.product} onValueChange={(v) => update((d) => void (d.meta.product = v))}>
+          <Select value={m.product} onValueChange={(v) => update((d) => void Object.assign(d, applyProductDefaults(p, v, settings)))}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
