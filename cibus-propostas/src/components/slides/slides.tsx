@@ -640,9 +640,9 @@ function MetricValue({ value, big }: { value: string; big?: boolean }) {
 function CaseVisual({ cs, className }: { cs: CaseDef; className?: string }) {
   if (cs.image) return <img src={cs.image} alt="" className={cn('h-full w-full object-cover', className)} />
   return (
-    <div className={cn('relative flex h-full w-full items-center justify-center overflow-hidden bg-ink', className)}>
-      <BrandWatermark className="-bottom-8 -left-6 h-[300px]" opacity={0.05} />
-      <div className="absolute -bottom-24 -right-16 h-80 w-80 rounded-full bg-brand/15 blur-2xl" />
+    <div className={cn('relative flex h-full w-full items-center justify-center overflow-hidden bg-brand', className)}>
+      <BrandWatermark className="-bottom-8 -left-6 h-[300px]" opacity={0.14} />
+      <div className="absolute -right-16 -top-24 h-80 w-80 rounded-full bg-white/15 blur-3xl" />
       {cs.logo ? (
         <img src={cs.logo} alt="" className="relative max-h-[40%] max-w-[60%] object-contain" />
       ) : (
@@ -654,52 +654,6 @@ function CaseVisual({ cs, className }: { cs: CaseDef; className?: string }) {
   )
 }
 
-export function CasesOverviewSlide(c: Common & { list: CaseDef[] }) {
-  const { p, list } = c
-  return (
-    <Slide className="bg-mist">
-      <SlideHeader index={c.index} kicker="Cases" title={p.cases.title} subtitle={p.cases.subtitle} />
-      <div
-        className="absolute bottom-[78px] left-[72px] right-[72px] top-[222px] grid gap-4"
-        style={{ gridTemplateColumns: `repeat(${Math.min(list.length, 4)}, minmax(0,1fr))` }}
-      >
-        {list.slice(0, 4).map((cs) => {
-          const m = cs.metrics.find((x) => x.value)
-          return (
-            <div key={cs.id} className="flex min-w-0 flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white">
-              <div className="relative h-[46%] shrink-0">
-                <CaseVisual cs={cs} />
-                {cs.logo && cs.image && (
-                  <div className="absolute bottom-3 left-3 rounded-xl bg-white px-3 py-2 shadow">
-                    <img src={cs.logo} alt="" className="h-6 max-w-[110px] object-contain" />
-                  </div>
-                )}
-              </div>
-              <div className="flex min-h-0 flex-1 flex-col p-5">
-                <div className="truncate text-[20px] font-extrabold text-ink" style={{ letterSpacing: '-0.02em' }}>
-                  {cs.name}
-                </div>
-                <div className="mt-0.5 truncate text-[13px] font-semibold text-slate-400">
-                  {[cs.segment, cs.location].filter(Boolean).join(' · ')}
-                </div>
-                {m && (
-                  <div className="mt-auto">
-                    <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-slate-400">{m.name}</div>
-                    <div className="mt-1 text-[22px] font-extrabold leading-tight text-ink">
-                      <MetricValue value={m.value} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-      <Footer {...c} />
-    </Slide>
-  )
-}
-
 export function CaseSlide(c: Common & { cs: CaseDef; single: boolean }) {
   const { cs, p, single } = c
   const metrics = cs.metrics.filter((m) => m.name || m.value).slice(0, 4)
@@ -708,7 +662,7 @@ export function CaseSlide(c: Common & { cs: CaseDef; single: boolean }) {
     <Slide className="bg-white">
       <div className="absolute bottom-0 left-0 top-0 w-[468px]">
         <CaseVisual cs={cs} />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
+        {cs.image && <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />}
         {cs.logo && cs.image && (
           <div className="absolute left-8 top-8 rounded-2xl bg-white px-4 py-3 shadow-lg">
             <img src={cs.logo} alt="" className="h-8 max-w-[150px] object-contain" />
@@ -716,9 +670,9 @@ export function CaseSlide(c: Common & { cs: CaseDef; single: boolean }) {
         )}
         {(cs.location || cs.segment) && (
           <div className="absolute bottom-8 left-8 right-8 flex flex-wrap gap-2">
-            {cs.segment && <span className="rounded-full bg-white/15 px-3.5 py-1.5 text-[13px] font-semibold text-white backdrop-blur">{cs.segment}</span>}
+            {cs.segment && <span className="whitespace-nowrap rounded-full bg-white/15 px-3.5 py-1.5 text-[13px] font-semibold text-white backdrop-blur">{cs.segment}</span>}
             {cs.location && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-1.5 text-[13px] font-semibold text-white">
+              <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white/15 px-3.5 py-1.5 text-[13px] font-semibold text-white">
                 <MapPin className="h-3.5 w-3.5" /> {cs.location}
               </span>
             )}
@@ -872,14 +826,12 @@ export function buildDeck(p: Proposal, ctx: DeckContext): DeckSlide[] {
   if (on('roi')) specs.push({ key: 'roi', id: 'roi', label: 'ROI', render: (c) => <RoiSlide {...c} /> })
   if (on('cases')) {
     const list = selectedCases(p, ctx)
-    if (list.length > 1)
-      specs.push({ key: 'cases', id: 'cases-overview', label: 'Cases', render: (c) => <CasesOverviewSlide {...c} list={list} /> })
     list.forEach((cs) =>
       specs.push({
         key: 'cases',
         id: `case-${cs.id}`,
         label: cs.name,
-        render: (c) => <CaseSlide {...c} cs={cs} single={list.length === 1} />,
+        render: (c) => <CaseSlide {...c} cs={cs} single />,
       }),
     )
   }

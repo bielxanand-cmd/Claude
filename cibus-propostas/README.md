@@ -67,7 +67,7 @@ Cada página é um componente de layout fixo de **1280×720**, com a fonte **Rob
 
 - Os textos longos passam pelo `FitBox`, que reduz a fonte até um tamanho mínimo legível. Se ainda não couber, a página mostra um aviso no editor e na revisão.
 - Listas longas (desafios, oportunidades, itens sob consumo) são limitadas ao que cabe no layout, e o formulário avisa quando esse limite é ultrapassado.
-- Seções desativadas não geram páginas. Cases geram uma página cada, mais uma visão geral quando há dois ou mais.
+- Seções desativadas não geram páginas. Cada case selecionado gera uma página.
 
 ## Cálculos
 

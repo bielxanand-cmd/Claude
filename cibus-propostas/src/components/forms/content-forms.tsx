@@ -314,7 +314,7 @@ export function CasesForm({ p, update }: FormProps) {
           </Field>
         </div>
       </Section>
-      <Section title="Escolha os cases" description="Cada case vira uma página. Com 2 ou mais, criamos também uma página de visão geral.">
+      <Section title="Escolha os cases" description="Cada case selecionado vira uma página, na ordem escolhida.">
         <div className="grid gap-2 sm:grid-cols-2">
           {cases
             .filter((c) => c.active || ids.includes(c.id))
