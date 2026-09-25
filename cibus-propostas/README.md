@@ -59,7 +59,7 @@ Trocar o produto no campo *Produto* muda na hora as cores e a unidade de todos o
 3. **Assistente em 7 etapas:** Cliente → Cenário → Projeto → Investimento → ROI → Cases → Revisão, com prévia do slide ao vivo e salvamento automático.
 4. **Editor visual:** páginas à esquerda, prévia no centro e painel de edição à direita.
 5. **Modo apresentação:** slides em tela cheia; navegação pelas setas ou pelo teclado (←/→).
-6. **Revisão e PDF:** checklist de validação ("Sua proposta está pronta!") e geração do PDF.
+6. **Revisão e PDF:** liga/desliga de cada página do PDF (Capa, Cenário, Projeto, Investimentos, ROI, Cases, Encerramento), com as pendências de cada uma. Pendências são avisos e não impedem a geração: o vendedor completa a página ou a retira do PDF.
 
 ## Como o PDF é gerado
 

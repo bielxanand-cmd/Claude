@@ -9,7 +9,7 @@ export interface CheckItem {
   step: StepKey
   label: string
   ok: boolean
-  /** bloqueia a geração do PDF */
+  /** Legado: nenhuma pendência bloqueia mais o PDF; a página pode ser gerada ou retirada */
   blocking: boolean
   message?: string
 }
@@ -29,7 +29,7 @@ export function validateProposal(p: Proposal): CheckItem[] {
     step: 'client',
     label: 'Dados do cliente',
     ok: clientMissing.length === 0,
-    blocking: true,
+    blocking: false,
     message: clientMissing.length ? `Preencha: ${clientMissing.join(', ')}.` : undefined,
   })
 
@@ -50,7 +50,7 @@ export function validateProposal(p: Proposal): CheckItem[] {
       step: 'project',
       label: 'Projeto',
       ok: has,
-      blocking: true,
+      blocking: false,
       message: has ? undefined : 'Escreva pelo menos uma descrição do projeto.',
     })
   }
@@ -61,7 +61,7 @@ export function validateProposal(p: Proposal): CheckItem[] {
       step: 'investment',
       label: 'Investimentos',
       ok: missing.length === 0,
-      blocking: true,
+      blocking: false,
       message: missing.length ? `${missing.join(' e ')[0]!.toUpperCase()}${missing.join(' e ').slice(1)}.` : undefined,
     })
   }
@@ -77,7 +77,7 @@ export function validateProposal(p: Proposal): CheckItem[] {
       step: 'cases',
       label: 'Cases',
       ok,
-      blocking: true,
+      blocking: false,
       message: ok ? undefined : 'Selecione pelo menos um case ou desative a seção de cases.',
     })
   }

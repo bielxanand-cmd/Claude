@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Loading, NotFound } from '@/components/status-pages'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, Circle, Eye, FileDown, Loader2, PartyPopper } from 'lucide-react'
+import { AlertCircle, ArrowLeft, ArrowRight, Check, ChevronDown, Eye, FileDown, Loader2, PartyPopper } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ClientForm, ClosingForm, CoverForm, ProposalMetaForm } from '@/components/forms/client-forms'
 import { CasesForm, ProjectForm, RoiForm, ScenarioForm } from '@/components/forms/content-forms'
@@ -218,51 +219,68 @@ function Review({
 }) {
   const pdf = usePdfExport()
   const [generated, setGenerated] = useState(false)
-  const blocking = checks.filter((c) => !c.ok && c.blocking)
-  const ready = blocking.length === 0
-  const labels: Record<StepKey, string> = { client: 'Dados do cliente', scenario: 'Cenário atual', project: 'Projeto', investment: 'Investimentos', roi: 'ROI', cases: 'Cases', review: '' }
-  const allChecks: { step: StepKey; ok: boolean; blocking: boolean; message?: string; skipped?: boolean }[] = (
-    ['client', 'scenario', 'project', 'investment', 'roi', 'cases'] as StepKey[]
-  ).map((k) => checks.find((c) => c.step === k) ?? { step: k, ok: true, blocking: false, skipped: true })
+  const pages: { key: SlideKey; label: string; step: StepKey }[] = [
+    { key: 'cover', label: 'Capa', step: 'client' },
+    { key: 'scenario', label: 'Cenário atual', step: 'scenario' },
+    { key: 'project', label: 'O projeto', step: 'project' },
+    { key: 'investment', label: 'Investimentos', step: 'investment' },
+    { key: 'roi', label: 'ROI', step: 'roi' },
+    { key: 'cases', label: 'Cases', step: 'cases' },
+    { key: 'closing', label: 'Encerramento', step: 'review' },
+  ]
+  const clientCheck = checks.find((c) => c.step === 'client')
+  const checkOf = (pg: (typeof pages)[number]) => (pg.key === 'cover' ? clientCheck : pg.key === 'closing' ? undefined : checks.find((c) => c.step === pg.step))
+  const included = pages.filter((pg) => p.sections[pg.key])
+  const pending = included.filter((pg) => checkOf(pg) && !checkOf(pg)!.ok)
+  const ready = deck.length > 0
+  const clean = ready && pending.length === 0
 
   return (
     <div className="mx-auto max-w-[1500px] animate-fade-up px-4 py-8 lg:px-6">
       <div className="grid gap-8 lg:grid-cols-[420px_minmax(0,1fr)]">
         <div className="space-y-4">
-          <div className={cn('relative overflow-hidden rounded-2xl p-7', ready ? 'bg-ink text-white' : 'border bg-white')}>
-            {ready && <BrandWatermark className="-bottom-10 -right-2 h-[170px]" opacity={0.07} />}
-            <div className={cn('flex h-12 w-12 items-center justify-center rounded-2xl', ready ? 'bg-brand' : 'bg-amber-100 text-amber-700')}>
-              {ready ? <PartyPopper className="h-6 w-6" /> : <AlertCircle className="h-6 w-6" />}
+          <div className={cn('relative overflow-hidden rounded-2xl p-7', clean ? 'bg-ink text-white' : 'border bg-white')}>
+            {clean && <BrandWatermark className="-bottom-10 -right-2 h-[170px]" opacity={0.07} />}
+            <div className={cn('flex h-12 w-12 items-center justify-center rounded-2xl', clean ? 'bg-brand' : 'bg-amber-100 text-amber-700')}>
+              {clean ? <PartyPopper className="h-6 w-6" /> : <AlertCircle className="h-6 w-6" />}
             </div>
-            <h2 className="mt-5 text-2xl font-extrabold tracking-tight">{ready ? 'Sua proposta está pronta!' : 'Quase lá'}</h2>
-            <p className={cn('mt-1 text-sm', ready ? 'text-white/65' : 'text-muted-foreground')}>
-              {ready ? `${deck.length} páginas em formato 16:9, prontas para enviar.` : 'Resolva os itens abaixo para gerar o PDF.'}
+            <h2 className="mt-5 text-2xl font-extrabold tracking-tight">
+              {!ready ? 'Selecione as páginas' : clean ? 'Sua proposta está pronta!' : 'Pronta para gerar'}
+            </h2>
+            <p className={cn('mt-1 text-sm', clean ? 'text-white/65' : 'text-muted-foreground')}>
+              {!ready
+                ? 'Marque pelo menos uma página para gerar o PDF.'
+                : pending.length
+                  ? `${deck.length} páginas. ${pending.length === 1 ? 'Uma página tem pendência' : `${pending.length} páginas têm pendências`}: você pode completar ou gerar assim mesmo.`
+                  : `${deck.length} páginas em formato 16:9, prontas para enviar.`}
             </p>
-            <ul className="mt-5 space-y-1">
-              {allChecks.map((c) => (
-                <li key={c.step}>
-                  <button
-                    onClick={() => go(c.step)}
-                    className={cn('flex w-full items-start gap-3 rounded-lg px-2 py-2 text-left transition-colors', ready ? 'hover:bg-white/5' : 'hover:bg-mist')}
-                  >
-                    <span
-                      className={cn(
-                        'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full',
-                        c.skipped ? 'bg-ink/10 text-ink/40' : c.ok ? 'bg-brand text-white' : c.blocking ? 'bg-red-500 text-white' : 'bg-amber-400 text-white',
-                      )}
-                    >
-                      {c.skipped ? <Circle className="h-2 w-2" /> : c.ok ? <Check className="h-3 w-3" strokeWidth={3.5} /> : <span className="text-[11px] font-bold">!</span>}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold">
-                        {labels[c.step]}
-                        {c.skipped && <span className="font-normal opacity-60"> · página oculta</span>}
+
+            <div className={cn('mt-5 text-[11px] font-bold uppercase tracking-[0.14em]', clean ? 'text-white/50' : 'text-muted-foreground')}>Páginas do PDF</div>
+            <ul className="mt-2 space-y-1">
+              {pages.map((pg) => {
+                const on = p.sections[pg.key]
+                const c = checkOf(pg)
+                const warn = on && c && !c.ok
+                return (
+                  <li key={pg.key} className={cn('flex items-start gap-3 rounded-lg px-2 py-2 transition-colors', clean ? 'hover:bg-white/5' : 'hover:bg-mist')}>
+                    <Switch
+                      checked={on}
+                      aria-label={`Incluir ${pg.label} no PDF`}
+                      onCheckedChange={(v) => update((d) => void (d.sections[pg.key] = v))}
+                      className="mt-0.5 h-5 w-9 [&>span]:h-4 [&>span]:w-4 [&>span]:data-[state=checked]:translate-x-4"
+                    />
+                    <button type="button" onClick={() => go(pg.step)} className="min-w-0 flex-1 text-left">
+                      <span className={cn('flex items-center gap-2 text-sm font-semibold', !on && 'opacity-50')}>
+                        {pg.label}
+                        {on && c?.ok && <Check className="h-3.5 w-3.5 text-brand" strokeWidth={3} />}
+                        {warn && <span className="rounded-full bg-amber-100 px-1.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">pendente</span>}
+                        {!on && <span className="text-xs font-normal">· fora do PDF</span>}
                       </span>
-                      {c.message && <span className={cn('block text-xs', ready ? 'text-white/55' : 'text-muted-foreground')}>{c.message}</span>}
-                    </span>
-                  </button>
-                </li>
-              ))}
+                      {warn && c.message && <span className={cn('block text-xs', clean ? 'text-white/55' : 'text-muted-foreground')}>{c.message}</span>}
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
             <Button
               size="lg"
