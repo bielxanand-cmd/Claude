@@ -5,6 +5,7 @@ import { planProgress } from '@/domain/progress'
 import { percent } from '@/lib/text'
 import { cn } from '@/lib/utils'
 import { Logo } from './logo'
+import { SyncIndicator } from './sync-indicator'
 import { NAV_ITEMS } from './nav'
 
 export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
@@ -48,11 +49,12 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </nav>
 
+      <SyncIndicator className="mb-3 mt-6 px-3" />
       {plan && progress && (
         <Link
           to="/progresso"
           onClick={onNavigate}
-          className="mt-6 block rounded-2xl border border-sidebar-border bg-white/[0.03] p-4 transition hover:bg-white/[0.06]"
+          className="block rounded-2xl border border-sidebar-border bg-white/[0.03] p-4 transition hover:bg-white/[0.06]"
         >
           <p className="text-xs font-medium text-sidebar-muted">Progresso geral</p>
           <p className="mt-1 text-2xl font-extrabold text-white">{percent(progress.ratio)}</p>

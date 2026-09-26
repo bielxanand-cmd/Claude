@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { consolidateStudyPlan } from '@/domain/consolidate'
 import type { Flashcard } from '@/domain/flashcards'
 import { toStatusMap } from '@/domain/progress'
@@ -186,6 +186,18 @@ export function useResetData() {
     mutationFn: () => dataSource.resetUserData(),
     onSuccess: () => qc.clear(),
   })
+}
+
+/** Mantém a tela atualizada quando o progresso muda em outra aba/aparelho. */
+export function useRemoteSync() {
+  const qc = useQueryClient()
+  useEffect(
+    () =>
+      dataSource.subscribe?.((what) => {
+        if (what === 'userTopics') void qc.invalidateQueries({ queryKey: queryKeys.userTopics })
+      }),
+    [qc],
+  )
 }
 
 /* ------------------------------------------------------------------ Agregado */

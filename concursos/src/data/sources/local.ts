@@ -3,6 +3,7 @@ import type { Career, CatalogSnapshot, Position, Summary, UserSelection, UserTop
 import { uuid } from '@/lib/storage'
 import { htmlToText, slugify } from '@/lib/text'
 import { createBrowserPersistence } from '../persistence/browser'
+import { newerTopic } from '../persistence/cloud'
 import { setSyncStatus } from '../persistence/status'
 import { emptyCatalog, type Change, type Persistence, type Snapshot, type UserState } from '../persistence/types'
 import { buildSeedRows, type CatalogRows } from '../seed'
@@ -63,6 +64,20 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
         persistence = cloudPersistence
         snapshot = { user: loaded?.user ?? freshUser(), catalog: loaded?.catalog ?? emptyCatalog() }
         setSyncStatus({ where: 'cloud', state: 'idle', message: null })
+        // Progresso feito em outra aba/aparelho: vence a alteração mais recente de cada assunto
+        cloudPersistence.subscribe?.((change) => {
+          if (change.type !== 'topics') return
+          const local = snapshot.user.topics
+          let changed = false
+          for (const [id, remote] of Object.entries(change.topics)) {
+            const winner = newerTopic(local[id], remote)
+            if (winner && winner !== local[id]) {
+              local[id] = { ...winner }
+              changed = true
+            }
+          }
+          if (changed) remoteListeners.forEach((l) => l('userTopics'))
+        })
         return
       } catch (err) {
         // Não sobrescreve a nuvem com um estado vazio: segue só neste navegador
@@ -81,6 +96,7 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
     if (!cloudPersistence) setSyncStatus({ where: 'browser', state: 'idle' })
   })()
 
+  const remoteListeners = new Set<(what: 'userTopics') => void>()
   const save = (change: Change) => persistence.save(change, snapshot)
   const user = async () => {
     await ready
@@ -226,7 +242,7 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
         completedAt: null,
         lastAccessedAt: null,
       }
-      u.topics[topicId] = { ...current, ...patch }
+      u.topics[topicId] = { ...current, ...patch, updatedAt: new Date().toISOString() }
       save({ type: 'topic', topicId })
       return delay({ ...u.topics[topicId] }, 0)
     },
@@ -265,6 +281,11 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
       else delete u.flashcards[topicId]
       save({ type: 'flashcards', topicId })
       return delay(u.flashcards[topicId] ?? [], 0)
+    },
+
+    subscribe(listener) {
+      remoteListeners.add(listener)
+      return () => remoteListeners.delete(listener)
     },
 
     async resetUserData() {

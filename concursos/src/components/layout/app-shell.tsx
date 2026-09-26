@@ -5,17 +5,20 @@ import { Link, Outlet, useLocation, useNavigation } from 'react-router-dom'
 import { DemoBadge } from '@/components/study/feedback'
 import { Button } from '@/components/ui/button'
 import { SheetContent } from '@/components/ui/dialog'
-import { useStudy } from '@/data/queries'
+import { useRemoteSync, useStudy } from '@/data/queries'
 import { positionTitle } from '@/domain/labels'
 import { Logo } from './logo'
 import { SearchDialog } from './search-dialog'
 import { SwitchContestDialog } from './switch-contest-dialog'
+import { useSyncWarnings } from './sync-indicator'
 import { Sidebar, SidebarContent } from './sidebar'
 
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [switchOpen, setSwitchOpen] = useState(false)
+  useRemoteSync()
+  useSyncWarnings()
   const { plan, selection } = useStudy()
   const location = useLocation()
   const navigation = useNavigation()

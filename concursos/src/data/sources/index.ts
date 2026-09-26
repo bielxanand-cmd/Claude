@@ -13,6 +13,7 @@ function createLazySupabaseDataSource(url: string, anonKey: string): DataSource 
   return new Proxy({ kind: 'supabase' } as DataSource, {
     get(target, prop: keyof DataSource) {
       if (prop === 'kind') return target.kind
+      if (prop === 'subscribe') return undefined
       return async (...args: unknown[]) => {
         const source = await loaded
         return (source[prop] as (...a: unknown[]) => unknown)(...args)

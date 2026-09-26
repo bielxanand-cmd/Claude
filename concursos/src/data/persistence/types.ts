@@ -45,6 +45,9 @@ export type Change =
   | { type: 'catalog-meta' } // carreiras e cargos manuais
   | { type: 'import'; rows: ImportRows }
 
+/** Alteração vinda de outra aba/aparelho. */
+export type RemoteChange = { type: 'topics'; topics: UserState['topics'] }
+
 export interface Persistence {
   readonly kind: 'browser' | 'cloud'
   /** `null` quando não há nada salvo */
@@ -53,6 +56,8 @@ export interface Persistence {
   /** Grava um estado inteiro (migração do navegador para a nuvem) */
   saveAll(snapshot: Snapshot): Promise<void>
   clear(): Promise<void>
+  /** Recebe alterações feitas em outras abas/aparelhos (quando suportado) */
+  subscribe?(listener: (change: RemoteChange) => void): () => void
 }
 
 export const emptyCatalog = (): CustomCatalog => ({

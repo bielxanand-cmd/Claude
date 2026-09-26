@@ -167,6 +167,8 @@ export interface UserTopic {
   lastStudiedAt: string | null
   completedAt: string | null
   lastAccessedAt: string | null
+  /** Última alteração (resolve conflitos entre abas/dispositivos) */
+  updatedAt?: string | null
 }
 
 export interface SummaryContent {

@@ -61,4 +61,6 @@ export interface DataSource {
   /** Substitui os flashcards de um assunto (inclui o estado de revisão) */
   saveTopicFlashcards(topicId: string, cards: Flashcard[]): Promise<Flashcard[]>
   resetUserData(): Promise<void>
+  /** Avisa quando dados mudam fora desta página (outra aba/aparelho) */
+  subscribe?(listener: (what: 'userTopics') => void): () => void
 }

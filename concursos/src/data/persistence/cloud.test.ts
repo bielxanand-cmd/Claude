@@ -5,23 +5,57 @@ import { createLocalDataSource } from '../sources/local'
 import { createCloudPersistence } from './cloud'
 
 /** Banco em memória com a mesma API usada do runtime do claude.ai (db + user). */
-function fakeRuntime(uid: string | null = 'viewer-1') {
-  const docs = new Map<string, Record<string, unknown>>()
+function fakeRuntime(uid: string | null = 'viewer-1', shared?: Map<string, Record<string, unknown>>) {
+  const docs = shared ?? new Map<string, Record<string, unknown>>()
   const writes: string[] = []
+  const listeners = new Map<string, Set<(s: unknown) => void>>()
+  let failNext = 0
   const snap = (path: string) => ({
     id: path.split('/').at(-1)!,
     exists: docs.has(path),
     data: () => (docs.has(path) ? structuredClone(docs.get(path)) : undefined),
   })
+  const notify = (path: string) => listeners.get(path)?.forEach((l) => l(snap(path)))
+  const merge = (a: Record<string, unknown>, b: Record<string, unknown>): Record<string, unknown> => {
+    const out = { ...a }
+    for (const [k, v] of Object.entries(b))
+      out[k] = v && typeof v === 'object' && !Array.isArray(v) && out[k] && typeof out[k] === 'object' ? merge(out[k] as Record<string, unknown>, v as Record<string, unknown>) : v
+    return out
+  }
+  const guard = () => {
+    if (failNext > 0) {
+      failNext--
+      throw { code: 'unavailable', message: 'transient' }
+    }
+  }
   const docRef = (path: string): unknown => ({
     path,
     get: async () => snap(path),
     set: async (body: Record<string, unknown>) => {
+      guard()
       if (JSON.stringify(body).length > 256 * 1024) throw { code: 'invalid_argument', message: 'document too large' }
       writes.push(path)
       docs.set(path, structuredClone(body))
+      notify(path)
     },
-    delete: async () => void docs.delete(path),
+    update: async (body: Record<string, unknown>) => {
+      guard()
+      if (!docs.has(path)) throw { code: 'invalid_argument', message: 'missing document' }
+      writes.push(path)
+      docs.set(path, merge(docs.get(path)!, structuredClone(body)))
+      notify(path)
+    },
+    delete: async () => {
+      docs.delete(path)
+      notify(path)
+    },
+    onSnapshot: (next: (s: unknown) => void) => {
+      const set = listeners.get(path) ?? new Set()
+      set.add(next)
+      listeners.set(path, set)
+      next(snap(path))
+      return () => set.delete(next)
+    },
     collection: (sub: string) => collRef(`${path}/${sub}`),
   })
   const collRef = (path: string) => ({
@@ -33,10 +67,10 @@ function fakeRuntime(uid: string | null = 'viewer-1') {
   const runtime = {
     use: async (name: string) => (name === 'db' ? { doc: docRef } : name === 'user' ? { id: async () => uid } : null),
   }
-  return { runtime, docs, writes }
+  return { runtime, docs, writes, failWrites: (n: number) => (failNext = n) }
 }
 
-const flush = () => new Promise((r) => setTimeout(r, 700))
+const flush = (ms = 700) => new Promise((r) => setTimeout(r, ms))
 
 function fakeLocalStorage() {
   const store = new Map<string, string>()
@@ -126,6 +160,46 @@ describe('dados salvos na conta (página publicada)', () => {
     await flush()
     expect(fake.writes.filter((p) => p.endsWith('/progress')).length).toBeLessThanOrEqual(2)
     expect(Object.keys((fake.docs.get('data/users/viewer-1/progress') as { topics: object }).topics)).toHaveLength(10)
+  })
+
+  it('duas abas: uma aba desatualizada não apaga o progresso salvo pela outra', { timeout: 15_000 }, async () => {
+    const tabA = createLocalDataSource(createCloudPersistence)
+    const tabB = createLocalDataSource(createCloudPersistence)
+    await tabA.getProfile()
+    await tabB.getProfile() // B carregou antes de A concluir
+    await tabA.updateUserTopic('auditoria__controle-interno', { status: 'completed' })
+    await flush(200)
+    // B (desatualizada) mexe em outro assunto
+    await tabB.updateUserTopic('auditoria__planejamento-de-auditoria', { lastAccessedAt: new Date().toISOString() })
+    await flush(200)
+    const topics = (fake.docs.get('data/users/viewer-1/progress') as { topics: Record<string, { status: string }> }).topics
+    expect(topics['auditoria__controle-interno'].status).toBe('completed')
+    expect(topics['auditoria__planejamento-de-auditoria']).toBeDefined()
+    // e a aba B recebe o progresso de A ao vivo
+    expect((await tabB.listUserTopics()).find((t) => t.topicId === 'auditoria__controle-interno')?.status).toBe('completed')
+  })
+
+  it('fechar a página logo após concluir: a pendência é reenviada na próxima abertura', { timeout: 15_000 }, async () => {
+    const first = createLocalDataSource(createCloudPersistence)
+    await first.getProfile()
+    fake.failWrites(99) // a gravação não chega à conta (página fechada / sem conexão)
+    await first.updateUserTopic('auditoria__controle-interno', { status: 'completed' })
+    await flush(100)
+    expect(fake.docs.has('data/users/viewer-1/progress')).toBe(false)
+
+    fake.failWrites(0)
+    const reopened = createLocalDataSource(createCloudPersistence) // mesmo navegador: diário local ainda existe
+    expect((await reopened.listUserTopics()).find((t) => t.topicId === 'auditoria__controle-interno')?.status).toBe('completed')
+    expect((fake.docs.get('data/users/viewer-1/progress') as { topics: Record<string, { status: string }> }).topics['auditoria__controle-interno'].status).toBe('completed')
+  })
+
+  it('repete gravações que falham temporariamente', { timeout: 15_000 }, async () => {
+    const source = createLocalDataSource(createCloudPersistence)
+    await source.getProfile()
+    fake.failWrites(1)
+    await source.updateUserTopic('auditoria__controle-interno', { status: 'completed' })
+    await flush(1600)
+    expect((fake.docs.get('data/users/viewer-1/progress') as { topics: Record<string, { status: string }> }).topics['auditoria__controle-interno'].status).toBe('completed')
   })
 
   it('sem identidade do usuário, usa o navegador', async () => {
