@@ -1,6 +1,8 @@
 # 🏋️ Rotina de Treinos
 
-App web simples para gerenciar sua rotina de musculação. Funciona 100% no navegador, sem instalação nem servidor: os dados ficam salvos no `localStorage`.
+App web simples para gerenciar sua rotina de musculação. Funciona no navegador, sem instalação.
+
+Aberto pelo link publicado no claude.ai, o app salva treinos e histórico na conta do usuário e sincroniza entre computador e celular (`nuvem.js`). Aberto como arquivo local, salva só no `localStorage` daquele navegador.
 
 ## Como usar
 
@@ -32,3 +34,4 @@ python3 -m http.server 8000
 | `styles.css` | Estilos (mobile-first, com tema escuro automático) |
 | `exercicios.js` | Biblioteca de exercícios, dicas de execução e ilustrações em SVG |
 | `app.js`     | Lógica, persistência, timer e gráfico        |
+| `nuvem.js`   | Sincronização entre aparelhos quando publicado no claude.ai |

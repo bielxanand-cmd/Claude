@@ -10,6 +10,7 @@
 <body>
   <header class="topbar">
     <h1>🏋️ Rotina de Treinos</h1>
+    <span id="status-nuvem" class="status-nuvem" role="status" hidden></span>
   </header>
 
   <nav class="tabs" role="tablist">
@@ -32,7 +33,7 @@
       <div id="lista-treinos"></div>
       <div class="card data-tools">
         <h3>Backup</h3>
-        <p class="muted">Seus dados ficam salvos neste navegador. Exporte para guardar uma cópia.</p>
+        <p class="muted">Abrindo o app pelo link do claude.ai, seus treinos e seu histórico ficam salvos na sua conta e aparecem no computador e no celular. Exporte para guardar uma cópia extra.</p>
         <div class="row">
           <button class="btn" id="btn-exportar">Exportar JSON</button>
           <button class="btn" id="btn-copiar">Copiar JSON</button>
@@ -112,5 +113,6 @@
 
   <script src="exercicios.js"></script>
   <script src="app.js"></script>
+  <script src="nuvem.js"></script>
 </body>
 </html>

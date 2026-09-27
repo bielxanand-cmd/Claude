@@ -61,12 +61,18 @@ function carregar() {
 
 let estado = carregar();
 
-function salvar() {
+function salvarLocal() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
   } catch (e) {
     console.warn('Não foi possível salvar:', e);
   }
+}
+
+// Salva uma alteração feita pelo usuário: no aparelho e, se disponível, na nuvem (nuvem.js)
+function salvar() {
+  salvarLocal();
+  if (typeof aoSalvar === 'function') aoSalvar();
 }
 
 // ---------- Utilitários ----------
@@ -821,11 +827,22 @@ $('#btn-copiar').addEventListener('click', async () => {
   }
 });
 
-$('#btn-exportar').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify(estado, null, 2)], { type: 'application/json' });
+$('#btn-exportar').addEventListener('click', async () => {
+  const json = JSON.stringify(estado, null, 2);
+  const nomeArquivo = `treinos-${dataLocal()}.json`;
+  const downloads = window.claude?.use ? await claude.use('downloads') : null;
+  if (downloads) {
+    try {
+      await downloads.save({ filename: nomeArquivo, data: json });
+    } catch (e) {
+      if (e?.code !== 'declined') avisar('Não foi possível exportar aqui. Use "Copiar JSON".');
+    }
+    return;
+  }
+  const blob = new Blob([json], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `treinos-${dataLocal()}.json`;
+  a.download = nomeArquivo;
   a.click();
   URL.revokeObjectURL(a.href);
 });

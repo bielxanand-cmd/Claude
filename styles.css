@@ -48,7 +48,27 @@ body {
   border-bottom: 1px solid var(--border);
   padding: 12px 16px;
 }
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 .topbar h1 { margin: 0; font-size: 1.25rem; }
+.status-nuvem {
+  font-size: 0.78rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.status-nuvem::before { content: "●"; margin-right: 6px; }
+.status-nuvem[data-tipo="ok"]::before { color: var(--success); }
+.status-nuvem[data-tipo="salvando"]::before { color: var(--primary); }
+.status-nuvem[data-tipo="erro"]::before { color: var(--danger); }
+.status-nuvem[data-tipo="local"]::before { color: var(--muted); }
 
 .tabs {
   display: flex;
