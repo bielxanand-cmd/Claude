@@ -179,7 +179,11 @@ function renderHoje() {
         <strong>${esc(t.nome)}</strong>
         <button class="btn primary" data-acao="iniciar" data-id="${t.id}">Iniciar</button>
       </div>
-      <p class="muted">${t.exercicios.length} exercício(s) · ${t.exercicios.map((e) => esc(e.nome)).join(', ')}</p>
+      <p class="muted">${t.exercicios.length} exercício(s) · toque em um exercício para ver como executar</p>
+      <div class="ex-linhas">
+        ${t.exercicios.map((e) => linhaExercicioHtml(e, `data-acao="ver-ex" data-treino="${t.id}" data-exid="${e.id}"`,
+          `${e.series}×${e.reps}`)).join('')}
+      </div>
     </div>`;
 
   el.innerHTML = `
@@ -215,15 +219,14 @@ function htmlSessaoAtiva(s) {
 
     return `
       <div class="card exercicio-sessao ${completo ? 'completo' : ''}">
-        <div class="section-head">
-          <strong>${esc(ex.nome)}</strong>
-          <span class="muted">descanso ${ex.descanso}s</span>
-        </div>
+        ${linhaExercicioHtml(ex, `data-acao="ver-ex" data-sessao-ex="${ei}"`, `descanso ${ex.descanso}s`)}
         <div class="serie serie-head"><span></span><span>kg</span><span>reps</span><span></span></div>
         ${series}
         <div class="row">
           <button class="btn small" data-acao="add-serie" data-ex="${ei}">+ série</button>
           <button class="btn small danger" data-acao="rem-serie" data-ex="${ei}" ${ex.series.length <= 1 ? 'disabled' : ''}>− série</button>
+          <span class="spacer"></span>
+          <button class="btn small" data-acao="trocar-ex" data-sessao-ex="${ei}">↻ Substituir</button>
         </div>
       </div>`;
   }).join('');
@@ -263,6 +266,7 @@ function iniciarSessao(treinoId) {
     exercicios: t.exercicios.map((e) => ({
       exercicioId: e.id,
       nome: e.nome,
+      musculo: e.musculo,
       descanso: e.descanso,
       series: Array.from({ length: e.series }, () => ({ reps: e.reps, carga: e.carga, feito: false })),
     })),
@@ -280,7 +284,7 @@ $('#view-hoje').addEventListener('click', async (ev) => {
   const s = estado.ativa;
 
   if (acao === 'iniciar') return iniciarSessao(id);
-  if (!s) return;
+  if (!s || acao === 'ver-ex' || acao === 'trocar-ex') return;
 
   if (acao === 'serie') {
     const serie = s.exercicios[ei].series[si];
@@ -362,9 +366,10 @@ function renderTreinos() {
         </div>
       </div>
       <div class="chips">${DIAS.map((d, i) => `<span class="chip ${t.dias.includes(i) ? 'on' : ''}">${d}</span>`).join('')}</div>
-      <ul class="ex-list">
-        ${t.exercicios.map((e) => `<li>${esc(e.nome)} — <span class="muted">${e.series}×${e.reps} · ${e.carga} kg · ${e.descanso}s</span></li>`).join('')}
-      </ul>
+      <div class="ex-linhas">
+        ${t.exercicios.map((e) => linhaExercicioHtml(e, `data-acao="ver-ex" data-treino="${t.id}" data-exid="${e.id}"`,
+          `${e.series}×${e.reps} · ${e.carga} kg · ${e.descanso}s`)).join('')}
+      </div>
     </div>`).join('');
 }
 
@@ -403,8 +408,9 @@ function linhaExercicio(e = {}) {
   const div = document.createElement('div');
   div.className = 'ex-form';
   div.dataset.id = e.id || uid();
+  if (e.musculo) div.dataset.musculo = e.musculo;
   div.innerHTML = `
-    <label class="ex-nome">Exercício<input name="ex-nome" required maxlength="60" value="${esc(e.nome || '')}" placeholder="Nome" /></label>
+    <label class="ex-nome">Exercício<input name="ex-nome" list="lista-biblioteca" required maxlength="60" value="${esc(e.nome || '')}" placeholder="Escolha ou digite" /></label>
     <label>Séries<input name="ex-series" type="number" min="1" max="20" required value="${e.series ?? 3}" /></label>
     <label>Reps<input name="ex-reps" type="number" min="1" max="100" required value="${e.reps ?? 10}" /></label>
     <label>Kg<input name="ex-carga" type="number" min="0" step="0.5" value="${e.carga ?? 0}" /></label>
@@ -453,6 +459,7 @@ form.addEventListener('submit', (ev) => {
     exercicios: linhas.map((l) => ({
       id: l.dataset.id,
       nome: l.querySelector('[name="ex-nome"]').value.trim(),
+      musculo: buscarExercicio(l.querySelector('[name="ex-nome"]').value)?.musculo || l.dataset.musculo || undefined,
       series: Math.max(1, Math.round(num(l.querySelector('[name="ex-series"]').value))),
       reps: Math.max(1, Math.round(num(l.querySelector('[name="ex-reps"]').value))),
       carga: Math.max(0, num(l.querySelector('[name="ex-carga"]').value)),
@@ -464,6 +471,170 @@ form.addEventListener('submit', (ev) => {
   else estado.treinos.push(treino);
   salvar();
   render();
+});
+
+// ---------- Exercícios: ilustração, dicas e substituição ----------
+
+$('#lista-biblioteca').innerHTML = BIBLIOTECA.map((e) => `<option value="${esc(e.nome)}"></option>`).join('');
+
+const musculoDe = (ex) => ex.musculo || buscarExercicio(ex.nome)?.musculo || null;
+
+function miniatura(ex) {
+  const info = buscarExercicio(ex.nome);
+  return `<span class="thumb">${figuraExercicio(info?.padrao, { animar: false, peso: info?.peso })}</span>`;
+}
+
+function linhaExercicioHtml(ex, attrs, detalhe) {
+  const musculo = musculoDe(ex);
+  return `
+    <button type="button" class="ex-linha" ${attrs}>
+      ${miniatura(ex)}
+      <span class="ex-linha-texto">
+        <strong>${esc(ex.nome)}</strong>
+        <span class="muted">${musculo ? `${MUSCULOS[musculo]} · ` : ''}${esc(detalhe)}</span>
+      </span>
+      <span class="ex-linha-seta" aria-hidden="true">›</span>
+    </button>`;
+}
+
+const dlgEx = $('#dlg-exercicio');
+let ctxEx = null; // { treinoId, exId } ou { sessaoEx }
+
+function exercicioDoContexto() {
+  if (!ctxEx) return null;
+  if (ctxEx.sessaoEx != null) return estado.ativa?.exercicios[ctxEx.sessaoEx] || null;
+  const t = estado.treinos.find((x) => x.id === ctxEx.treinoId);
+  return t?.exercicios.find((e) => e.id === ctxEx.exId) || null;
+}
+
+function nomesDoTreino() {
+  if (ctxEx.sessaoEx != null) return estado.ativa.exercicios.map((e) => e.nome);
+  return (estado.treinos.find((x) => x.id === ctxEx.treinoId)?.exercicios || []).map((e) => e.nome);
+}
+
+function abrirExercicio(ctx, modo = 'detalhe') {
+  ctxEx = { ...ctx, sugestao: 0 };
+  if (!exercicioDoContexto()) return;
+  renderDlgExercicio(modo);
+  if (!dlgEx.open) dlgEx.showModal();
+}
+
+function blocoExecucao(info, peso) {
+  if (!info) return '';
+  return `
+    <figure class="figura-grande">
+      ${figuraExercicio(info.padrao, { peso: peso ?? info.peso })}
+      <figcaption>O boneco repete o movimento. A silhueta clara mostra a posição final.</figcaption>
+    </figure>
+    <h3>Como executar</h3>
+    <ol class="dicas">${info.dicas.map((d) => `<li>${esc(d)}</li>`).join('')}</ol>
+    <p class="evite"><strong>Evite:</strong> ${esc(info.evite)}</p>`;
+}
+
+function renderDlgExercicio(modo) {
+  const ex = exercicioDoContexto();
+  const corpo = $('#dlg-exercicio-corpo');
+  const musculo = musculoDe(ex);
+  const opcoes = musculo ? alternativas(ex.nome, musculo, nomesDoTreino()) : [];
+
+  if (modo === 'sugestao' && opcoes.length) {
+    const idx = ctxEx.sugestao % opcoes.length;
+    const novo = opcoes[idx];
+    corpo.innerHTML = `
+      <p class="muted">Substituir <strong>${esc(ex.nome)}</strong> por:</p>
+      <div class="dlg-titulo">
+        <h2>${esc(novo.nome)}</h2>
+        <span class="chip on">${MUSCULOS[musculo]}</span>
+      </div>
+      <p class="muted">Trabalha o mesmo músculo com uma execução diferente. Opção ${idx + 1} de ${opcoes.length}.</p>
+      ${blocoExecucao(novo)}
+      <div class="row end">
+        <button type="button" class="btn" data-acao="voltar">Voltar</button>
+        <button type="button" class="btn" data-acao="outra" ${opcoes.length < 2 ? 'disabled' : ''}>Outra opção</button>
+        <button type="button" class="btn primary" data-acao="usar" data-nome="${esc(novo.nome)}">Usar este</button>
+      </div>`;
+    return;
+  }
+
+  const info = buscarExercicio(ex.nome);
+  corpo.innerHTML = `
+    <div class="dlg-titulo">
+      <h2>${esc(ex.nome)}</h2>
+      ${musculo ? `<span class="chip on">${MUSCULOS[musculo]}</span>` : ''}
+    </div>
+    ${info ? blocoExecucao(info) : `
+      <figure class="figura-grande">${figuraExercicio(null)}</figure>
+      <p class="muted">Este exercício não está na biblioteca, então não tem ilustração. Escolha o músculo trabalhado para receber sugestões de substituição.</p>
+      <label for="sel-musculo">Músculo trabalhado</label>
+      <select id="sel-musculo">
+        <option value="">Selecione…</option>
+        ${Object.entries(MUSCULOS).map(([k, v]) => `<option value="${k}" ${k === musculo ? 'selected' : ''}>${v}</option>`).join('')}
+      </select>`}
+    <div class="row end">
+      <button type="button" class="btn" data-acao="fechar">Fechar</button>
+      <button type="button" class="btn primary" data-acao="substituir" ${opcoes.length ? '' : 'disabled'}>↻ Substituir exercício</button>
+    </div>`;
+}
+
+async function substituirExercicio(nomeNovo) {
+  const novo = buscarExercicio(nomeNovo);
+  const ex = exercicioDoContexto();
+  if (!novo || !ex) return;
+  const antigo = ex.nome;
+
+  if (ctxEx.sessaoEx != null) {
+    if (ex.series.some((x) => x.feito)) {
+      dlgEx.close();
+      if (!await confirmar('As séries já marcadas deste exercício serão desmarcadas. Substituir mesmo assim?', 'Substituir')) return;
+    }
+    Object.assign(ex, { nome: novo.nome, musculo: novo.musculo });
+    ex.series.forEach((x) => { x.carga = 0; x.feito = false; });
+    // Mantém o treino salvo alinhado com a troca
+    const t = estado.treinos.find((x) => x.id === estado.ativa.treinoId);
+    const alvo = t?.exercicios.find((e) => e.id === ex.exercicioId);
+    if (alvo) Object.assign(alvo, { nome: novo.nome, musculo: novo.musculo, carga: 0 });
+  } else {
+    Object.assign(ex, { nome: novo.nome, musculo: novo.musculo, carga: 0 });
+  }
+  salvar();
+  if (dlgEx.open) dlgEx.close();
+  render();
+  avisar(`${antigo} foi substituído por ${novo.nome}. Ajuste a carga.`);
+}
+
+document.addEventListener('click', (ev) => {
+  const btn = ev.target.closest('[data-acao="ver-ex"], [data-acao="trocar-ex"]');
+  if (!btn) return;
+  const ctx = btn.dataset.sessaoEx != null
+    ? { sessaoEx: Number(btn.dataset.sessaoEx) }
+    : { treinoId: btn.dataset.treino, exId: btn.dataset.exid };
+  abrirExercicio(ctx, btn.dataset.acao === 'trocar-ex' ? 'sugestao' : 'detalhe');
+});
+
+dlgEx.addEventListener('click', (ev) => {
+  if (ev.target === dlgEx) return dlgEx.close(); // clique fora
+  const btn = ev.target.closest('[data-acao]');
+  if (!btn) return;
+  const acao = btn.dataset.acao;
+  if (acao === 'fechar') dlgEx.close();
+  else if (acao === 'substituir') renderDlgExercicio('sugestao');
+  else if (acao === 'voltar') renderDlgExercicio('detalhe');
+  else if (acao === 'outra') { ctxEx.sugestao++; renderDlgExercicio('sugestao'); }
+  else if (acao === 'usar') substituirExercicio(btn.dataset.nome);
+});
+
+dlgEx.addEventListener('change', (ev) => {
+  if (ev.target.id !== 'sel-musculo') return;
+  const ex = exercicioDoContexto();
+  ex.musculo = ev.target.value || undefined;
+  if (ctxEx.sessaoEx != null) {
+    const t = estado.treinos.find((x) => x.id === estado.ativa.treinoId);
+    const alvo = t?.exercicios.find((e) => e.id === ex.exercicioId);
+    if (alvo) alvo.musculo = ex.musculo;
+  }
+  salvar();
+  render();
+  renderDlgExercicio('detalhe');
 });
 
 // ---------- Histórico ----------
