@@ -22,8 +22,9 @@ python3 -m http.server 8000
 - **Substituir exercício**: sugere outro exercício para o mesmo músculo, com uma execução diferente (outro movimento ou equipamento). Dá para ver outras opções antes de confirmar. A troca vale para a sessão e para o treino salvo.
 - **Treinos**: crie, edite, duplique e exclua treinos (ex.: A/B/C), com dias da semana e exercícios (séries, reps, carga, descanso).
 - **Progressão automática**: ao finalizar, o treino guarda a carga e as reps da última série feita, que viram o ponto de partida da próxima sessão.
+- **Calorias**: ao finalizar, uma mensagem de parabéns mostra a estimativa de calorias gastas (método MET: peso corporal × tempo × intensidade de 3,5 a 6 MET conforme o ritmo das séries). O peso é pedido uma vez e pode ser alterado na aba Progresso.
 - **Histórico**: sessões com data, duração, séries, volume (kg × reps) e observações.
-- **Progresso**: total de treinos, treinos nos últimos 30 dias, semanas seguidas treinando, volume total e gráfico de carga máxima por exercício.
+- **Progresso**: total de treinos, treinos nos últimos 30 dias, semanas seguidas treinando, volume total, gráfico de calorias por treino e dia (cores por treino) e gráfico de carga máxima por exercício.
 - **Backup**: exporte e importe seus dados em JSON.
 
 ## Estrutura

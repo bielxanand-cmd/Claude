@@ -35,7 +35,7 @@ function canon(v) {
   return JSON.stringify(v ?? null);
 }
 
-const corpoRotina = (e) => ({ treinos: e.treinos, ativa: e.ativa ?? null });
+const corpoRotina = (e) => ({ treinos: e.treinos, ativa: e.ativa ?? null, perfil: e.perfil ?? {} });
 const ordenarSessoes = (lista) => [...lista].sort((a, b) => (b.fim || b.inicio) - (a.fim || a.inicio));
 const limpo = (obj) => JSON.parse(JSON.stringify(obj));
 
@@ -104,6 +104,7 @@ function adotarNuvem(rotina, sessoes) {
     treinos: rotina?.treinos ?? estado.treinos,
     sessoes: ordenarSessoes(sessoes),
     ativa: rotina ? rotina.ativa ?? null : estado.ativa,
+    perfil: rotina?.perfil ?? estado.perfil ?? {},
   };
   if (canon(novo) === canon(estado)) return;
   estado = novo;
@@ -136,6 +137,7 @@ function primeiraSincronizacao() {
       treinos,
       sessoes: ordenarSessoes([...sessoes, ...estado.sessoes.filter((s) => !idsSessoes.has(s.id))]),
       ativa: rotina?.ativa ?? estado.ativa,
+      perfil: rotina?.perfil?.peso ? rotina.perfil : estado.perfil ?? {},
     };
     salvarLocal();
     render();

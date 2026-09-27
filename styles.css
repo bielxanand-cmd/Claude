@@ -1,4 +1,13 @@
 :root {
+  --serie-1: #2a78d6;
+  --serie-2: #eb6834;
+  --serie-3: #1baf7a;
+  --serie-4: #eda100;
+  --serie-5: #e87ba4;
+  --serie-6: #008300;
+  --serie-7: #4a3aa7;
+  --serie-8: #e34948;
+  --serie-outros: #94a3b8;
   --bg: #f1f5f9;
   --card: #ffffff;
   --text: #0f172a;
@@ -14,6 +23,15 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
+    --serie-1: #3987e5;
+    --serie-2: #d95926;
+    --serie-3: #199e70;
+    --serie-4: #c98500;
+    --serie-5: #d55181;
+    --serie-6: #008300;
+    --serie-7: #9085e9;
+    --serie-8: #e66767;
+    --serie-outros: #64748b;
     --bg: #0f172a;
     --card: #1e293b;
     --text: #e2e8f0;
@@ -24,6 +42,15 @@
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --serie-1: #3987e5;
+  --serie-2: #d95926;
+  --serie-3: #199e70;
+  --serie-4: #c98500;
+  --serie-5: #d55181;
+  --serie-6: #008300;
+  --serie-7: #9085e9;
+  --serie-8: #e66767;
+  --serie-outros: #64748b;
   --bg: #0f172a;
   --card: #1e293b;
   --text: #e2e8f0;
@@ -349,3 +376,47 @@ fieldset.dias { border: 1px solid var(--border); border-radius: 8px; margin: 0 0
   background: color-mix(in srgb, var(--danger) 10%, transparent);
   font-size: 0.9rem;
 }
+
+/* Calorias */
+.peso-inline { display: inline-flex; align-items: center; gap: 6px; margin: 0; color: var(--muted); }
+.peso-inline input { width: 80px; margin: 0; text-align: center; }
+.nota { font-size: 0.8rem; }
+.legenda { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 4px 0; font-size: 0.85rem; }
+.legenda-item { display: inline-flex; align-items: center; gap: 6px; }
+.legenda-cor { width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex: none; }
+.grafico-cal { position: relative; }
+.grafico-cal svg { display: block; width: 100%; height: auto; }
+.grafico-cal .grade { stroke: var(--border); stroke-width: 1; }
+.grafico-cal .base { stroke: var(--muted); stroke-width: 1; }
+.grafico-cal .eixo-texto { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.grafico-cal .rotulo-valor { fill: var(--text); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.grafico-cal .alvo { fill: transparent; cursor: pointer; outline: none; }
+.grafico-cal .alvo.ativo, .grafico-cal .alvo:focus-visible { fill: color-mix(in srgb, var(--text) 6%, transparent); }
+.tooltip {
+  position: absolute;
+  transform: translateY(-100%);
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  font-size: 0.82rem;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 2;
+}
+.tooltip-titulo { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+
+/* Parabéns */
+#dlg-parabens { width: min(420px, 92vw); }
+.parabens { text-align: center; }
+.parabens h2 { margin: 4px 0 8px; text-wrap: balance; }
+.parabens-emoji { font-size: 2.6rem; line-height: 1; margin-top: 4px; }
+.parabens-frase { font-size: 1.15rem; margin: 8px 0; }
+.parabens-frase strong { color: var(--success); white-space: nowrap; }
+.parabens .row.end { justify-content: center; }
+.form-peso { text-align: left; margin-top: 8px; }
+.form-peso .row { flex-wrap: nowrap; }
+.form-peso input { flex: 1; }

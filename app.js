@@ -43,6 +43,7 @@ function estadoInicial() {
     ],
     sessoes: [],
     ativa: null,
+    perfil: {},
   };
 }
 
@@ -51,7 +52,7 @@ function carregar() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const dados = JSON.parse(raw);
-      if (Array.isArray(dados.treinos) && Array.isArray(dados.sessoes)) return dados;
+      if (Array.isArray(dados.treinos) && Array.isArray(dados.sessoes)) return { perfil: {}, ...dados };
     }
   } catch (e) {
     console.warn('Não foi possível ler os dados salvos:', e);
@@ -347,11 +348,105 @@ async function finalizarSessao() {
     });
   }
 
+  if (estado.perfil?.peso) s.calorias = estimarCalorias(s, estado.perfil.peso);
+
   pararTimer();
   salvar();
-  avisar(`Treino concluído! 💪 Volume total: ${volumeSessao(s).toLocaleString('pt-BR')} kg`);
   mostrarView('historico');
+  abrirParabens(s);
 }
+
+// ---------- Calorias ----------
+// Estimativa pelo método MET: kcal = MET × peso (kg) × horas.
+// Musculação fica entre 3,5 (ritmo leve) e 6 MET (ritmo intenso); o ritmo é medido
+// pelas séries concluídas por minuto.
+
+const MET_MIN = 3.5;
+const MET_MAX = 6;
+
+function metSessao(s) {
+  const min = minutosSessao(s);
+  if (!min) return MET_MIN;
+  const series = s.exercicios.reduce((t, ex) => t + ex.series.filter((x) => x.feito).length, 0);
+  return Math.min(MET_MAX, Math.max(MET_MIN, MET_MIN + (series / min - 0.15) * 10));
+}
+
+// Duração limitada a 3 h, para um treino esquecido aberto não inflar a conta
+const minutosSessao = (s) => Math.min(180, Math.max(0, ((s.fim || s.inicio) - s.inicio) / 60000));
+
+function estimarCalorias(s, peso) {
+  if (!peso) return null;
+  return Math.round(metSessao(s) * peso * (minutosSessao(s) / 60));
+}
+
+const caloriasSessao = (s) => s.calorias ?? estimarCalorias(s, estado.perfil?.peso);
+
+function definirPeso(valor) {
+  const peso = num(valor);
+  if (peso < 30 || peso > 300) {
+    avisar('Informe um peso entre 30 e 300 kg.');
+    return false;
+  }
+  estado.perfil = { ...estado.perfil, peso };
+  // Treinos antigos sem estimativa passam a usar este peso
+  estado.sessoes.forEach((x) => { if (x.calorias == null) x.calorias = estimarCalorias(x, peso); });
+  salvar();
+  return true;
+}
+
+const dlgParabens = $('#dlg-parabens');
+let sessaoParabens = null;
+
+function abrirParabens(s) {
+  sessaoParabens = s;
+  renderParabens();
+  if (!dlgParabens.open) dlgParabens.showModal();
+}
+
+function renderParabens() {
+  const s = sessaoParabens;
+  const series = s.exercicios.reduce((t, ex) => t + ex.series.filter((x) => x.feito).length, 0);
+  const resumo = `${esc(s.treinoNome)} · ${formatarDuracao((s.fim || s.inicio) - s.inicio)} · ${series} séries · ${volumeSessao(s).toLocaleString('pt-BR')} kg levantados`;
+  const kcal = caloriasSessao(s);
+  $('#dlg-parabens-corpo').innerHTML = kcal != null ? `
+    <div class="parabens-emoji" aria-hidden="true">🎉</div>
+    <h2>Parabéns por finalizar o treino!</h2>
+    <p class="parabens-frase">Hoje você consumiu <strong>${kcal.toLocaleString('pt-BR')} calorias</strong>.</p>
+    <p class="muted">${resumo}</p>
+    <p class="muted nota">Estimativa com base no seu peso (${estado.perfil.peso.toLocaleString('pt-BR')} kg), no tempo de treino e no ritmo das séries.</p>
+    <div class="row end">
+      <button type="button" class="btn" data-acao="fechar">Fechar</button>
+      <button type="button" class="btn primary" data-acao="evolucao">Ver evolução</button>
+    </div>` : `
+    <div class="parabens-emoji" aria-hidden="true">🎉</div>
+    <h2>Parabéns por finalizar o treino!</h2>
+    <p class="muted">${resumo}</p>
+    <form id="form-peso" class="form-peso">
+      <label for="input-peso-parabens">Para calcular as calorias gastas, informe seu peso (kg). Só é preciso fazer isso uma vez.</label>
+      <div class="row">
+        <input id="input-peso-parabens" type="number" inputmode="decimal" min="30" max="300" step="0.1" placeholder="Ex.: 75" required />
+        <button type="submit" class="btn primary">Calcular</button>
+      </div>
+    </form>
+    <div class="row end">
+      <button type="button" class="btn" data-acao="fechar">Agora não</button>
+    </div>`;
+  $('#input-peso-parabens')?.focus();
+}
+
+dlgParabens.addEventListener('click', (ev) => {
+  const acao = ev.target.closest('[data-acao]')?.dataset.acao;
+  if (acao === 'fechar') dlgParabens.close();
+  else if (acao === 'evolucao') { dlgParabens.close(); mostrarView('progresso'); }
+});
+
+dlgParabens.addEventListener('submit', (ev) => {
+  ev.preventDefault();
+  if (definirPeso($('#input-peso-parabens').value)) {
+    render();
+    renderParabens();
+  }
+});
 
 // ---------- Treinos (CRUD) ----------
 
@@ -662,7 +757,7 @@ function renderHistorico() {
       <details class="card">
         <summary class="section-head">
           <span><strong>${esc(s.treinoNome)}</strong><br>
-            <span class="muted">${formatarData(s.data)} · ${formatarDuracao((s.fim || s.inicio) - s.inicio)} · ${feitas} séries · ${volumeSessao(s).toLocaleString('pt-BR')} kg</span>
+            <span class="muted">${formatarData(s.data)} · ${formatarDuracao((s.fim || s.inicio) - s.inicio)} · ${feitas} séries · ${volumeSessao(s).toLocaleString('pt-BR')} kg${caloriasSessao(s) != null ? ` · ${caloriasSessao(s).toLocaleString('pt-BR')} kcal` : ''}</span>
           </span>
         </summary>
         <ul class="ex-list">${detalhes || '<li class="muted">Nenhuma série registrada.</li>'}</ul>
@@ -724,7 +819,128 @@ function renderProgresso() {
     ? nomes.map((n) => `<option ${n === atual ? 'selected' : ''}>${esc(n)}</option>`).join('')
     : '<option>—</option>';
   renderGrafico(nomes.length ? select.value : null);
+  renderCalorias();
 }
+
+// Gráfico de calorias por treino: uma barra por sessão, cor pelo treino
+
+const MAX_BARRAS = 14;
+
+function coresPorTreino() {
+  // A cor acompanha o treino (ordem da lista de treinos, depois treinos antigos do histórico)
+  const nomes = [...new Set([
+    ...estado.treinos.map((t) => t.nome),
+    ...[...estado.sessoes].reverse().map((s) => s.treinoNome),
+  ])];
+  return new Map(nomes.map((n, i) => [n, i < 8 ? `var(--serie-${i + 1})` : 'var(--serie-outros)']));
+}
+
+function renderCalorias() {
+  const inputPeso = $('#input-peso');
+  if (document.activeElement !== inputPeso) inputPeso.value = estado.perfil?.peso ?? '';
+
+  const el = $('#grafico-calorias');
+  const legenda = $('#legenda-calorias');
+  const resumo = $('#resumo-calorias');
+  const comKcal = estado.sessoes.filter((s) => caloriasSessao(s) != null);
+
+  if (!estado.perfil?.peso && !comKcal.length) {
+    legenda.innerHTML = '';
+    resumo.textContent = '';
+    el.innerHTML = '<p class="empty">Informe seu peso acima para ver as calorias gastas em cada treino.</p>';
+    return;
+  }
+  if (!comKcal.length) {
+    legenda.innerHTML = '';
+    resumo.textContent = '';
+    el.innerHTML = '<p class="empty">Finalize um treino para ver as calorias aqui.</p>';
+    return;
+  }
+
+  const ha30 = dataLocal(new Date(Date.now() - 30 * 86400000));
+  const mes = comKcal.filter((s) => s.data >= ha30);
+  const totalMes = mes.reduce((t, s) => t + caloriasSessao(s), 0);
+  const media = Math.round(comKcal.reduce((t, s) => t + caloriasSessao(s), 0) / comKcal.length);
+  resumo.innerHTML = `Últimos 30 dias: <strong>${totalMes.toLocaleString('pt-BR')} kcal</strong> em ${mes.length} treino(s) · média de <strong>${media.toLocaleString('pt-BR')} kcal</strong> por treino`;
+
+  const barras = [...comKcal].sort((a, b) => (a.fim || a.inicio) - (b.fim || b.inicio)).slice(-MAX_BARRAS);
+  const cores = coresPorTreino();
+  const ordem = [...cores.keys()];
+  const nomesNoGrafico = [...new Set(barras.map((s) => s.treinoNome))].sort((a, b) => ordem.indexOf(a) - ordem.indexOf(b));
+  legenda.innerHTML = nomesNoGrafico.length > 1
+    ? nomesNoGrafico.map((n) => `<span class="legenda-item"><span class="legenda-cor" style="background:${cores.get(n)}"></span>${esc(n)}</span>`).join('')
+    : '';
+
+  const W = 360, H = 220, Pd = { t: 22, r: 6, b: 26, l: 38 };
+  const plotW = W - Pd.l - Pd.r, plotH = H - Pd.t - Pd.b;
+  const maxV = Math.max(...barras.map(caloriasSessao), 1);
+  const passo = [50, 100, 200, 250, 500, 1000].find((p) => maxV / p <= 4) || 1000;
+  const topo = Math.ceil(maxV / passo) * passo;
+  const y = (v) => Pd.t + plotH - (v / topo) * plotH;
+  const coluna = plotW / barras.length;
+  const largura = Math.min(28, coluna - 4);
+  const mostrarData = (i) => barras.length <= 8 || i % 2 === (barras.length - 1) % 2;
+  const dm = (iso) => { const [, m, d] = iso.split('-'); return `${d}/${m}`; };
+  const ultimo = barras.length - 1;
+
+  const ticks = [];
+  for (let v = 0; v <= topo; v += passo) ticks.push(v);
+
+  const barraPath = (x, v) => {
+    const yt = y(v), yb = y(0), r = Math.min(4, largura / 2, yb - yt);
+    if (yb - yt < 0.5) return '';
+    return `M${x},${yb} V${yt + r} Q${x},${yt} ${x + r},${yt} H${x + largura - r} Q${x + largura},${yt} ${x + largura},${yt + r} V${yb} Z`;
+  };
+
+  el.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Calorias gastas por treino, últimos ${barras.length} treinos">
+      ${ticks.map((v) => `
+        <line class="grade" x1="${Pd.l}" x2="${W - Pd.r}" y1="${y(v)}" y2="${y(v)}"/>
+        <text class="eixo-texto" x="${Pd.l - 6}" y="${y(v) + 4}" text-anchor="end">${v.toLocaleString('pt-BR')}</text>`).join('')}
+      ${barras.map((s, i) => {
+        const x = Pd.l + i * coluna + (coluna - largura) / 2;
+        const v = caloriasSessao(s);
+        return `
+          <path class="barra" d="${barraPath(x, v)}" style="fill:${cores.get(s.treinoNome)}"/>
+          ${mostrarData(i) ? `<text class="eixo-texto" x="${x + largura / 2}" y="${H - 8}" text-anchor="middle">${dm(s.data)}</text>` : ''}
+          ${i === ultimo ? `<text class="rotulo-valor" x="${x + largura / 2}" y="${y(v) - 6}" text-anchor="middle">${v.toLocaleString('pt-BR')}</text>` : ''}
+          <rect class="alvo" x="${Pd.l + i * coluna}" y="${Pd.t}" width="${coluna}" height="${plotH}" tabindex="0" data-i="${i}"
+            aria-label="${esc(s.treinoNome)}, ${formatarData(s.data)}: ${v} kcal"/>`;
+      }).join('')}
+      <line class="base" x1="${Pd.l}" x2="${W - Pd.r}" y1="${y(0)}" y2="${y(0)}"/>
+    </svg>
+    <div class="tooltip" id="tooltip-calorias" hidden></div>`;
+
+  const tip = $('#tooltip-calorias');
+  const mostrar = (alvo) => {
+    const s = barras[Number(alvo.dataset.i)];
+    tip.innerHTML = `
+      <span class="tooltip-titulo"><span class="legenda-cor" style="background:${cores.get(s.treinoNome)}"></span>${esc(s.treinoNome)}</span>
+      <span>${formatarData(s.data)} · ${formatarDuracao((s.fim || s.inicio) - s.inicio)}</span>
+      <strong>${caloriasSessao(s).toLocaleString('pt-BR')} kcal</strong>`;
+    tip.hidden = false;
+    const caixa = el.getBoundingClientRect();
+    const r = alvo.getBoundingClientRect();
+    const left = Math.min(Math.max(r.left + r.width / 2 - caixa.left - tip.offsetWidth / 2, 0), caixa.width - tip.offsetWidth);
+    tip.style.left = `${left}px`;
+    tip.style.top = `${Math.max(0, r.top - caixa.top - 4)}px`;
+    el.querySelectorAll('.alvo').forEach((a) => a.classList.toggle('ativo', a === alvo));
+  };
+  const esconder = () => { tip.hidden = true; el.querySelectorAll('.alvo.ativo').forEach((a) => a.classList.remove('ativo')); };
+  el.querySelectorAll('.alvo').forEach((a) => {
+    a.addEventListener('mouseenter', () => mostrar(a));
+    a.addEventListener('focus', () => mostrar(a));
+    a.addEventListener('click', () => mostrar(a));
+    a.addEventListener('mouseleave', esconder);
+    a.addEventListener('blur', esconder);
+  });
+}
+
+$('#input-peso').addEventListener('change', (ev) => {
+  if (ev.target.value === '') return;
+  if (definirPeso(ev.target.value)) render();
+  else ev.target.value = estado.perfil?.peso ?? '';
+});
 
 $('#select-exercicio').addEventListener('change', (ev) => renderGrafico(ev.target.value));
 
@@ -855,7 +1071,7 @@ $('#input-importar').addEventListener('change', async (ev) => {
     const dados = JSON.parse(await arquivo.text());
     if (!Array.isArray(dados.treinos) || !Array.isArray(dados.sessoes)) throw new Error('formato inválido');
     if (!await confirmar('Importar vai substituir todos os dados atuais. Continuar?', 'Importar')) return;
-    estado = { treinos: dados.treinos, sessoes: dados.sessoes, ativa: dados.ativa ?? null };
+    estado = { treinos: dados.treinos, sessoes: dados.sessoes, ativa: dados.ativa ?? null, perfil: dados.perfil ?? {} };
     salvar();
     render();
     avisar('Dados importados com sucesso!');
