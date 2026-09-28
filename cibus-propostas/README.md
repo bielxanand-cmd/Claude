@@ -79,7 +79,7 @@ Trocar o produto no campo *Produto* muda na hora as cores e a unidade de todos o
 3. **Assistente em 7 etapas:** Cliente → Cenário → Projeto → Investimento → ROI → Cases → Revisão, com prévia do slide ao vivo e salvamento automático.
 4. **Editor visual:** páginas à esquerda, prévia no centro e painel de edição à direita.
 5. **Modo apresentação:** slides em tela cheia; navegação pelas setas ou pelo teclado (←/→).
-6. **Revisão e PDF:** liga/desliga de cada página do PDF (Capa, Cenário, Projeto, Investimentos, ROI, Cases, Encerramento), com as pendências de cada uma. Pendências são avisos e não impedem a geração: o vendedor completa a página ou a retira do PDF.
+6. **Revisão e PDF:** liga/desliga de cada página do PDF (Capa, Cenário, Projeto, Bureau, Cronograma, Investimentos, ROI, Cases, Encerramento), com as pendências de cada uma. Pendências são avisos e não impedem a geração: o vendedor completa a página ou a retira do PDF.
 
 ## Imagem da capa
 
@@ -94,6 +94,10 @@ A proporção da imagem é medida no envio e fica na proposta (`cover.imageRatio
 ## Bureau de Marketing
 
 Logo depois de "O projeto" entra a página do **Bureau de Marketing Cibus**, a agência interna. Ela mostra a apresentação do Bureau, as colunas *Planejamos*, *Criamos* e *Orientamos* e a observação sobre o que não está incluso. O texto vem pronto, é editável por proposta (etapa Projeto ou editor visual) e pode ser restaurado ao padrão. Como as outras páginas, pode ser ligada ou desligada na revisão.
+
+## Cronograma
+
+Depois do Bureau entra o **Cronograma** de implantação: título, selo com o prazo total (padrão *30 dias*) e até 6 etapas na linha do tempo, cada uma com nome, resumo, entregas e período (ex.: *Dias 2 – 15*). Vem pronto com o cronograma padrão (Kickoff, Desenvolvimento do aplicativo, Migração de dados, Comunicação com os clientes e Projeto em produção), é editável por proposta (etapa Projeto ou editor visual) e pode ser restaurado ao padrão ou desligado na revisão. No Supabase, fica em `proposals.timeline` (migração `0007`).
 
 ## Como o PDF é gerado
 

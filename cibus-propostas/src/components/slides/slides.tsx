@@ -1,11 +1,34 @@
 import { useState, type ReactNode, type SyntheticEvent } from 'react'
-import { ArrowRight, BadgeCheck, Check, Compass, Gift, MessagesSquare, Palette, Globe, Mail, MapPin, MessageCircle, Phone, Sparkles, Star, Store } from 'lucide-react'
+import {
+  ArrowRight,
+  BadgeCheck,
+  CalendarDays,
+  Check,
+  Compass,
+  Database,
+  Flag,
+  Gift,
+  Globe,
+  Mail,
+  MapPin,
+  Megaphone,
+  MessageCircle,
+  MessagesSquare,
+  Palette,
+  Phone,
+  Rocket,
+  Smartphone,
+  Sparkles,
+  Star,
+  Store,
+  Users,
+} from 'lucide-react'
 import appMockup from '@/assets/brand/app-cibus.webp'
 import { calcInvestment, formatBRL, formatBRLShort, formatPercent, formatUnitPrice } from '@/lib/pricing'
 import type { AppSettings, CaseDef, ModuleDef, Proposal, SlideKey } from '@/lib/types'
 import { cn, formatDateShort, initials, textLength } from '@/lib/utils'
 import { productKeyOf, productThemeVars, profileOf } from '@/lib/products'
-import { BrandWatermark, CibusLogo, FitBox, Highlight, RichHtml, Slide, SlideFooter, SlideHeader, SlideLink, SlideThemeContext } from './primitives'
+import { BrandWatermark, CibusLogo, FitBox, Highlight, RichHtml, SLIDE_W, Slide, SlideFooter, SlideHeader, SlideLink, SlideThemeContext } from './primitives'
 
 export interface DeckContext {
   settings: AppSettings
@@ -561,6 +584,134 @@ export function BureauSlide(c: Common) {
 }
 
 /* =========================================================================
+ * CRONOGRAMA
+ * ======================================================================= */
+
+const TIMELINE_ICONS = [Users, Smartphone, Database, Megaphone, Rocket, Flag]
+const TIMELINE = { left: 72, right: 72, gap: 16, circle: 76, circleTop: 200, cardTop: 306, cardBottom: 640 }
+
+export function TimelineSlide(c: Common) {
+  const t = c.p.timeline
+  const phases = t.phases.filter((ph) => ph.title.trim() || ph.items.some((i) => i.trim())).slice(0, 6)
+  const n = Math.max(1, phases.length)
+  const colW = (SLIDE_W - TIMELINE.left - TIMELINE.right - TIMELINE.gap * (n - 1)) / n
+  const centerX = (i: number) => TIMELINE.left + i * (colW + TIMELINE.gap) + colW / 2
+  const trackY = TIMELINE.circleTop + TIMELINE.circle / 2
+  return (
+    <Slide className="bg-mist">
+      <div
+        className="absolute inset-0 opacity-[0.5]"
+        style={{ backgroundImage: 'radial-gradient(rgb(16 24 40 / 0.06) 1px, transparent 1px)', backgroundSize: '22px 22px' }}
+      />
+
+      {/* Cabeçalho */}
+      <div className="absolute left-[72px] top-[52px] w-[800px]">
+        <div className="flex items-center gap-3 text-[13px] font-bold uppercase tracking-[0.18em] text-brand">
+          <span className="tabular-nums">{String(c.index).padStart(2, '0')}</span>
+          <span className="h-[2px] w-7 rounded-full bg-brand" />
+          <span>Cronograma</span>
+        </div>
+        <FitBox id="timeline-title" label="Título do cronograma" max={40} min={28} lineHeight={1.08} className="mt-3 h-[48px] font-extrabold text-ink" style={{ letterSpacing: '-0.03em' }}>
+          <Highlight text={t.title} />
+        </FitBox>
+        {t.subtitle.trim() && <p className="mt-2 truncate text-[16px] font-medium text-slate-500">{t.subtitle}</p>}
+      </div>
+      {t.total.trim() && (
+        <div className="absolute right-[72px] top-[62px] inline-flex h-[60px] items-center gap-3 rounded-2xl bg-brand px-6 text-white shadow-[0_16px_32px_-14px_rgb(var(--brand)/.8)]">
+          <CalendarDays className="h-7 w-7" />
+          <span className="whitespace-nowrap text-[24px] font-extrabold uppercase tracking-[-0.01em]">{t.total}</span>
+        </div>
+      )}
+
+      {/* Linha do tempo: segmentos alternando marca e escuro */}
+      {phases.slice(0, -1).map((_, i) => (
+        <div
+          key={i}
+          className={cn('absolute h-[6px] -translate-y-1/2 rounded-full', i % 2 === 0 ? 'bg-brand' : 'bg-ink')}
+          style={{ left: centerX(i), width: centerX(i + 1) - centerX(i), top: trackY }}
+        />
+      ))}
+
+      {phases.map((ph, i) => {
+        const Icon = TIMELINE_ICONS[i] ?? Flag
+        const brand = i % 2 === 0
+        const left = TIMELINE.left + i * (colW + TIMELINE.gap)
+        return (
+          <div key={ph.id}>
+            {/* marco */}
+            <div
+              className={cn(
+                'absolute flex items-center justify-center rounded-full text-white ring-[7px] ring-white shadow-[0_14px_28px_-12px_rgba(16,24,40,.55)]',
+                brand ? 'bg-brand' : 'bg-ink',
+              )}
+              style={{ left: centerX(i) - TIMELINE.circle / 2, top: TIMELINE.circleTop, width: TIMELINE.circle, height: TIMELINE.circle }}
+            >
+              <Icon className="h-[32px] w-[32px]" strokeWidth={2} />
+            </div>
+            <div
+              className={cn('absolute w-[2px]', brand ? 'bg-brand' : 'bg-ink')}
+              style={{ left: centerX(i) - 1, top: TIMELINE.circleTop + TIMELINE.circle + 7, height: TIMELINE.cardTop - TIMELINE.circleTop - TIMELINE.circle - 7 }}
+            />
+            <div
+              className={cn('absolute h-3 w-3 rounded-full ring-[3px] ring-mist', brand ? 'bg-brand' : 'bg-ink')}
+              style={{ left: centerX(i) - 6, top: TIMELINE.cardTop - 6 }}
+            />
+
+            {/* etapa */}
+            <div
+              className="absolute flex flex-col rounded-[22px] border border-slate-200 bg-white px-5 pb-4 pt-5 shadow-[0_20px_40px_-24px_rgba(16,24,40,.35)]"
+              style={{ left, width: colW, top: TIMELINE.cardTop, height: TIMELINE.cardBottom - TIMELINE.cardTop }}
+            >
+              <FitBox
+                id={`timeline-title-${i}`}
+                label={`Título da etapa ${i + 1}`}
+                max={18}
+                min={14}
+                lineHeight={1.15}
+                className={cn('h-[44px] shrink-0 font-extrabold', brand ? 'text-brand' : 'text-ink')}
+                style={{ letterSpacing: '-0.02em' }}
+              >
+                {i + 1}. {ph.title}
+              </FitBox>
+              {ph.subtitle.trim() && (
+                <div data-flow className="mt-1 line-clamp-2 shrink-0 text-[12.5px] font-medium leading-snug text-slate-500">
+                  {ph.subtitle}
+                </div>
+              )}
+              <FitBox id={`timeline-items-${i}`} label={`Itens da etapa ${i + 1}`} max={13.5} min={11} lineHeight={1.35} className="mt-3 min-h-0 flex-1">
+                <ul data-flow className="space-y-[0.6em]">
+                  {ph.items
+                    .filter((it) => it.trim())
+                    .map((it, j) => (
+                      <li key={j} data-flow className="flex items-start gap-2 font-medium text-ink">
+                        <span className="mt-[0.5em] h-[0.42em] w-[0.42em] shrink-0 rounded-full bg-brand" />
+                        <span data-flow className="min-w-0 flex-1 pr-1">
+                          {it}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              </FitBox>
+              {ph.period.trim() && (
+                <div
+                  className={cn(
+                    'mt-3 flex h-9 shrink-0 items-center justify-center rounded-full px-3 text-[13px] font-extrabold uppercase tracking-[0.04em] text-ink',
+                    brand ? 'bg-brand/15' : 'bg-slate-100',
+                  )}
+                >
+                  <span className="truncate">{ph.period}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })}
+      <Footer {...c} />
+    </Slide>
+  )
+}
+
+/* =========================================================================
  * 04 — INVESTIMENTOS
  * ======================================================================= */
 
@@ -961,6 +1112,7 @@ export function buildDeck(p: Proposal, ctx: DeckContext): DeckSlide[] {
   if (on('scenario')) specs.push({ key: 'scenario', id: 'scenario', label: 'Cenário atual', render: (c) => <ScenarioSlide {...c} /> })
   if (on('project')) specs.push({ key: 'project', id: 'project', label: 'O projeto', render: (c) => <ProjectSlide {...c} /> })
   if (on('bureau')) specs.push({ key: 'bureau', id: 'bureau', label: 'Bureau de Marketing', render: (c) => <BureauSlide {...c} /> })
+  if (on('timeline')) specs.push({ key: 'timeline', id: 'timeline', label: 'Cronograma', render: (c) => <TimelineSlide {...c} /> })
   if (on('investment')) specs.push({ key: 'investment', id: 'investment', label: 'Investimentos', render: (c) => <InvestmentSlide {...c} /> })
   if (on('roi')) specs.push({ key: 'roi', id: 'roi', label: 'ROI', render: (c) => <RoiSlide {...c} /> })
   if (on('cases')) {

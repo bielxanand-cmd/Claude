@@ -27,7 +27,9 @@ async function waitForImages(root: HTMLElement) {
   )
 }
 
-const nextFrame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+const FLOW_CSS = '\n[data-flow]{height:auto!important;min-height:0!important;max-height:none!important}'
+
+const nextFrame =() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
 
 /**
  * Renderiza cada slide em um palco 1280×720 fora da tela e monta um PDF 16:9
@@ -52,7 +54,10 @@ export async function exportDeckToPdf(deck: DeckSlide[], opts: { title: string; 
       await waitForImages(node)
       await nextFrame()
 
-      fontEmbedCSS ??= await getFontEmbedCSS(node)
+      // A captura copia a altura calculada na tela; como o texto rasterizado pode
+      // ficar um pouco mais estreito, uma linha a menos viraria um vão. Blocos
+      // marcados com data-flow voltam a ter altura automática na captura.
+      fontEmbedCSS ??= (await getFontEmbedCSS(node)) + FLOW_CSS
       const opt = { width: SLIDE_W, height: SLIDE_H, pixelRatio: PIXEL_RATIO, quality: 0.95, cacheBust: false, fontEmbedCSS }
       if (i === 0) await toJpeg(node, opt) // aquecimento: garante imagens decodificadas no primeiro render
       const img = await toJpeg(node, opt)

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { prepareImage } from '../image'
 import { calcInvestment } from '../pricing'
-import { defaultBureau } from '../templates'
+import { defaultBureau, defaultTimeline } from '../templates'
 import type { AppSettings, CaseDef, CaseMetric, Executive, ModuleDef, Proposal } from '../types'
 import type { Repository } from './types'
 
@@ -89,6 +89,7 @@ function rowToProposal(r: Row): Proposal {
     roi: r.roi,
     cases: { title: r.cases_title, subtitle: r.cases_subtitle, caseIds: cases.map((c: Row) => c.case_id) },
     bureau: r.bureau && Object.keys(r.bureau).length ? r.bureau : defaultBureau(),
+    timeline: r.timeline && Object.keys(r.timeline).length ? r.timeline : defaultTimeline(),
     createdBy: r.created_by ?? undefined,
     updatedBy: r.updated_by ?? undefined,
     closing: r.closing,
@@ -129,6 +130,7 @@ function proposalToPayload(p: Proposal): Row {
     cases_subtitle: p.cases.subtitle,
     roi: p.roi,
     bureau: p.bureau,
+    timeline: p.timeline,
     created_by: p.createdBy ?? null,
     updated_by: p.updatedBy ?? null,
     closing: p.closing,

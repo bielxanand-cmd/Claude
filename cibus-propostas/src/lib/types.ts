@@ -21,7 +21,7 @@ export const MODULE_CATEGORIES = [
 ] as const
 export type ModuleCategory = (typeof MODULE_CATEGORIES)[number]
 
-export type SlideKey = 'cover' | 'scenario' | 'project' | 'bureau' | 'investment' | 'roi' | 'cases' | 'closing'
+export type SlideKey = 'cover' | 'scenario' | 'project' | 'bureau' | 'timeline' | 'investment' | 'roi' | 'cases' | 'closing'
 
 export type DiscountType = 'percent' | 'fixed'
 
@@ -35,6 +35,14 @@ export interface PersonRef {
   id: string | null
   /** Nome de referência, usado só quando não dá para resolver pelo id */
   name: string
+}
+
+export interface TimelinePhase {
+  id: string
+  title: string
+  subtitle: string
+  items: string[]
+  period: string // ex.: "Dias 2 – 15"
 }
 
 export type CoverImageFit = 'auto' | 'fill' | 'fit'
@@ -210,6 +218,14 @@ export interface Proposal {
     intro: string // *trecho* = destaque
     columns: { title: string; items: string[] }[]
     note: string
+  }
+
+  /** Cronograma de implantação */
+  timeline: {
+    title: string // *trecho* = destaque
+    subtitle: string
+    total: string // ex.: "30 dias"
+    phases: TimelinePhase[]
   }
 
   closing: {

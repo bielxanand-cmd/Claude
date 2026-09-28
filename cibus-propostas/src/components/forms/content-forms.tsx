@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input, Textarea } from '@/components/ui/input'
 import { useAppData } from '@/lib/app-data'
-import { defaultBureau, uid } from '@/lib/templates'
+import { defaultBureau, defaultTimeline, uid } from '@/lib/templates'
 import { MODULE_CATEGORIES, type CaseDef } from '@/lib/types'
 import { cn, initials } from '@/lib/utils'
 import { SectionToggle, type FormProps } from './client-forms'
@@ -205,6 +205,93 @@ export function BureauForm({ p, update }: FormProps) {
       <Button type="button" variant="outline" size="sm" onClick={() => update((d) => void (d.bureau = defaultBureau()))}>
         <RotateCcw /> Restaurar texto padrão
       </Button>
+    </Section>
+  )
+}
+
+/* --------------------------------------------------------------- Cronograma */
+
+const MAX_PHASES = 6
+
+export function TimelineForm({ p, update }: FormProps) {
+  const t = p.timeline
+  return (
+    <Section
+      title="Cronograma"
+      description="Etapas da implantação, da reunião de kickoff ao projeto em produção. Já vem com o cronograma padrão de 30 dias."
+      action={<SectionToggle p={p} update={update} k="timeline" />}
+    >
+      <div className="grid gap-4 @xl:grid-cols-[1fr_160px]">
+        <Field label="Título" htmlFor="tltitle" hint="Use *asteriscos* para destacar um trecho na cor da marca." aside={<CharCount value={t.title} max={50} />}>
+          <Input id="tltitle" value={t.title} onChange={(e) => update((d) => void (d.timeline.title = e.target.value))} />
+        </Field>
+        <Field label="Prazo total" htmlFor="tltotal" hint="Aparece no selo.">
+          <Input id="tltotal" placeholder="30 dias" value={t.total} onChange={(e) => update((d) => void (d.timeline.total = e.target.value))} />
+        </Field>
+      </div>
+      <Field label="Subtítulo" htmlFor="tlsub" aside={<CharCount value={t.subtitle} max={90} />}>
+        <Input id="tlsub" value={t.subtitle} onChange={(e) => update((d) => void (d.timeline.subtitle = e.target.value))} />
+      </Field>
+      <div className="space-y-3">
+        {t.phases.map((ph, i) => (
+          <div key={ph.id} className="space-y-2 rounded-lg border bg-mist/60 p-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">{i + 1}</span>
+              <Input
+                aria-label={`Título da etapa ${i + 1}`}
+                className="font-bold"
+                placeholder="Nome da etapa"
+                value={ph.title}
+                onChange={(e) => update((d) => void (d.timeline.phases[i]!.title = e.target.value))}
+              />
+              <Input
+                aria-label={`Período da etapa ${i + 1}`}
+                className="w-36 shrink-0"
+                placeholder="Dias 2 – 15"
+                value={ph.period}
+                onChange={(e) => update((d) => void (d.timeline.phases[i]!.period = e.target.value))}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Remover etapa ${i + 1}`}
+                onClick={() => update((d) => void d.timeline.phases.splice(i, 1))}
+              >
+                <Trash2 className="text-muted-foreground" />
+              </Button>
+            </div>
+            <Input
+              aria-label={`Subtítulo da etapa ${i + 1}`}
+              placeholder="Resumo da etapa"
+              value={ph.subtitle}
+              onChange={(e) => update((d) => void (d.timeline.phases[i]!.subtitle = e.target.value))}
+            />
+            <ListEditor
+              items={ph.items}
+              onChange={(v) => update((d) => void (d.timeline.phases[i]!.items = v))}
+              addLabel="Entrega"
+              placeholder="Nova entrega"
+              maxItems={5}
+              maxChars={60}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={t.phases.length >= MAX_PHASES}
+          onClick={() => update((d) => void d.timeline.phases.push({ id: uid(), title: '', subtitle: '', items: [], period: '' }))}
+        >
+          <Plus /> Adicionar etapa
+        </Button>
+        <Button type="button" variant="outline" size="sm" onClick={() => update((d) => void (d.timeline = defaultTimeline()))}>
+          <RotateCcw /> Restaurar cronograma padrão
+        </Button>
+      </div>
     </Section>
   )
 }

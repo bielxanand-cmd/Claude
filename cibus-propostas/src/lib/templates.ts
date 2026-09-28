@@ -12,6 +12,7 @@ export const SLIDES: { key: SlideKey; label: string; short: string }[] = [
   { key: 'scenario', label: 'Cenário atual', short: 'Cenário' },
   { key: 'project', label: 'O projeto', short: 'Projeto' },
   { key: 'bureau', label: 'Bureau de Marketing', short: 'Bureau' },
+  { key: 'timeline', label: 'Cronograma', short: 'Cronograma' },
   { key: 'investment', label: 'Investimentos', short: 'Investimento' },
   { key: 'roi', label: 'ROI', short: 'ROI' },
   { key: 'cases', label: 'Cases', short: 'Cases' },
@@ -76,6 +77,49 @@ export function defaultBureau(): Proposal['bureau'] {
       },
     ],
     note: 'A execução é realizada pela equipe ou agência da empresa. Não estão inclusos gestão de anúncios, publicação nas redes sociais, operação diária das campanhas e execução de ações presenciais.',
+  }
+}
+
+/** Cronograma padrão de implantação (30 dias, 5 etapas). */
+export function defaultTimeline(): Proposal['timeline'] {
+  const phase = (title: string, subtitle: string, items: string[], period: string) => ({ id: uid(), title, subtitle, items, period })
+  return {
+    title: 'Do kickoff ao app no ar em *30 dias*',
+    subtitle: 'Cada etapa com entregas claras e acompanhamento do time Cibus.',
+    total: '30 dias',
+    phases: [
+      phase('Kickoff', 'Alinhamento e planejamento', ['Reunião de kickoff', 'Definição de escopo', 'Alinhamento de times', 'Plano de projeto'], 'Dia 1'),
+      phase(
+        'Desenvolvimento do aplicativo',
+        'Configuração e personalização',
+        ['Customização do app', 'Configuração de regras e benefícios', 'Aprovação do time do cliente', 'Publicação nas lojas (App Store e Google Play)'],
+        'Dias 2 – 15',
+      ),
+      phase(
+        'Migração de dados',
+        'Transferência segura e completa',
+        ['Extração e tratamento dos dados', 'Migração de cadastros, saldos e histórico', 'Validação e testes', 'Garantia da integridade das informações'],
+        'Dias 16 – 22',
+      ),
+      phase(
+        'Comunicação com os clientes',
+        'Informação e engajamento',
+        [
+          'Planejamento da comunicação',
+          'Avisos antecipados no app, SMS, e-mail e outros canais',
+          'Materiais de divulgação',
+          'Orientações sobre o novo app',
+          'Suporte durante a transição',
+        ],
+        'Dias 23 – 28',
+      ),
+      phase(
+        'Projeto em produção',
+        'Início da operação',
+        ['App disponível nas lojas', 'Programa ativo para os clientes', 'Acompanhamento e suporte no go-live', 'Monitoramento de resultados'],
+        'Dias 29 – 30',
+      ),
+    ],
   }
 }
 
@@ -169,8 +213,9 @@ const defaultTemplate: TemplateDef = {
         caseIds: [],
       },
       bureau: defaultBureau(),
+      timeline: defaultTimeline(),
       closing: { title: ps.closingTitle, cta: 'Vamos começar?' },
-      sections: { cover: true, scenario: true, project: true, bureau: true, investment: true, roi: true, cases: true, closing: true },
+      sections: { cover: true, scenario: true, project: true, bureau: true, timeline: true, investment: true, roi: true, cases: true, closing: true },
     }
   },
 }
@@ -185,6 +230,7 @@ export function duplicateProposal(p: Proposal): Proposal {
   copy.investment.customDiscounts = copy.investment.customDiscounts.map((d) => ({ ...d, id: uid() }))
   copy.investment.consumption = copy.investment.consumption.map((c) => ({ ...c, id: uid() }))
   copy.roi.indicators = copy.roi.indicators.map((i) => ({ ...i, id: uid() }))
+  if (copy.timeline) copy.timeline.phases = copy.timeline.phases.map((ph) => ({ ...ph, id: uid() }))
   return {
     ...copy,
     id: uid(),
@@ -213,6 +259,7 @@ export function normalizeProposal(p: Partial<Proposal>, ctx: TemplateContext): P
     roi: merge(base.roi, p.roi),
     cases: merge(base.cases, p.cases),
     bureau: merge(base.bureau, p.bureau),
+    timeline: merge(base.timeline, p.timeline),
     closing: merge(base.closing, p.closing),
     sections: merge(base.sections, p.sections),
   } as Proposal
