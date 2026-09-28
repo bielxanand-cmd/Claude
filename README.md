@@ -36,3 +36,9 @@ python3 -m http.server 8000
 | `exercicios.js` | Biblioteca de exercícios, dicas de execução e ilustrações em SVG |
 | `app.js`     | Lógica, persistência, timer e gráfico        |
 | `nuvem.js`   | Sincronização entre aparelhos quando publicado no claude.ai |
+
+---
+
+## SDR Plantão
+
+Na pasta [`sdr/`](sdr/) há um app separado para SDR (fila de atendimento, SLA de 5 min, cadência e métricas). Veja o [README](sdr/README.md).

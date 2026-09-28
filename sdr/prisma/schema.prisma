@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Lead {
+  id             Int       @id @default(autoincrement())
+  nome           String
+  telefone       String?
+  email          String?
+  origem         String?
+  interesse      String?
+  observacao     String?
+  createdAt      DateTime  @default(now())
+  // Início da contagem do SLA (= createdAt, ou abertura do expediente se chegou fora do horário)
+  slaStartAt     DateTime  @default(now())
+  foraDoHorario  Boolean   @default(false)
+  firstContactAt DateTime?
+  speedToLeadSec Int?
+  // NOVO | EM_CADENCIA | CONVERSANDO | AGENDADO | DESQUALIFICADO | INVALIDO | ENCERRADO
+  status         String    @default("NOVO")
+  // Nota de qualificação 0-3 (nº de perguntas do script marcadas como "ok")
+  score          Int       @default(0)
+  // Respostas às perguntas de qualificação: JSON [{ ok: boolean, txt: string }] x3
+  respostas      String?
+  attempts       Attempt[]
+  tasks          Task[]
+  meetings       Meeting[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Attempt {
+  id          Int      @id @default(autoincrement())
+  leadId      Int
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  // LIGACAO | WHATSAPP | EMAIL
+  canal       String
+  // NAO_ATENDEU | AGENDOU | RETORNAR | DESQUALIFICADO | NUMERO_INVALIDO | ENVIADO | RESPONDEU
+  resultado   String
+  nota        String?
+  // Número sequencial da tentativa para este lead (1 = primeira)
+  numero      Int
+  taskId      Int?
+  createdAt   DateTime @default(now())
+
+  @@index([leadId])
+  @@index([createdAt])
+}
+
+model Task {
+  id            Int       @id @default(autoincrement())
+  leadId        Int
+  lead          Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  // CADENCIA | CONFIRMACAO | RETORNO
+  tipo          String
+  // LIGACAO | WHATSAPP | EMAIL
+  canal         String
+  titulo        String
+  dueAt         DateTime
+  // PENDENTE | FEITA | CANCELADA
+  status        String    @default("PENDENTE")
+  cadenceStepId Int?
+  templateId    Int?
+  meetingId     Int?
+  doneAt        DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([status, dueAt])
+  @@index([leadId])
+}
+
+model CadenceStep {
+  id         Int     @id @default(autoincrement())
+  ordem      Int
+  dia        Int
+  canal      String
+  titulo     String
+  templateId Int?
+  ativo      Boolean @default(true)
+}
+
+model Meeting {
+  id            Int      @id @default(autoincrement())
+  leadId        Int
+  lead          Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  scheduledAt   DateTime
+  bookedAt      DateTime @default(now())
+  // Em qual tentativa (número) a reunião saiu
+  attemptNumero Int      @default(1)
+  // AGENDADA | CONFIRMADA | REALIZADA | NO_SHOW | CANCELADA
+  status        String   @default("AGENDADA")
+  nota          String?
+
+  @@index([scheduledAt])
+  @@index([bookedAt])
+}
+
+model Template {
+  id    Int    @id @default(autoincrement())
+  // Identificador interno dos templates padrão (ex.: "wa_confirma")
+  chave String? @unique
+  canal String
+  nome  String
+  // Para e-mail: assunto
+  assunto String?
+  corpo String
+}
+
+model Settings {
+  id               Int    @id @default(1)
+  produto          String
+  nomeSdr          String @default("Seu nome")
+  empresa          String @default("Sua empresa")
+  horaInicio       String @default("08:00")
+  horaFim          String @default("17:00")
+  // dias úteis: "1,2,3,4,5" (0 = domingo)
+  diasUteis        String @default("1,2,3,4,5")
+  metaReunioes     Int    @default(10)
+  slaMinutos       Int    @default(5)
+  duracaoReuniao   Int    @default(30)
+  scriptAbertura   String
+  pergunta1        String
+  pergunta2        String
+  pergunta3        String
+  scriptFechamento String
+  // Metas das taxas (0-1) para o indicador de gargalo
+  metaContato      Float  @default(0.5)
+  metaAgendamento  Float  @default(0.35)
+  metaNoShow       Float  @default(0.2)
+  webhookToken     String?
+}
