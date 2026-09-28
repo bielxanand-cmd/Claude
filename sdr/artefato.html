@@ -1,0 +1,1592 @@
+<title>SDR Plantão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: console de plantão — barra fixa com meta + faixa de SLA, conteúdo em duas colunas que empilham no celular. */
+:root {
+  --bg: #eef2f1; --surface: #ffffff; --surface-2: #f4f7f6; --line: #d6dfdc; --line-2: #e6ecea;
+  --ink: #14201d; --ink-2: #4a5955; --ink-3: #7b8a86;
+  --accent: #0d6b5b; --accent-ink: #ffffff; --accent-soft: #d9efe9;
+  --ok: #157a3c; --ok-soft: #dcf5e4; --warn: #9a5a06; --warn-soft: #fdf0cf;
+  --bad: #b3163c; --bad-soft: #fde3e8; --info: #1f4fbf; --info-soft: #dfe8fb; --violet: #6130c9; --violet-soft: #ebe4fb;
+  --sla-green: #15924a; --sla-yellow: #f2b01e; --sla-yellow-ink: #3a2700; --sla-red: #d91c47;
+  --bar: #0d6b5b; --bar-hover: #0a5245; --grid: #e3e9e7;
+  --shadow: 0 1px 2px rgba(15, 30, 26, .06), 0 4px 14px rgba(15, 30, 26, .05);
+  --f-ui: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1413; --surface: #151d1b; --surface-2: #1b2523; --line: #2b3835; --line-2: #222d2b;
+  --ink: #e5eeeb; --ink-2: #a8b8b3; --ink-3: #72837e;
+  --accent: #3fbea4; --accent-ink: #04211b; --accent-soft: #15372f;
+  --ok: #5fd88c; --ok-soft: #133021; --warn: #f5c250; --warn-soft: #3a2b0d;
+  --bad: #ff7d98; --bad-soft: #3d131e; --info: #9dbcff; --info-soft: #172743; --violet: #c3b0ff; --violet-soft: #2a2148;
+  --bar: #3fbea4; --bar-hover: #6ad6c0; --grid: #24302d;
+  --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0e1413; --surface: #151d1b; --surface-2: #1b2523; --line: #2b3835; --line-2: #222d2b;
+  --ink: #e5eeeb; --ink-2: #a8b8b3; --ink-3: #72837e;
+  --accent: #3fbea4; --accent-ink: #04211b; --accent-soft: #15372f;
+  --ok: #5fd88c; --ok-soft: #133021; --warn: #f5c250; --warn-soft: #3a2b0d;
+  --bad: #ff7d98; --bad-soft: #3d131e; --info: #9dbcff; --info-soft: #172743; --violet: #c3b0ff; --violet-soft: #2a2148;
+  --bar: #3fbea4; --bar-hover: #6ad6c0; --grid: #24302d;
+  --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 14px; line-height: 1.45; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--ink-3); }
+.small { font-size: 12px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h1 { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+
+/* Barra superior */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top-in { max-width: 1240px; margin: 0 auto; padding: 8px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+@media (max-width: 640px) { .top { position: static; } }
+.brand { font-weight: 800; font-size: 16px; display: flex; align-items: center; gap: 8px; color: var(--ink); }
+.brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--sla-green); box-shadow: 0 0 0 3px var(--ok-soft); }
+.brand-dot.alert { background: var(--sla-red); box-shadow: 0 0 0 3px var(--bad-soft); animation: pulse 1s infinite; }
+nav.tabs { display: flex; flex-wrap: wrap; gap: 2px; }
+nav.tabs button { border: 0; background: none; padding: 6px 10px; border-radius: 8px; cursor: pointer; color: var(--ink-2); font-weight: 600; }
+nav.tabs button:hover { background: var(--surface-2); }
+nav.tabs button[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+.top-right { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.meter { display: flex; align-items: center; gap: 8px; font-weight: 700; background: none; border: 0; cursor: pointer; padding: 0; }
+.meter-track { width: 96px; height: 8px; border-radius: 99px; background: var(--line-2); overflow: hidden; }
+.meter-fill { height: 100%; background: var(--accent); border-radius: 99px; }
+.meter-fill.done { background: var(--ok); }
+
+/* SLA strip */
+.sla { border-top: 1px solid var(--line); background: var(--ok-soft); }
+.sla.hot { background: var(--bad-soft); }
+.sla-in { max-width: 1240px; margin: 0 auto; padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sla-chip { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: 4px 10px 4px 4px; cursor: pointer; min-width: 0; }
+.sla-chip.g { border-color: var(--sla-green); } .sla-chip.y { border-color: var(--sla-yellow); } .sla-chip.r { border-color: var(--sla-red); }
+.sla-chip span.t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+
+.timer { font-family: var(--f-mono); font-weight: 700; font-variant-numeric: tabular-nums; border-radius: 7px; padding: 2px 8px; color: #fff; font-size: 16px; min-width: 64px; text-align: center; display: inline-block; }
+.timer.g { background: var(--sla-green); } .timer.y { background: var(--sla-yellow); color: var(--sla-yellow-ink); } .timer.r { background: var(--sla-red); animation: pulse 1.2s infinite; }
+@keyframes pulse { 50% { opacity: .65; } }
+@media (prefers-reduced-motion: reduce) { .timer.r, .brand-dot.alert { animation: none; } }
+
+main { max-width: 1240px; margin: 0 auto; padding: 16px 16px 48px; }
+.grid-2 { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
+.grid-lead { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; }
+@media (max-width: 900px) { .grid-2, .grid-lead { grid-template-columns: minmax(0, 1fr); } }
+.stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; box-shadow: var(--shadow); min-width: 0; }
+.card.tint-warn { background: var(--warn-soft); border-color: transparent; }
+.card.tint-ok { background: var(--ok-soft); border-color: transparent; }
+.card.tint-accent { background: var(--accent-soft); border-color: transparent; }
+.sec-title { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 12px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
+.num { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); color: var(--bg); font-size: 11px; }
+.count { background: var(--line-2); color: var(--ink-2); border-radius: 99px; padding: 0 8px; font-size: 11px; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 6px 12px; font-weight: 600; cursor: pointer; white-space: nowrap; text-decoration: none; }
+.btn:hover { background: var(--surface-2); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.go { background: var(--sla-green); border-color: var(--sla-green); color: #fff; }
+.btn.danger { color: var(--bad); border-color: var(--bad-soft); }
+.btn.violet { color: var(--violet); border-color: var(--violet-soft); }
+.btn.info { color: var(--info); border-color: var(--info-soft); }
+.btn.sm { padding: 3px 8px; font-size: 12px; }
+.btn.link { border: 0; background: none; color: var(--accent); padding: 0; }
+.btn.ghost { border-color: transparent; background: none; color: var(--ink-3); padding: 2px 6px; }
+.btn.ghost:hover { color: var(--bad); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+kbd { font-family: var(--f-mono); font-size: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-3); border-radius: 4px; padding: 0 4px; line-height: 16px; }
+.btn.primary kbd, .btn.go kbd { background: rgba(255,255,255,.2); color: inherit; border-color: transparent; }
+
+.input { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 10px; outline: none; }
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+textarea.input { resize: vertical; }
+label.lbl { display: block; font-size: 12px; font-weight: 600; color: var(--ink-3); margin-bottom: 4px; }
+.form-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.span-all { grid-column: 1 / -1; }
+
+/* Fila */
+.qlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.qitem { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; cursor: pointer; min-width: 0; text-align: left; width: 100%; }
+.qitem:hover { border-color: var(--accent); }
+.qitem.sel { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.qitem .main { min-width: 0; flex: 1; }
+.qitem .name { font-weight: 700; }
+.qitem .sub { font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qitem .when { font-size: 12px; white-space: nowrap; }
+.when.late { color: var(--bad); font-weight: 700; } .when.now { color: var(--ok); } .when.later { color: var(--ink-3); }
+.empty { border: 1px dashed var(--line); border-radius: 10px; padding: 14px; text-align: center; color: var(--ink-3); font-size: 13px; }
+
+.tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; border-radius: 6px; padding: 1px 7px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.tag.canal { font-weight: 600; min-width: 84px; justify-content: flex-start; }
+.st-NOVO, .st-NO_SHOW { background: var(--bad-soft); color: var(--bad); }
+.st-EM_CADENCIA, .st-AGENDADA { background: var(--info-soft); color: var(--info); }
+.st-CONVERSANDO { background: var(--violet-soft); color: var(--violet); }
+.st-AGENDADO, .st-CONFIRMADA { background: var(--ok-soft); color: var(--ok); }
+.st-REALIZADA { background: var(--ok); color: var(--surface); }
+.stars { color: #d99a06; font-size: 12px; letter-spacing: 1px; } .stars i { color: var(--line); font-style: normal; }
+
+/* Lead */
+.lead-head { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
+.lead-head .contacts { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--ink-2); font-size: 13px; }
+.outcomes { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.outcomes .btn { justify-content: flex-start; padding: 9px 12px; white-space: normal; text-align: left; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 5px 10px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.script p, .script .q { background: var(--surface-2); border-radius: 8px; padding: 8px 10px; margin: 0; }
+.script .close { background: var(--ok-soft); color: var(--ink); font-weight: 600; }
+.script ol { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.timeline li { display: grid; grid-template-columns: 96px 20px minmax(0, 1fr); gap: 6px; }
+.tasks li { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.tasks .when { width: 96px; flex: none; }
+
+table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.data th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); padding: 8px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+table.data td { padding: 8px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+table.data tr:hover td { background: var(--surface-2); }
+.scroll-x { overflow-x: auto; }
+
+/* Dashboard */
+.kpis { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.kpi .v { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.kpi .v.good { color: var(--ok); }
+.goal-num { font-size: 40px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.bigbar { height: 12px; background: var(--line-2); border-radius: 99px; overflow: hidden; }
+.bigbar > div { height: 100%; background: var(--accent); border-radius: 99px; }
+.bigbar > div.done { background: var(--ok); }
+.stages { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.stage { background: var(--surface); border-radius: 8px; padding: 8px 10px; }
+.minibar { height: 5px; background: var(--line-2); border-radius: 99px; margin-top: 6px; overflow: hidden; }
+.minibar > div { height: 100%; border-radius: 99px; background: var(--warn); }
+.minibar > div.ok { background: var(--ok); }
+.chart { position: relative; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--ink-3); font-size: 11px; font-family: var(--f-ui); }
+.chart .val { fill: var(--ink-2); font-weight: 700; }
+.chart .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 8px; padding: 6px 8px; font-size: 12px; transform: translate(-50%, -100%); white-space: nowrap; }
+.funnel li { list-style: none; }
+.funnel { padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+
+/* Modal / toasts */
+.backdrop { position: fixed; inset: 0; background: rgba(8, 16, 14, .45); z-index: 50; display: flex; align-items: flex-start; justify-content: center; padding: 8vh 16px 16px; overflow-y: auto; }
+.modal { background: var(--surface); border-radius: 14px; width: 100%; max-width: 460px; padding: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+.modal.wide { max-width: 720px; }
+.modal-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.toasts { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 60; display: flex; flex-direction: column; gap: 8px; max-width: min(360px, calc(100vw - 32px)); }
+.toast { background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: 10px; box-shadow: var(--shadow); font-weight: 600; }
+.toast.bad { background: var(--bad); color: #fff; }
+.toast.alert { background: var(--sla-red); color: #fff; }
+.banner-note { background: var(--warn-soft); color: var(--ink); border-radius: 10px; padding: 8px 12px; font-size: 13px; }
+pre.code { background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px; font-family: var(--f-mono); font-size: 12px; overflow-x: auto; margin: 0; }
+.check { display: flex; gap: 8px; align-items: flex-start; }
+.check input { margin-top: 3px; accent-color: var(--accent); width: 16px; height: 16px; }
+.done-txt { text-decoration: line-through; color: var(--ink-3); }
+</style>
+
+<div id="root"><main><p class="muted">Carregando o SDR Plantão…</p></main></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<script id="core">
+/* ===== Regras de negócio (sem DOM): datas, cadência, tentativas, fila, métricas, exemplo ===== */
+const SDR = (() => {
+  // Fuso de São Paulo (UTC-3, sem horário de verão desde 2019).
+  const OFF = -180 * 60000, DAY = 86400000;
+  const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+  const local = (t) => { const s = new Date(t + OFF); return { y: s.getUTCFullYear(), m: s.getUTCMonth() + 1, d: s.getUTCDate(), hh: s.getUTCHours(), mm: s.getUTCMinutes(), dow: s.getUTCDay() }; };
+  const fromLocal = (y, m, d, hh = 0, mm = 0) => Date.UTC(y, m - 1, d, hh, mm) - OFF;
+  const startOfDay = (t) => { const p = local(t); return fromLocal(p.y, p.m, p.d); };
+  const endOfDay = (t) => startOfDay(t) + DAY - 1;
+  const sameDay = (a, b) => startOfDay(a) === startOfDay(b);
+  const startOfWeek = (t) => startOfDay(t) - ((local(t).dow + 6) % 7) * DAY;
+  const hm = (s) => { const [h, m] = String(s).split(":").map(Number); return h * 60 + (m || 0); };
+  const minutesOfDay = (t) => { const p = local(t); return p.hh * 60 + p.mm; };
+  const atMinutes = (day, min) => { const p = local(day); return fromLocal(p.y, p.m, p.d, Math.floor(min / 60), min % 60); };
+  const workdays = (cfg) => String(cfg.diasUteis).split(",").filter(Boolean).map(Number);
+  const isWorkday = (cfg, t) => workdays(cfg).includes(local(t).dow);
+  const isWorkingTime = (cfg, t) => { const m = minutesOfDay(t); return isWorkday(cfg, t) && m >= hm(cfg.horaInicio) && m < hm(cfg.horaFim); };
+  function nextWorkStart(cfg, t) {
+    if (isWorkingTime(cfg, t)) return t;
+    let day = startOfDay(t);
+    if (isWorkday(cfg, t) && minutesOfDay(t) < hm(cfg.horaInicio)) return atMinutes(day, hm(cfg.horaInicio));
+    for (let i = 0; i < 14; i++) { day += DAY; if (isWorkday(cfg, day)) return atMinutes(day, hm(cfg.horaInicio)); }
+    return t;
+  }
+  function addBusinessDays(cfg, t, n) { let d = t, left = n, g = 0; while (left > 0 && g++ < 60) { d += DAY; if (isWorkday(cfg, d)) left--; } return d; }
+  function prevBusinessDay(cfg, t) { let d = startOfDay(t); for (let i = 0; i < 14; i++) { d -= DAY; if (isWorkday(cfg, d)) return d; } return startOfDay(t) - DAY; }
+  function nextBusinessDay(cfg, t) { let d = startOfDay(t); for (let i = 0; i < 14; i++) { d += DAY; if (isWorkday(cfg, d)) return d; } return startOfDay(t) + DAY; }
+  const pad = (n) => String(n).padStart(2, "0");
+  const fmtTime = (t) => { const p = local(t); return `${pad(p.hh)}:${pad(p.mm)}`; };
+  const fmtDate = (t) => { const p = local(t); return `${DIAS[p.dow]} ${pad(p.d)}/${pad(p.m)}`; };
+  const fmtDateTime = (t) => `${fmtDate(t)} ${fmtTime(t)}`;
+  function fmtSlot(t, now) {
+    const p = local(t), hora = `${pad(p.hh)}h${pad(p.mm)}`;
+    if (sameDay(t, now)) return `hoje às ${hora}`;
+    if (sameDay(t, now + DAY)) return `amanhã (${DIAS[p.dow]}) às ${hora}`;
+    return `${fmtDate(t)} às ${hora}`;
+  }
+  const toInputValue = (t) => { const p = local(t); return `${p.y}-${pad(p.m)}-${pad(p.d)}T${pad(p.hh)}:${pad(p.mm)}`; };
+  function fromInputValue(v) { const [dp, tp = "00:00"] = v.split("T"); const [y, m, d] = dp.split("-").map(Number); const [hh, mm] = tp.split(":").map(Number); return fromLocal(y, m, d, hh, mm); }
+  function fmtDuration(sec) {
+    if (sec == null) return "—";
+    const s = Math.max(0, Math.round(sec));
+    if (s < 60) return `${s}s`;
+    if (s < 3600) return `${Math.floor(s / 60)}min ${pad(s % 60)}s`;
+    return `${Math.floor(s / 3600)}h ${pad(Math.floor((s % 3600) / 60))}min`;
+  }
+
+  const CANAIS = ["LIGACAO", "WHATSAPP", "EMAIL"];
+  const CANAL_LABEL = { LIGACAO: "Ligação", WHATSAPP: "WhatsApp", EMAIL: "E-mail" };
+  const CANAL_ICON = { LIGACAO: "📞", WHATSAPP: "💬", EMAIL: "✉️" };
+  const RESULTADO_LABEL = { NAO_ATENDEU: "Não atendeu", AGENDOU: "Atendeu - agendou", RETORNAR: "Atendeu - retornar depois", DESQUALIFICADO: "Desqualificado", NUMERO_INVALIDO: "Número inválido", ENVIADO: "Mensagem enviada" };
+  const CONVERSA = ["AGENDOU", "RETORNAR", "DESQUALIFICADO"];
+  const STATUS_LABEL = { NOVO: "Novo", EM_CADENCIA: "Em cadência", CONVERSANDO: "Conversando", AGENDADO: "Agendado", DESQUALIFICADO: "Desqualificado", INVALIDO: "Número inválido", ENCERRADO: "Encerrado" };
+  const STATUS_FECHADOS = ["AGENDADO", "DESQUALIFICADO", "INVALIDO", "ENCERRADO"];
+  const MEETING_LABEL = { AGENDADA: "Agendada", CONFIRMADA: "Confirmada", REALIZADA: "Realizada", NO_SHOW: "No-show", CANCELADA: "Cancelada" };
+
+  const DEFAULT_SETTINGS = {
+    produto: "Consultoria que ajuda empresas a organizar e acelerar o processo comercial.",
+    nomeSdr: "Seu nome", empresa: "Sua empresa",
+    horaInicio: "08:00", horaFim: "17:00", diasUteis: "1,2,3,4,5",
+    metaReunioes: 10, slaMinutos: 5, duracaoReuniao: 30,
+    scriptAbertura: "Oi {nome}, tudo bem? Aqui é {sdr}, da {empresa}. Vi que você acabou de se inscrever sobre {interesse}. Tem 2 minutinhos agora?",
+    pergunta1: "Qual é hoje o principal desafio que te fez buscar isso?",
+    pergunta2: "Qual o tamanho da empresa / da equipe envolvida?",
+    pergunta3: "Para quando vocês querem resolver isso?",
+    scriptFechamento: "Faz sentido a gente conversar com calma com um especialista. Tenho {horario1} ou {horario2}. Qual fica melhor pra você?",
+    metaContato: 0.5, metaAgendamento: 0.35, metaNoShow: 0.2,
+  };
+  const DEFAULT_TEMPLATES = [
+    { id: "wa_d0", canal: "WHATSAPP", nome: "D0 - WhatsApp após ligação", corpo: "Oi {nome}, tudo bem? Aqui é {sdr}, da {empresa} 👋\nAcabei de te ligar sobre sua inscrição em {interesse}. Queria entender rapidinho seu cenário e te mostrar como podemos ajudar.\nTenho {horario1} ou {horario2}, qual fica melhor?" },
+    { id: "email_d0", canal: "EMAIL", nome: "D0 - E-mail de apresentação", assunto: "{nome}, sobre sua inscrição em {interesse}", corpo: "Olá {nome},\n\nSou {sdr}, da {empresa}. Recebi sua inscrição sobre {interesse} e tentei te ligar agora há pouco.\n\n{produto}\n\nQue tal uma conversa rápida de 30 minutos? Tenho {horario1} ou {horario2}.\n\nAbraço,\n{sdr}" },
+    { id: "wa_d1", canal: "WHATSAPP", nome: "D1 - WhatsApp follow-up", corpo: "Oi {nome}! Tentei falar com você de novo agora. Ainda tem interesse em {interesse}? Se preferir, me diz o melhor horário que eu te ligo 🙂" },
+    { id: "email_d4", canal: "EMAIL", nome: "D4 - E-mail de follow-up", assunto: "Ainda faz sentido conversarmos, {nome}?", corpo: "Oi {nome},\n\nTentei contato algumas vezes nos últimos dias sobre {interesse}. Sei que a rotina é corrida!\n\nSe fizer sentido, tenho {horario1} ou {horario2} para uma conversa rápida.\n\nAbraço,\n{sdr}" },
+    { id: "wa_d7", canal: "WHATSAPP", nome: "D7 - Encerramento", corpo: "Oi {nome}, tentei falar com você algumas vezes sobre {interesse}. Como não consegui retorno, vou fechar seu cadastro por aqui. Ainda faz sentido pra você? Se sim, é só me responder que a gente marca 🙂" },
+    { id: "wa_confirma", canal: "WHATSAPP", nome: "Confirmação de reunião", corpo: "Oi {nome}! Passando para confirmar nossa conversa {reuniao}. Está de pé? Qualquer imprevisto me avisa que a gente remarca 🙂" },
+  ];
+  const DEFAULT_CADENCE = [
+    { dia: 0, canal: "LIGACAO", titulo: "Ligação imediata", templateId: null },
+    { dia: 0, canal: "WHATSAPP", titulo: "WhatsApp imediato", templateId: "wa_d0" },
+    { dia: 0, canal: "EMAIL", titulo: "E-mail de apresentação", templateId: "email_d0" },
+    { dia: 1, canal: "LIGACAO", titulo: "Ligação D1", templateId: null },
+    { dia: 1, canal: "WHATSAPP", titulo: "WhatsApp D1", templateId: "wa_d1" },
+    { dia: 2, canal: "LIGACAO", titulo: "Ligação D2", templateId: null },
+    { dia: 4, canal: "LIGACAO", titulo: "Ligação D4", templateId: null },
+    { dia: 4, canal: "EMAIL", titulo: "E-mail D4", templateId: "email_d4" },
+    { dia: 7, canal: "WHATSAPP", titulo: "Mensagem de encerramento", templateId: "wa_d7" },
+  ].map((c) => ({ ...c, ativo: true }));
+  const defaultConfig = () => ({ settings: { ...DEFAULT_SETTINGS }, templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })), cadence: DEFAULT_CADENCE.map((c) => ({ ...c })) });
+
+  let seq = 0;
+  const uid = (p) => p + Date.now().toString(36) + (seq++).toString(36) + Math.random().toString(36).slice(2, 6);
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const clean = (v) => { if (v == null) return null; const s = String(v).trim(); return s === "" ? null : s; };
+
+  function newLead(input, now, cfg, forceSla) {
+    const createdAt = input.createdAt ?? now;
+    const dentro = forceSla || isWorkingTime(cfg, createdAt);
+    return {
+      id: uid("l"), nome: String(input.nome).trim(), telefone: clean(input.telefone), email: clean(input.email)?.toLowerCase() ?? null,
+      origem: clean(input.origem), interesse: clean(input.interesse), observacao: clean(input.observacao),
+      createdAt, slaStartAt: dentro ? createdAt : nextWorkStart(cfg, createdAt), foraDoHorario: !dentro,
+      firstContactAt: null, speedToLeadSec: null, status: "NOVO", score: 0, respostas: null,
+      attempts: [], tasks: [], meetings: [], exemplo: !!input.exemplo,
+    };
+  }
+
+  const ALIASES = {
+    nome: ["nome", "name", "full_name", "fullname", "nome_completo", "your-name", "cliente"],
+    telefone: ["telefone", "phone", "phone_number", "whatsapp", "celular", "tel", "fone", "mobile"],
+    email: ["email", "e-mail", "e_mail", "mail", "email_address"],
+    origem: ["origem", "source", "utm_source", "fonte", "canal", "form", "form_name", "formulario"],
+    interesse: ["interesse", "interest", "produto", "product", "servico", "service", "assunto", "subject"],
+    observacao: ["observacao", "observação", "obs", "message", "mensagem", "notes", "nota", "comentario"],
+  };
+  function normalizeLeadPayload(row) {
+    const flat = {};
+    for (const [k, v] of Object.entries(row || {})) if (v != null && typeof v !== "object") flat[k.trim().toLowerCase()] ??= String(v);
+    const pick = (keys) => { for (const k of keys) if (flat[k]?.trim()) return flat[k].trim(); return null; };
+    let nome = pick(ALIASES.nome);
+    if (!nome) nome = [pick(["first_name", "firstname", "primeiro_nome"]), pick(["last_name", "lastname", "sobrenome"])].filter(Boolean).join(" ") || null;
+    const telefone = pick(ALIASES.telefone), email = pick(ALIASES.email);
+    nome = nome || email || telefone;
+    if (!nome) return null;
+    const dataRaw = pick(["data", "created_at", "createdat", "data_inscricao"]);
+    const dt = dataRaw ? Date.parse(dataRaw) : NaN;
+    return { nome, telefone, email, origem: pick(ALIASES.origem), interesse: pick(ALIASES.interesse), observacao: pick(ALIASES.observacao), createdAt: isNaN(dt) ? undefined : dt };
+  }
+
+  // Cadência: D0 imediato (1 min entre passos só para ordenar); Dn = n dias úteis depois, no horário da 1ª tentativa (limitado ao expediente).
+  function cadenceDueDates(cfg, steps, base) {
+    const ini = hm(cfg.horaInicio), fim = hm(cfg.horaFim);
+    const mod = Math.min(Math.max(minutesOfDay(base), ini), Math.max(ini, fim - 30));
+    const perDay = new Map();
+    return steps.map((s) => {
+      const idx = perDay.get(s.dia) ?? 0; perDay.set(s.dia, idx + 1);
+      if (s.dia === 0) return base + idx * 60000;
+      return atMinutes(addBusinessDays(cfg, base, s.dia), mod) + idx * 60000;
+    });
+  }
+  function activeSteps(config) {
+    return config.cadence.map((s, i) => ({ ...s, i })).filter((s) => s.ativo !== false).sort((a, b) => a.dia - b.dia || a.i - b.i);
+  }
+  function generateCadence(lead, config, base) {
+    const rest = activeSteps(config).slice(1);
+    const dues = cadenceDueDates(config.settings, rest, base);
+    rest.forEach((s, i) => lead.tasks.push({ id: uid("t"), tipo: "CADENCIA", canal: s.canal, titulo: `D${s.dia} · ${s.titulo}`, dueAt: dues[i], status: "PENDENTE", templateId: s.templateId || null, meetingId: null, doneAt: null }));
+  }
+  function cancelPending(lead, tipos) {
+    for (const t of lead.tasks) if (t.status === "PENDENTE" && (!tipos || tipos.includes(t.tipo))) t.status = "CANCELADA";
+  }
+
+  function busyMeetings(leads) {
+    const out = [];
+    for (const l of leads) for (const m of l.meetings) if (m.status === "AGENDADA" || m.status === "CONFIRMADA") out.push(m.scheduledAt);
+    return out;
+  }
+  function daySlots(cfg, day, from, busy) {
+    const out = [], dur = Number(cfg.duracaoReuniao) || 30, fim = hm(cfg.horaFim);
+    let m = hm(cfg.horaInicio);
+    if (sameDay(day, from)) m = Math.max(m, Math.ceil((minutesOfDay(from) + 60) / 30) * 30);
+    for (; m + dur <= fim; m += 30) {
+      const s = atMinutes(day, m), e = s + dur * 60000;
+      if (!busy.some((b) => b < e && b + dur * 60000 > s)) out.push(s);
+    }
+    return out;
+  }
+  // Horários livres de hoje e do próximo dia útil; horario2 fica no outro dia ou em outro período (3h+ depois).
+  function suggestSlots(now, cfg, leads) {
+    const busy = busyMeetings(leads);
+    const today = isWorkday(cfg, now) ? daySlots(cfg, startOfDay(now), now, busy) : [];
+    const next = daySlots(cfg, nextBusinessDay(cfg, now), now, busy);
+    const h1 = today[0] ?? next[0] ?? null;
+    const h2 = today.length && next.length ? next[0] : ((today.length ? today : next).find((d) => h1 && d >= h1 + 3 * 3600000) ?? today[1] ?? next[1] ?? null);
+    return { hoje: today, amanha: next, horario1: h1, horario2: h2 };
+  }
+  // Confirmação: 2h antes se for no mesmo dia; senão 30 min antes do fim do dia útil anterior.
+  function confirmationDue(cfg, scheduledAt, now) {
+    const due = sameDay(scheduledAt, now) ? scheduledAt - 120 * 60000 : atMinutes(prevBusinessDay(cfg, scheduledAt), Math.max(hm(cfg.horaInicio), hm(cfg.horaFim) - 30));
+    return due < now ? now : due;
+  }
+  function confirmTask(lead, config, meetingId, scheduledAt, now) {
+    const tpl = config.templates.find((t) => t.id === "wa_confirma") ?? config.templates.find((t) => /confirma/i.test(t.nome));
+    lead.tasks.push({ id: uid("t"), tipo: "CONFIRMACAO", canal: "WHATSAPP", titulo: `Confirmar reunião (${fmtSlot(scheduledAt, now)})`, dueAt: confirmationDue(config.settings, scheduledAt, now), status: "PENDENTE", templateId: tpl?.id ?? null, meetingId, doneAt: null });
+  }
+
+  function registerAttempt(leadIn, input, now, config) {
+    if (input.resultado === "AGENDOU" && !input.scheduledAt) throw new Error("Informe a data/hora da reunião.");
+    if (input.resultado === "RETORNAR" && !input.retornoAt) throw new Error("Informe quando retornar.");
+    const cfg = config.settings, lead = clone(leadIn);
+    const numero = lead.attempts.length + 1;
+    if (!lead.firstContactAt) { lead.firstContactAt = now; lead.speedToLeadSec = Math.max(0, Math.round((now - lead.slaStartAt) / 1000)); }
+    if (input.score != null) lead.score = Math.max(0, Math.min(3, input.score));
+    let taskId = input.taskId || null;
+    if (!taskId) {
+      const t = lead.tasks.filter((x) => x.status === "PENDENTE" && x.canal === input.canal && x.tipo !== "CONFIRMACAO" && x.dueAt <= endOfDay(now)).sort((a, b) => a.dueAt - b.dueAt)[0];
+      taskId = t?.id ?? null;
+    }
+    const task = lead.tasks.find((x) => x.id === taskId && x.status === "PENDENTE");
+    if (task) { task.status = "FEITA"; task.doneAt = now; }
+    lead.attempts.push({ id: uid("a"), canal: input.canal, resultado: input.resultado, nota: input.nota || null, numero, taskId, at: now });
+    let meeting = null;
+    const pend = () => lead.tasks.filter((x) => x.status === "PENDENTE").length;
+    switch (input.resultado) {
+      case "NAO_ATENDEU": case "ENVIADO":
+        if (lead.status === "NOVO") { lead.status = "EM_CADENCIA"; generateCadence(lead, config, now); }
+        else if (pend() === 0 && lead.status === "EM_CADENCIA") lead.status = "ENCERRADO";
+        else if (pend() === 0 && lead.status === "CONVERSANDO") lead.tasks.push({ id: uid("t"), tipo: "RETORNO", canal: "LIGACAO", titulo: "Retorno (nova tentativa)", dueAt: addBusinessDays(cfg, now, 1), status: "PENDENTE", templateId: null, meetingId: null, doneAt: null });
+        break;
+      case "AGENDOU":
+        cancelPending(lead); lead.status = "AGENDADO";
+        meeting = { id: uid("m"), scheduledAt: input.scheduledAt, bookedAt: now, attemptNumero: numero, status: "AGENDADA", nota: null };
+        lead.meetings.push(meeting); confirmTask(lead, config, meeting.id, input.scheduledAt, now);
+        break;
+      case "RETORNAR":
+        cancelPending(lead); lead.status = "CONVERSANDO";
+        lead.tasks.push({ id: uid("t"), tipo: "RETORNO", canal: "LIGACAO", titulo: "Retornar conforme combinado", dueAt: input.retornoAt, status: "PENDENTE", templateId: null, meetingId: null, doneAt: null });
+        break;
+      case "DESQUALIFICADO": cancelPending(lead); lead.status = "DESQUALIFICADO"; break;
+      case "NUMERO_INVALIDO": cancelPending(lead); lead.status = "INVALIDO"; break;
+    }
+    return { lead, meeting };
+  }
+
+  function updateMeeting(leadIn, meetingId, patch, now, config) {
+    const lead = clone(leadIn);
+    const m = lead.meetings.find((x) => x.id === meetingId);
+    if (!m) return lead;
+    const closeConf = (status) => { for (const t of lead.tasks) if (t.meetingId === meetingId && t.tipo === "CONFIRMACAO" && t.status === "PENDENTE") { t.status = status; t.doneAt = status === "FEITA" ? now : null; } };
+    if (patch.scheduledAt && patch.scheduledAt !== m.scheduledAt) {
+      m.scheduledAt = patch.scheduledAt; m.status = "AGENDADA";
+      closeConf("CANCELADA"); cancelPending(lead, ["RETORNO"]); lead.status = "AGENDADO";
+      confirmTask(lead, config, m.id, patch.scheduledAt, now);
+    }
+    if (patch.status && patch.status !== m.status) {
+      m.status = patch.status;
+      if (patch.status === "CONFIRMADA" || patch.status === "REALIZADA") closeConf("FEITA");
+      if (patch.status === "CANCELADA") closeConf("CANCELADA");
+      if (patch.status === "NO_SHOW") {
+        closeConf("CANCELADA"); lead.status = "CONVERSANDO";
+        lead.tasks.push({ id: uid("t"), tipo: "RETORNO", canal: "WHATSAPP", titulo: "Reagendar (no-show)", dueAt: now + 10 * 60000, status: "PENDENTE", templateId: null, meetingId: null, doneAt: null });
+      }
+    }
+    return lead;
+  }
+
+  function slaState(leads, cfg, now) {
+    const pend = leads.filter((l) => l.status === "NOVO" && !l.firstContactAt).sort((a, b) => a.slaStartAt - b.slaStartAt);
+    const slaMs = cfg.slaMinutos * 60000;
+    const ativos = pend.filter((l) => l.slaStartAt <= now).map((l) => ({ lead: l, deadline: l.slaStartAt + slaMs }));
+    const dentro = ativos.filter((x) => x.deadline > now);
+    const estourados = ativos.filter((x) => x.deadline <= now).sort((a, b) => b.lead.slaStartAt - a.lead.slaStartAt);
+    let agendadasHoje = 0;
+    const d0 = startOfDay(now), d1 = endOfDay(now);
+    for (const l of leads) for (const m of l.meetings) if (m.bookedAt >= d0 && m.bookedAt <= d1 && m.status !== "CANCELADA") agendadasHoje++;
+    return { items: [...dentro, ...estourados], aguardando: pend.filter((l) => l.slaStartAt > now), agendadasHoje, meta: cfg.metaReunioes };
+  }
+
+  function buildQueue(leads, cfg, now) {
+    const hoje = startOfDay(now), fimHoje = endOfDay(now);
+    const items = [];
+    for (const l of leads) for (const t of l.tasks) if (t.status === "PENDENTE" && t.dueAt <= fimHoje) {
+      items.push({ task: t, lead: l, meeting: t.meetingId ? l.meetings.find((m) => m.id === t.meetingId) ?? null : null, disponivel: t.dueAt <= now });
+    }
+    items.sort((a, b) => a.task.dueAt - b.task.dueAt);
+    const confirmacoes = items.filter((i) => i.task.tipo === "CONFIRMACAO");
+    const follow = items.filter((i) => i.task.tipo !== "CONFIRMACAO");
+    const atrasados = follow.filter((i) => i.task.dueAt < hoje);
+    const doDia = follow.filter((i) => i.task.dueAt >= hoje).sort((a, b) => {
+      if (a.disponivel !== b.disponivel) return a.disponivel ? -1 : 1;
+      if (!a.disponivel) return a.task.dueAt - b.task.dueAt;
+      if (a.lead.score !== b.lead.score) return b.lead.score - a.lead.score;
+      return b.lead.createdAt - a.lead.createdAt;
+    });
+    const ini = hm(cfg.horaInicio), fim = hm(cfg.horaFim), min = minutesOfDay(now);
+    const bloco = !isWorkday(cfg, now) ? null : min >= ini && min < ini + 30 ? "ABERTURA" : min >= fim - 30 && min < fim ? "FECHAMENTO" : null;
+    const foraDoHorario = leads.filter((l) => l.foraDoHorario && l.slaStartAt >= hoje && l.slaStartAt <= fimHoje).sort((a, b) => a.createdAt - b.createdAt);
+    const meetings = [];
+    for (const l of leads) for (const m of l.meetings) meetings.push({ ...m, lead: l });
+    meetings.sort((a, b) => a.scheduledAt - b.scheduledAt);
+    const reunioesHoje = meetings.filter((m) => m.scheduledAt >= hoje && m.scheduledAt <= fimHoje && m.status !== "CANCELADA");
+    const futuras = meetings.filter((m) => m.scheduledAt > fimHoje && m.scheduledAt < fimHoje + 4 * DAY && (m.status === "AGENDADA" || m.status === "CONFIRMADA"));
+    const reunioesAmanha = futuras.filter((m) => sameDay(m.scheduledAt, futuras[0].scheduledAt));
+    return { confirmacoes, atrasados, doDia, bloco, foraDoHorario, reunioesHoje, reunioesAmanha };
+  }
+
+  const ratio = (a, b) => (b > 0 ? a / b : null);
+  function computeMetrics(leads, cfg, range, ref, now) {
+    const start = range === "day" ? startOfDay(ref) : startOfWeek(ref);
+    const end = range === "day" ? endOfDay(ref) : start + 7 * DAY - 1;
+    const slaSec = cfg.slaMinutos * 60;
+    const dias = []; for (let d = start; d <= end; d += DAY) dias.push(d);
+    const diasUteis = dias.filter((d) => isWorkday(cfg, d)).length;
+    const meta = range === "day" ? cfg.metaReunioes : cfg.metaReunioes * diasUteis;
+    const inP = (t) => t >= start && t <= end;
+    const novos = leads.filter((l) => inP(l.createdAt));
+    const contatados = novos.filter((l) => l.speedToLeadSec != null);
+    const avg = contatados.length ? contatados.reduce((s, l) => s + l.speedToLeadSec, 0) / contatados.length : null;
+    const avaliaveis = novos.filter((l) => l.firstContactAt || l.slaStartAt + slaSec * 1000 < now);
+    const dentroSla = contatados.filter((l) => l.speedToLeadSec <= slaSec).length;
+    const trab = new Set(), conv = new Set(), agend = new Set();
+    let tentativasTotal = 0;
+    const booked = [], held = [];
+    for (const l of leads) {
+      for (const a of l.attempts) if (inP(a.at)) {
+        tentativasTotal++; trab.add(l.id);
+        if (CONVERSA.includes(a.resultado)) conv.add(l.id);
+        if (a.resultado === "AGENDOU") agend.add(l.id);
+      }
+      for (const m of l.meetings) {
+        if (inP(m.bookedAt) && m.status !== "CANCELADA") booked.push(m);
+        if (inP(m.scheduledAt) && (m.status === "REALIZADA" || m.status === "NO_SHOW")) held.push(m);
+      }
+    }
+    const noShows = held.filter((m) => m.status === "NO_SHOW").length;
+    const porT = new Map();
+    for (const m of booked) { const k = Math.min(m.attemptNumero, 8); porT.set(k, (porT.get(k) ?? 0) + 1); }
+    const maxT = Math.max(4, ...porT.keys());
+    const tentativas = Array.from({ length: maxT }, (_, i) => ({ label: i + 1 === 8 ? "8ª+" : `${i + 1}ª`, value: porT.get(i + 1) ?? 0 }));
+    const serie = dias.map((d) => {
+      const e = d + DAY - 1, inD = (t) => t >= d && t <= e;
+      return { dia: d, leads: novos.filter((l) => inD(l.createdAt)).length, agendadas: booked.filter((m) => inD(m.bookedAt)).length, realizadas: held.filter((m) => m.status === "REALIZADA" && inD(m.scheduledAt)).length, noShow: held.filter((m) => m.status === "NO_SHOW" && inD(m.scheduledAt)).length };
+    });
+    const taxaContato = ratio(conv.size, trab.size), taxaAgendamento = ratio(agend.size, conv.size), taxaNoShow = ratio(noShows, held.length);
+    const etapas = [
+      { etapa: "contato", label: "Contato", valor: taxaContato, meta: cfg.metaContato, dica: "Varie os horários de ligação, mande WhatsApp logo após a ligação e reduza o speed-to-lead." },
+      { etapa: "agendamento", label: "Agendamento", valor: taxaAgendamento, meta: cfg.metaAgendamento, dica: "Revise o script: faça as perguntas de qualificação e feche sempre oferecendo dois horários." },
+      { etapa: "comparecimento", label: "Comparecimento", valor: taxaNoShow == null ? null : 1 - taxaNoShow, meta: 1 - cfg.metaNoShow, dica: "Agende mais perto (mesmo dia ou dia seguinte) e confirme sempre por WhatsApp." },
+    ].map((e) => ({ ...e, indice: e.valor == null || e.meta <= 0 ? null : e.valor / e.meta }));
+    const pior = etapas.filter((e) => e.indice != null).sort((a, b) => a.indice - b.indice)[0] ?? null;
+    return {
+      inicio: start, fim: end, meta, diasUteis, reunioesAgendadas: booked.length, leadsRecebidos: novos.length,
+      speedMedioSec: avg, pctDentroSla: ratio(dentroSla, avaliaveis.length), dentroSla, avaliaveisSla: avaliaveis.length,
+      trabalhados: trab.size, conversas: conv.size, agendaram: agend.size, tentativasTotal,
+      taxaContato, taxaAgendamento, taxaNoShow, realizadas: held.length - noShows, noShows,
+      tentativas, serie, etapas, gargalo: pior && pior.indice < 1 ? pior : null,
+    };
+  }
+
+  const render = (text, vars) => String(text || "").replace(/\{(\w+)\}/g, (m, k) => (vars[k] == null || vars[k] === "" ? m : vars[k]));
+  const primeiroNome = (nome) => String(nome).trim().split(/\s+/)[0] || nome;
+  function waPhone(tel) {
+    if (!tel) return null;
+    let d = String(tel).replace(/\D/g, "").replace(/^0+/, "");
+    if (d.length === 10 || d.length === 11) d = "55" + d;
+    return d.length >= 12 ? d : null;
+  }
+  const waLink = (tel, text) => { const p = waPhone(tel); return p ? `https://wa.me/${p}?text=${encodeURIComponent(text)}` : null; };
+
+  // Gera uma semana simulada de trabalho usando as mesmas regras acima (dados marcados como exemplo).
+  function generateExample(config, now, { seed = 42, agora = true } = {}) {
+    let s = seed;
+    const rnd = () => { s = (s + 0x6d2b79f5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const pick = (a) => a[Math.floor(rnd() * a.length)], int = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+    const NOMES = ["Ana", "Bruno", "Carla", "Diego", "Eduarda", "Felipe", "Gabriela", "Henrique", "Isabela", "João", "Karina", "Lucas", "Mariana", "Nicolas", "Olívia", "Pedro", "Rafaela", "Samuel", "Tatiane", "Vinícius", "Beatriz", "Caio", "Débora", "Fábio", "Juliana", "Marcelo", "Patrícia", "Renato", "Sabrina", "Thiago"];
+    const SOB = ["Silva", "Souza", "Oliveira", "Santos", "Pereira", "Lima", "Costa", "Ferreira", "Almeida", "Ribeiro", "Carvalho", "Gomes", "Martins", "Rocha", "Barbosa"];
+    const ORIG = ["Formulário site", "Instagram Ads", "Google Ads", "Webinar", "Indicação", "LinkedIn"];
+    const INT = ["Diagnóstico comercial", "Treinamento de vendas", "Implantação de CRM", "Consultoria de prospecção"];
+    const DDD = ["11", "21", "31", "41", "48", "51", "61", "71", "81", "85"];
+    const fake = (nome) => {
+      nome = nome ?? `${pick(NOMES)} ${pick(SOB)}`;
+      const slug = nome.toLowerCase().normalize("NFD").replace(/[^a-z ]/g, "").replace(" ", ".");
+      return { nome, telefone: `(${pick(DDD)}) 9${int(1000, 9999)}-${int(1000, 9999)}`, email: `${slug}${int(1, 99)}@exemplo.com.br`, origem: pick(ORIG), interesse: pick(INT), observacao: rnd() < 0.3 ? pick(["Quer começar ainda este mês.", "Empresa com 20 vendedores.", "Pediu contato à tarde.", "Já usa planilha, quer sair dela."]) : null, exemplo: true };
+    };
+    const cfg = config.settings, leads = [];
+    const conversa = () => { const r = rnd(); return r < 0.42 ? "AGENDOU" : r < 0.75 ? "RETORNAR" : "DESQUALIFICADO"; };
+    const act = (idx, at, canal, resultado, taskId) => {
+      let scheduledAt = null, retornoAt = null;
+      if (resultado === "AGENDOU") { const sl = suggestSlots(at, cfg, leads); scheduledAt = (rnd() < 0.6 ? sl.horario1 : sl.horario2) ?? sl.horario1; if (!scheduledAt) resultado = "RETORNAR"; }
+      if (resultado === "RETORNAR") retornoAt = at + pick([60, 120, 1440]) * 60000;
+      leads[idx] = registerAttempt(leads[idx], { canal, resultado, taskId, scheduledAt, retornoAt, score: resultado === "DESQUALIFICADO" ? 0 : int(1, 3) }, at, config).lead;
+    };
+    const dias = [];
+    for (let d = startOfDay(now); dias.length < 7; d -= DAY) if (isWorkday(cfg, d)) dias.unshift(d);
+    const ini = hm(cfg.horaInicio), fim = hm(cfg.horaFim), hoje = startOfDay(now);
+    for (const dia of dias) {
+      const n = dia === hoje ? 8 : int(8, 12);
+      for (let i = 0; i < n; i++) {
+        const fora = rnd() < 0.1;
+        const createdAt = fora ? atMinutes(dia - DAY, int(18 * 60, 23 * 60)) : atMinutes(dia, int(ini, fim - 10));
+        if (createdAt > now - 8 * 60000) continue;
+        leads.push(newLead({ ...fake(), createdAt }, createdAt, cfg));
+      }
+    }
+    leads.sort((a, b) => a.createdAt - b.createdAt);
+    for (let i = 0; i < leads.length; i++) {
+      const r = rnd();
+      const speedMin = r < 0.65 ? rnd() * 4.5 : r < 0.85 ? 5 + rnd() * 10 : 15 + rnd() * 90;
+      const first = leads[i].slaStartAt + speedMin * 60000;
+      if (first > now - 2 * 60000) continue;
+      act(i, first, "LIGACAO", rnd() < 0.3 ? conversa() : rnd() < 0.04 ? "NUMERO_INVALIDO" : "NAO_ATENDEU");
+      for (let g = 0; g < 20; g++) {
+        const t = leads[i].tasks.filter((x) => x.status === "PENDENTE" && x.tipo !== "CONFIRMACAO").sort((a, b) => a.dueAt - b.dueAt)[0];
+        if (!t || t.dueAt > now - 5 * 60000) break;
+        if (t.dueAt < hoje && rnd() < 0.025) break;
+        if (t.dueAt >= hoje && rnd() < 0.5) break;
+        const at = t.dueAt + int(0, 25) * 60000;
+        if (at > now) break;
+        let res;
+        if (t.tipo === "RETORNO") res = rnd() < 0.55 ? "AGENDOU" : rnd() < 0.5 ? "RETORNAR" : "NAO_ATENDEU";
+        else if (t.canal === "LIGACAO") res = rnd() < 0.18 ? conversa() : "NAO_ATENDEU";
+        else res = rnd() < 0.08 ? conversa() : "ENVIADO";
+        act(i, at, t.canal, res, t.id);
+      }
+    }
+    for (let i = 0; i < leads.length; i++) {
+      for (const m of [...leads[i].meetings]) {
+        const conf = leads[i].tasks.find((t) => t.meetingId === m.id && t.status === "PENDENTE");
+        if (conf && conf.dueAt < now - 10 * 60000 && rnd() < 0.85) leads[i] = updateMeeting(leads[i], m.id, { status: "CONFIRMADA" }, conf.dueAt + 5 * 60000, config);
+        const fimR = m.scheduledAt + cfg.duracaoReuniao * 60000;
+        if (fimR < now) leads[i] = updateMeeting(leads[i], m.id, { status: rnd() < 0.78 ? "REALIZADA" : "NO_SHOW" }, fimR, config);
+      }
+    }
+    if (agora) for (const [sec, nome] of [[20, "Letícia Moraes"], [150, "Rodrigo Tavares"], [400, "Camila Nunes"]]) {
+      const createdAt = now - sec * 1000;
+      leads.push(newLead({ ...fake(nome), origem: "Formulário site", createdAt }, createdAt, cfg, true));
+    }
+    return leads;
+  }
+
+  return {
+    DAY, DIAS, local, fromLocal, startOfDay, endOfDay, sameDay, startOfWeek, hm, atMinutes, isWorkday, isWorkingTime, nextWorkStart,
+    addBusinessDays, nextBusinessDay, fmtTime, fmtDate, fmtDateTime, fmtSlot, toInputValue, fromInputValue, fmtDuration,
+    CANAIS, CANAL_LABEL, CANAL_ICON, RESULTADO_LABEL, STATUS_LABEL, STATUS_FECHADOS, MEETING_LABEL,
+    defaultConfig, DEFAULT_SETTINGS, uid, clone, newLead, normalizeLeadPayload, cadenceDueDates, suggestSlots, confirmationDue,
+    registerAttempt, updateMeeting, slaState, buildQueue, computeMetrics, render, primeiroNome, waPhone, waLink, generateExample,
+  };
+})();
+if (typeof window !== "undefined") window.SDR = SDR;
+</script>
+
+<script id="app">
+(() => {
+const S = window.SDR;
+if (!window.React || !window.htm) { document.getElementById("root").innerHTML = '<main><p>Não foi possível carregar a interface. Recarregue a página.</p></main>'; return; }
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+const html = htm.bind(React.createElement);
+const now = () => Date.now();
+
+/* ===== Armazenamento: banco do artefato (db) com fallback para o navegador ===== */
+const LS_KEY = "sdr-plantao-v1";
+const ARCHIVE_AT = 1500;      // acima disso, leads encerrados antigos são compactados
+const ARCHIVE_AGE = 45 * S.DAY;
+const store = {
+  mode: "carregando", ready: false, leads: new Map(), arquivo: new Map(), config: null, pending: new Map(), chains: new Map(),
+  subs: new Set(), ver: 0, error: null, db: null,
+  emit() { this.ver++; this.subs.forEach((f) => f(this.ver)); },
+  get cfg() { return this.config ?? S.defaultConfig(); },
+  activeLeads() { const m = new Map(this.leads); for (const [id, l] of this.pending) l === null ? m.delete(id) : m.set(id, l); return [...m.values()]; },
+  archivedLeads() { const out = []; for (const doc of this.arquivo.values()) out.push(...(doc.leads || [])); return out; },
+  lead(id) { return this.activeLeads().find((l) => l.id === id) ?? this.archivedLeads().find((l) => l.id === id) ?? null; },
+  async init() {
+    let db = null;
+    try { db = window.claude?.use ? await window.claude.use("db") : null; } catch { db = null; }
+    if (db) {
+      this.db = db; this.mode = "db";
+      let got = 0; const first = () => { if (++got === 3) { this.ready = true; this.maybeArchive(); } this.emit(); };
+      const onErr = (e) => { this.error = e?.message || "Falha ao ler os dados."; this.emit(); };
+      let f1 = false, f2 = false, f3 = false;
+      db.collection("leads").onSnapshot((s) => { const m = new Map(); s.docs.forEach((d) => d.exists && m.set(d.id, d.data())); this.leads = m; if (!f1) { f1 = true; first(); } else this.emit(); }, onErr);
+      db.collection("arquivo").onSnapshot((s) => { const m = new Map(); s.docs.forEach((d) => d.exists && m.set(d.id, d.data())); this.arquivo = m; if (!f2) { f2 = true; first(); } else this.emit(); }, onErr);
+      db.doc("config/main").onSnapshot((d) => { this.config = d.exists ? normConfig(d.data()) : null; if (!f3) { f3 = true; first(); } else this.emit(); }, onErr);
+    } else {
+      this.mode = "local";
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) { const j = JSON.parse(raw); (j.leads || []).forEach((l) => this.leads.set(l.id, l)); (j.arquivo || []).forEach((a, i) => this.arquivo.set("a" + i, a)); this.config = j.config ? normConfig(j.config) : null; }
+      } catch {}
+      this.ready = true; this.emit();
+    }
+  },
+  persistLocal() {
+    if (this.mode !== "local") return;
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ leads: [...this.leads.values()], arquivo: [...this.arquivo.values()], config: this.config })); } catch {}
+  },
+  write(path, data) {
+    const prev = this.chains.get(path) || Promise.resolve();
+    const run = async () => {
+      const ref = this.db.doc(path);
+      for (let i = 0; i < 3; i++) {
+        try { data === null ? await ref.delete() : await ref.set(data); return; }
+        catch (e) {
+          const code = e?.code;
+          if ((code === "unavailable" || code === "resource_exhausted") && i < 2) { await new Promise((r) => setTimeout(r, 600 + Math.random() * 900 * (i + 1))); continue; }
+          throw e;
+        }
+      }
+    };
+    const p = prev.then(run, run);
+    this.chains.set(path, p.catch(() => {}));
+    return p;
+  },
+  async saveLead(lead) {
+    const plain = JSON.parse(JSON.stringify(lead));
+    if (this.mode === "local") { this.leads.set(plain.id, plain); this.persistLocal(); this.emit(); return; }
+    this.pending.set(plain.id, plain); this.emit();
+    try { await this.write("leads/" + plain.id, plain); }
+    catch (e) { toast(e?.code === "quota_exceeded" ? "O banco está cheio. Apague leads antigos em Configurações." : "Não foi possível salvar: " + (e?.message || e), "bad"); }
+    finally { if (this.pending.get(plain.id) === plain) this.pending.delete(plain.id); this.emit(); }
+  },
+  async deleteLead(id) {
+    if (this.mode === "local") { this.leads.delete(id); this.persistLocal(); this.emit(); return; }
+    this.pending.set(id, null); this.emit();
+    try { await this.write("leads/" + id, null); } catch (e) { toast("Não foi possível excluir: " + (e?.message || e), "bad"); }
+    finally { this.pending.delete(id); this.emit(); }
+  },
+  async saveConfig(cfg) {
+    const plain = JSON.parse(JSON.stringify(cfg));
+    this.config = plain;
+    if (this.mode === "local") { this.persistLocal(); this.emit(); return; }
+    this.emit();
+    try { await this.write("config/main", plain); } catch (e) { toast("Não foi possível salvar a configuração: " + (e?.message || e), "bad"); }
+  },
+  async saveMany(leads, onProgress) {
+    if (this.mode === "local") { leads.forEach((l) => this.leads.set(l.id, l)); this.persistLocal(); this.emit(); return; }
+    let i = 0;
+    for (const l of leads) { await this.saveLead(l); onProgress?.(++i, leads.length); }
+  },
+  async deleteMany(ids, onProgress) {
+    if (this.mode === "local") { ids.forEach((id) => this.leads.delete(id)); this.persistLocal(); this.emit(); return; }
+    let i = 0;
+    for (const id of ids) { await this.deleteLead(id); onProgress?.(++i, ids.length); }
+  },
+  async clearArchive() {
+    if (this.mode === "local") { this.arquivo.clear(); this.persistLocal(); this.emit(); return; }
+    for (const id of [...this.arquivo.keys()]) await this.write("arquivo/" + id, null);
+  },
+  // Compacta leads encerrados antigos em documentos de arquivo para caber no limite de documentos do banco.
+  async maybeArchive() {
+    const active = this.activeLeads();
+    if (active.length < ARCHIVE_AT) return;
+    const cut = now() - ARCHIVE_AGE;
+    const old = active.filter((l) => S.STATUS_FECHADOS.includes(l.status) && l.createdAt < cut && !l.tasks.some((t) => t.status === "PENDENTE"));
+    for (let i = 0; i < old.length; i += 60) {
+      const chunk = old.slice(i, i + 60);
+      const id = "a" + Date.now().toString(36) + i;
+      if (this.mode === "local") this.arquivo.set(id, { leads: chunk });
+      else await this.write("arquivo/" + id, { leads: chunk, criadoEm: now() });
+      for (const l of chunk) this.mode === "local" ? this.leads.delete(l.id) : await this.write("leads/" + l.id, null);
+    }
+    this.persistLocal(); this.emit();
+  },
+};
+function normConfig(c) {
+  const d = S.defaultConfig();
+  return { settings: { ...d.settings, ...(c.settings || {}) }, templates: Array.isArray(c.templates) ? c.templates : d.templates, cadence: Array.isArray(c.cadence) && c.cadence.length ? c.cadence : d.cadence };
+}
+function useStore() {
+  const [, set] = useState(0);
+  useEffect(() => { const f = (v) => set(v); store.subs.add(f); return () => store.subs.delete(f); }, []);
+  return store;
+}
+function useNow(ms = 1000) {
+  const [t, set] = useState(now());
+  useEffect(() => { const id = setInterval(() => set(now()), ms); return () => clearInterval(id); }, [ms]);
+  return t;
+}
+
+/* ===== Toasts, som, clipboard ===== */
+const toastSubs = new Set();
+function toast(msg, kind = "") { const t = { id: Math.random(), msg, kind }; toastSubs.forEach((f) => f(t)); }
+function Toasts() {
+  const [list, setList] = useState([]);
+  useEffect(() => {
+    const f = (t) => { setList((l) => [...l, t]); setTimeout(() => setList((l) => l.filter((x) => x.id !== t.id)), t.kind === "alert" ? 7000 : 3500); };
+    toastSubs.add(f); return () => toastSubs.delete(f);
+  }, []);
+  return html`<div class="toasts" role="status" aria-live="polite">${list.map((t) => html`<div key=${t.id} class=${"toast " + t.kind}>${t.msg}</div>`)}</div>`;
+}
+let actx = null, soundOn = false;
+function unlockAudio() {
+  try { actx ??= new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); soundOn = true; } catch {}
+}
+function tone(f, start, dur) {
+  if (!actx || !soundOn) return;
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.frequency.value = f; o.type = "sine";
+  g.gain.setValueAtTime(0.0001, actx.currentTime + start);
+  g.gain.exponentialRampToValueAtTime(0.35, actx.currentTime + start + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + start + dur);
+  o.connect(g).connect(actx.destination); o.start(actx.currentTime + start); o.stop(actx.currentTime + start + dur + 0.05);
+}
+const soundNewLead = () => { tone(660, 0, 0.15); tone(880, 0.18, 0.15); tone(1100, 0.36, 0.25); };
+const soundWarning = () => { tone(520, 0, 0.25); tone(520, 0.35, 0.25); };
+async function copyText(text, el) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch { if (el) { el.focus(); el.select?.(); } return false; }
+}
+const typing = (e) => { const t = e.target; return !!t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName)); };
+const modalOpen = () => !!document.querySelector("[data-modal]");
+const pct = (v) => (v == null ? "—" : `${Math.round(v * 100)}%`);
+
+/* ===== Peças de UI ===== */
+function Timer({ deadline }) {
+  const t = useNow();
+  const left = deadline - t;
+  const c = left <= 0 ? "r" : left <= 120000 ? "y" : "g";
+  const s = Math.floor(Math.abs(left) / 1000);
+  return html`<span class=${"timer " + c} aria-label="tempo de SLA">${left < 0 ? "+" : ""}${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}</span>`;
+}
+const slaClass = (deadline, t) => { const left = deadline - t; return left <= 0 ? "r" : left <= 120000 ? "y" : "g"; };
+const Stars = ({ v }) => html`<span class="stars" title=${`Qualificação ${v}/3`}>${"★".repeat(v)}<i>${"★".repeat(3 - v)}</i></span>`;
+const Canal = ({ c }) => html`<span class="tag canal">${S.CANAL_ICON[c]} ${S.CANAL_LABEL[c]}</span>`;
+const Status = ({ s, meeting }) => html`<span class=${"tag st-" + s}>${(meeting ? S.MEETING_LABEL : S.STATUS_LABEL)[s] ?? s}</span>`;
+const Empty = ({ children }) => html`<div class="empty">${children}</div>`;
+
+function Modal({ title, onClose, wide, children }) {
+  useEffect(() => {
+    const k = (e) => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } };
+    window.addEventListener("keydown", k, true); return () => window.removeEventListener("keydown", k, true);
+  }, [onClose]);
+  return html`<div class="backdrop" data-modal onMouseDown=${onClose}>
+    <div class=${"modal" + (wide ? " wide" : "")} role="dialog" aria-modal="true" aria-label=${title} onMouseDown=${(e) => e.stopPropagation()}>
+      <div class="modal-h"><h2 style=${{ fontSize: 17 }}>${title}</h2><button class="btn ghost" onClick=${onClose} aria-label="Fechar">✕</button></div>
+      ${children}
+    </div></div>`;
+}
+function ConfirmButton({ label, confirmLabel = "Clique de novo para confirmar", onConfirm, className = "btn danger" }) {
+  const [arm, setArm] = useState(false);
+  useEffect(() => { if (!arm) return; const t = setTimeout(() => setArm(false), 4000); return () => clearTimeout(t); }, [arm]);
+  return html`<button class=${className} onClick=${() => (arm ? (setArm(false), onConfirm()) : setArm(true))}>${arm ? confirmLabel : label}</button>`;
+}
+
+/* ===== App ===== */
+function App() {
+  const st = useStore();
+  const [route, setRoute] = useState({ view: "plantao" });
+  const [modal, setModal] = useState(null);
+  const [alertsOn, setAlertsOn] = useState(false);
+  const t = useNow(1000);
+  const cfg = st.cfg;
+  const leads = st.activeLeads();
+  const sla = useMemo(() => S.slaState(leads, cfg.settings, t), [st.ver, Math.floor(t / 1000)]);
+  const go = useCallback((view, extra = {}) => { setRoute({ view, ...extra }); window.scrollTo(0, 0); }, []);
+
+  // Alertas: lead novo (som + aviso) e "falta 1 minuto".
+  const seen = useRef(null), warned = useRef(new Set());
+  useEffect(() => {
+    if (!st.ready) return;
+    const ids = sla.items.map((x) => x.lead.id);
+    if (seen.current === null) { seen.current = new Set(ids); return; }
+    const novos = sla.items.filter((x) => !seen.current.has(x.lead.id));
+    novos.forEach((x) => { seen.current.add(x.lead.id); toast(`🚨 Lead novo: ${x.lead.nome}. Você tem ${cfg.settings.slaMinutos} min.`, "alert"); });
+    if (novos.length) soundNewLead();
+    for (const x of sla.items) {
+      const left = x.deadline - t;
+      if (left > 0 && left <= 60000 && !warned.current.has(x.lead.id)) { warned.current.add(x.lead.id); soundWarning(); toast(`⏱️ Falta 1 minuto para ${x.lead.nome}`, "alert"); }
+    }
+  }, [sla, st.ready]);
+  useEffect(() => { document.title = sla.items.length ? `(${sla.items.length}) SDR Plantão` : "SDR Plantão"; }, [sla.items.length]);
+
+  useEffect(() => {
+    const k = (e) => {
+      if (typing(e) || e.metaKey || e.ctrlKey || e.altKey || modalOpen()) return;
+      const key = e.key.toLowerCase();
+      if (key === "n") { e.preventDefault(); setModal("novo"); }
+      else if (e.key === "?") setModal("help");
+      else if (key === "q") go("plantao");
+      else if (key === "l") go("leads");
+      else if (key === "r") go("reunioes");
+      else if (key === "d") go("dashboard");
+    };
+    const unlock = () => { unlockAudio(); setAlertsOn(true); };
+    window.addEventListener("keydown", k);
+    window.addEventListener("pointerdown", unlock, { once: true });
+    return () => window.removeEventListener("keydown", k);
+  }, [go]);
+
+  const pctMeta = Math.min(100, (sla.agendadasHoje / Math.max(1, sla.meta)) * 100);
+  const hot = sla.items.some((x) => x.deadline <= t);
+  const NAV = [["plantao", "Plantão"], ["leads", "Leads"], ["reunioes", "Reuniões"], ["dashboard", "Dashboard"], ["config", "Configurações"]];
+  const activeView = route.view === "lead" ? route.from ?? "plantao" : route.view;
+
+  let body;
+  if (!st.ready) body = html`<p class="muted">Carregando seus leads…</p>`;
+  else if (route.view === "lead") body = html`<${LeadView} key=${route.id} id=${route.id} taskId=${route.taskId} go=${go} from=${route.from} />`;
+  else if (route.view === "leads") body = html`<${LeadsView} go=${go} openModal=${setModal} />`;
+  else if (route.view === "reunioes") body = html`<${ReunioesView} go=${go} />`;
+  else if (route.view === "dashboard") body = html`<${DashboardView} />`;
+  else if (route.view === "config") body = html`<${ConfigView} />`;
+  else body = html`<${Plantao} go=${go} sla=${sla} openModal=${setModal} />`;
+
+  return html`
+    <header class="top">
+      <div class="top-in">
+        <button class="brand btn link" style=${{ color: "var(--ink)" }} onClick=${() => go("plantao")}><span class=${"brand-dot" + (hot ? " alert" : "")}></span>SDR Plantão</button>
+        <nav class="tabs" aria-label="Telas">${NAV.map(([v, l]) => html`<button key=${v} aria-current=${activeView === v ? "page" : undefined} onClick=${() => go(v)}>${l}</button>`)}</nav>
+        <div class="top-right">
+          <button class="meter" onClick=${() => go("dashboard")} title="Reuniões agendadas hoje">
+            <span class="mono">${sla.agendadasHoje}/${sla.meta}</span>
+            <span class="meter-track"><span class=${"meter-fill" + (pctMeta >= 100 ? " done" : "")} style=${{ width: pctMeta + "%", display: "block" }}></span></span>
+          </button>
+          ${!alertsOn && html`<button class="btn sm" onClick=${() => { unlockAudio(); setAlertsOn(true); soundWarning(); }}>🔔 Ativar som</button>`}
+          <button class="btn primary sm" onClick=${() => setModal("novo")}>+ Lead <kbd>N</kbd></button>
+          <button class="btn sm" onClick=${() => setModal("help")} aria-label="Atalhos">?</button>
+        </div>
+      </div>
+      ${sla.items.length > 0 && html`<${SlaStrip} sla=${sla} t=${t} go=${go} hot=${hot} />`}
+    </header>
+    <main>
+      ${st.mode === "local" && st.ready && html`<p class="banner-note" style=${{ marginTop: 0 }}>Modo local: os dados ficam só neste navegador.</p>`}
+      ${st.error && html`<p class="banner-note" style=${{ marginTop: 0 }}>${st.error}</p>`}
+      ${body}
+    </main>
+    ${modal === "novo" && html`<${QuickLead} onClose=${() => setModal(null)} go=${go} />`}
+    ${modal === "help" && html`<${Help} onClose=${() => setModal(null)} />`}
+    ${modal === "import" && html`<${ImportCsv} onClose=${() => setModal(null)} />`}
+    <${Toasts} />`;
+}
+
+function SlaStrip({ sla, t, go, hot }) {
+  const [all, setAll] = useState(false);
+  const list = all ? sla.items : sla.items.slice(0, 4);
+  return html`<div class=${"sla" + (hot ? " hot" : "")}><div class="sla-in">
+    <span class="eyebrow" style=${{ color: "var(--ink-2)" }}>🚨 ${sla.items.length} aguardando 1º contato</span>
+    ${list.map((x) => html`<button key=${x.lead.id} class=${"sla-chip " + slaClass(x.deadline, t)} onClick=${() => go("lead", { id: x.lead.id })}>
+      <${Timer} deadline=${x.deadline} /><span class="t"><b>${x.lead.nome}</b> <span class="muted">· ${x.lead.interesse ?? x.lead.origem ?? "—"} · ${S.fmtTime(x.lead.createdAt)}</span></span>
+    </button>`)}
+    ${sla.items.length > 4 && html`<button class="btn link small" onClick=${() => setAll(!all)}>${all ? "mostrar menos" : `+${sla.items.length - 4}`}</button>`}
+  </div></div>`;
+}
+
+/* ===== Plantão ===== */
+function Plantao({ go, sla, openModal }) {
+  const st = useStore();
+  const t = useNow(15000);
+  const cfg = st.cfg.settings;
+  const leads = st.activeLeads();
+  const q = useMemo(() => S.buildQueue(leads, cfg, now()), [st.ver, t]);
+  const [sel, setSel] = useState(0);
+  const [bloco, setBloco] = useState(undefined);
+  const items = useMemo(() => {
+    const out = sla.items.map((x) => ({ kind: "sla", key: "l" + x.lead.id, x, open: () => go("lead", { id: x.lead.id }) }));
+    for (const s of ["confirmacoes", "atrasados", "doDia"]) for (const it of q[s]) out.push({ kind: "task", section: s, key: "t" + it.task.id, it, open: () => go("lead", { id: it.lead.id, taskId: it.task.id }) });
+    return out;
+  }, [sla, q]);
+  useEffect(() => {
+    const k = (e) => {
+      if (typing(e) || modalOpen() || e.metaKey || e.ctrlKey) return;
+      if (e.key === "j" || e.key === "ArrowDown") { e.preventDefault(); setSel((s) => Math.min(items.length - 1, s + 1)); }
+      else if (e.key === "k" || e.key === "ArrowUp") { e.preventDefault(); setSel((s) => Math.max(0, s - 1)); }
+      else if (e.key === "Enter" && items[sel]) items[sel].open();
+      else if (e.key === " " && items[0]) { e.preventDefault(); items[0].open(); }
+    };
+    window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
+  }, [items, sel]);
+  useEffect(() => { document.getElementById("qi-" + sel)?.scrollIntoView({ block: "nearest" }); }, [sel]);
+
+  if (st.activeLeads().length === 0 && st.archivedLeads().length === 0) return html`<${Welcome} openModal=${openModal} />`;
+
+  const blocoAtivo = bloco === undefined ? q.bloco : bloco;
+  const SECTIONS = [
+    ["sla", 1, "Leads novos no SLA", "Nenhum lead aguardando. 🎉"],
+    ["confirmacoes", 2, "Confirmar reuniões", "Nenhuma confirmação pendente."],
+    ["atrasados", 3, "Follow-ups atrasados", "Nada atrasado."],
+    ["doDia", 4, "Follow-ups de hoje", "Sem follow-ups para hoje."],
+  ];
+  return html`<div class="grid-2">
+    <div class="stack">
+      <div class="row">
+        <h1>O que fazer agora</h1>
+        ${items[0] && html`<button class="btn primary" onClick=${items[0].open}>▶ Atender próximo <kbd>Espaço</kbd></button>`}
+        <div class="row" style=${{ marginLeft: "auto" }}>
+          <button class="btn sm" aria-pressed=${blocoAtivo === "ABERTURA"} style=${blocoAtivo === "ABERTURA" ? { borderColor: "var(--accent)", background: "var(--accent-soft)" } : null} onClick=${() => setBloco(blocoAtivo === "ABERTURA" ? null : "ABERTURA")}>☀️ Abertura</button>
+          <button class="btn sm" aria-pressed=${blocoAtivo === "FECHAMENTO"} style=${blocoAtivo === "FECHAMENTO" ? { borderColor: "var(--accent)", background: "var(--accent-soft)" } : null} onClick=${() => setBloco(blocoAtivo === "FECHAMENTO" ? null : "FECHAMENTO")}>🌙 Fechamento</button>
+        </div>
+      </div>
+      ${blocoAtivo === "ABERTURA" && html`<${Abertura} q=${q} go=${go} />`}
+      ${blocoAtivo === "FECHAMENTO" && html`<${Fechamento} q=${q} sla=${sla} go=${go} />`}
+      ${SECTIONS.map(([id, n, title, empty]) => {
+        const list = items.map((it, i) => ({ it, i })).filter(({ it }) => (it.kind === "sla" ? id === "sla" : it.section === id));
+        return html`<section key=${id}>
+          <h2 class="sec-title"><span class="num">${n}</span>${title}<span class="count">${list.length}</span></h2>
+          ${list.length === 0 ? html`<${Empty}>${empty}<//>` : html`<ul class="qlist">${list.map(({ it, i }) => html`<li key=${it.key} id=${"qi-" + i}>
+            <button class=${"qitem" + (sel === i ? " sel" : "")} onClick=${it.open} onMouseEnter=${() => setSel(i)}>
+              ${it.kind === "sla" ? html`<${SlaRow} x=${it.x} />` : html`<${TaskRow} it=${it.it} section=${it.section} />`}
+            </button></li>`)}</ul>`}
+        </section>`;
+      })}
+    </div>
+    <aside class="stack">
+      <div class="card">
+        <h3 class="sec-title">Reuniões de hoje</h3>
+        ${q.reunioesHoje.length === 0 ? html`<${Empty}>Nenhuma reunião hoje.<//>` : html`<ul class="timeline">${q.reunioesHoje.map((m) => html`<li key=${m.id} style=${{ gridTemplateColumns: "46px minmax(0,1fr) auto" }}>
+          <b class="mono">${S.fmtTime(m.scheduledAt)}</b><button class="btn link" style=${{ textAlign: "left", overflow: "hidden", textOverflow: "ellipsis" }} onClick=${() => go("lead", { id: m.lead.id })}>${m.lead.nome}</button><${Status} s=${m.status} meeting />
+        </li>`)}</ul>`}
+        <button class="btn link small" style=${{ marginTop: 8 }} onClick=${() => go("reunioes")}>Ver todas →</button>
+      </div>
+      ${sla.aguardando.length > 0 && html`<div class="card">
+        <h3 class="sec-title">Chegaram fora do horário</h3>
+        <p class="small muted" style=${{ margin: "0 0 8px" }}>O SLA começa na abertura do expediente.</p>
+        <ul class="timeline">${sla.aguardando.map((l) => html`<li key=${l.id} style=${{ gridTemplateColumns: "minmax(0,1fr) auto" }}><button class="btn link" style=${{ textAlign: "left" }} onClick=${() => go("lead", { id: l.id })}>${l.nome}</button><span class="small muted mono">${S.fmtDateTime(l.createdAt)}</span></li>`)}</ul>
+      </div>`}
+      <div class="card small muted"><b style=${{ color: "var(--ink)" }}>Atalhos:</b> <kbd>J</kbd>/<kbd>K</kbd> navegam, <kbd>Enter</kbd> abre, <kbd>N</kbd> novo lead, <kbd>?</kbd> mostra todos.</div>
+    </aside>
+  </div>`;
+}
+function SlaRow({ x }) {
+  const l = x.lead;
+  return html`<${Timer} deadline=${x.deadline} />
+    <span class="main"><div class="name">${l.nome}</div><div class="sub">${l.interesse ?? "—"} · ${l.origem ?? "sem origem"} · entrou ${S.fmtTime(l.createdAt)}${l.foraDoHorario ? " (fora do horário)" : ""}</div></span>
+    <span class="when late">📞 Ligar agora</span>`;
+}
+function TaskRow({ it, section }) {
+  const t = it.task, l = it.lead;
+  const when = section === "atrasados" ? S.fmtDateTime(t.dueAt) : it.disponivel ? `desde ${S.fmtTime(t.dueAt)}` : `às ${S.fmtTime(t.dueAt)}`;
+  const cls = section === "atrasados" ? "late" : it.disponivel ? "now" : "later";
+  return html`<${Canal} c=${t.canal} />
+    <span class="main"><div class="row" style=${{ gap: 6 }}><span class="name">${l.nome}</span><${Stars} v=${l.score} /></div>
+      <div class="sub">${t.titulo}${it.meeting ? ` · reunião ${S.fmtSlot(it.meeting.scheduledAt, now())}` : ""} · lead de ${S.fmtDate(l.createdAt)}</div></span>
+    <span class=${"when " + cls}>${when}</span>`;
+}
+function Abertura({ q, go }) {
+  const n = q.atrasados.length + q.doDia.length;
+  return html`<div class="card tint-warn">
+    <h2 style=${{ fontSize: 16 }}>☀️ Abertura do dia (primeiros 30 min)</h2>
+    <p style=${{ margin: "4px 0 10px" }}>Comece pelos leads que chegaram fora do horário e depois ataque os ${n} follow-up${n === 1 ? "" : "s"} do dia.</p>
+    <div class="eyebrow" style=${{ marginBottom: 4 }}>Chegaram fora do horário (${q.foraDoHorario.length})</div>
+    ${q.foraDoHorario.length === 0 ? html`<p class="small muted" style=${{ margin: 0 }}>Nenhum.</p>` : html`<ul class="timeline">${q.foraDoHorario.map((l) => html`<li key=${l.id} style=${{ gridTemplateColumns: "18px minmax(0,1fr) auto" }}>
+      <span style=${{ color: l.firstContactAt ? "var(--ok)" : "var(--bad)" }}>${l.firstContactAt ? "✔" : "●"}</span>
+      <button class="btn link" style=${{ textAlign: "left" }} onClick=${() => go("lead", { id: l.id })}>${l.nome}</button><span class="small muted mono">${S.fmtDateTime(l.createdAt)}</span></li>`)}</ul>`}
+  </div>`;
+}
+function Fechamento({ q, sla, go }) {
+  const key = "fechamento-" + S.toInputValue(now()).slice(0, 10);
+  const [done, setDone] = useState(() => { try { return JSON.parse(localStorage.getItem(key) || "{}"); } catch { return {}; } });
+  const toggle = (k) => { const n = { ...done, [k]: !done[k] }; setDone(n); try { localStorage.setItem(key, JSON.stringify(n)); } catch {} };
+  const semConf = q.reunioesAmanha.filter((m) => m.status !== "CONFIRMADA").length;
+  const pend = q.atrasados.length + q.doDia.filter((i) => i.disponivel).length + q.confirmacoes.length;
+  const Item = ({ k, children }) => html`<li class="check"><input type="checkbox" id=${"fc-" + k} checked=${!!done[k]} onChange=${() => toggle(k)} /><label for=${"fc-" + k} class=${done[k] ? "done-txt" : ""}>${children}</label></li>`;
+  return html`<div class="card tint-accent">
+    <h2 style=${{ fontSize: 16, marginBottom: 10 }}>🌙 Fechamento do dia (últimos 30 min)</h2>
+    <ul style=${{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+      <${Item} k="confirmar"><b>Confirmar reuniões do próximo dia útil</b>: ${q.reunioesAmanha.length} reunião(ões), ${semConf} sem confirmação.
+        ${q.reunioesAmanha.map((m) => html`<div key=${m.id} class="small"><span class="mono">${S.fmtDateTime(m.scheduledAt)}</span> ${m.lead.nome} <${Status} s=${m.status} meeting /></div>`)}<//>
+      <${Item} k="pendencias"><b>Revisar pendências</b>: ${pend} tarefa(s) vencida(s) ainda abertas. Faça, reagende ou pule.<//>
+      <${Item} k="resumo"><b>Ver o resumo do dia</b>: ${sla.agendadasHoje}/${sla.meta} reuniões agendadas. <button class="btn link" onClick=${() => go("dashboard")}>Abrir dashboard</button><//>
+    </ul>
+  </div>`;
+}
+function Welcome({ openModal }) {
+  const st = useStore();
+  const [busy, setBusy] = useState(null);
+  async function exemplo() {
+    setBusy("Gerando…");
+    const leads = S.generateExample(st.cfg, now(), { seed: Math.floor(Math.random() * 1e6) });
+    await store.saveMany(leads, (i, n) => setBusy(`Salvando ${i}/${n}…`));
+    setBusy(null); toast(`${leads.length} leads de exemplo carregados.`);
+  }
+  return html`<div class="card" style=${{ maxWidth: 640, margin: "24px auto" }}>
+    <div class="eyebrow">Plantão vazio</div>
+    <h1 style=${{ margin: "4px 0 8px" }}>Sua fila aparece aqui</h1>
+    <p style=${{ marginTop: 0 }}>Cada lead novo entra no topo com um cronômetro de ${st.cfg.settings.slaMinutos} minutos. Depois da primeira tentativa, a cadência gera os follow-ups sozinha.</p>
+    <div class="row">
+      <button class="btn primary" onClick=${() => openModal("novo")}>+ Cadastrar lead <kbd>N</kbd></button>
+      <button class="btn" onClick=${() => openModal("import")}>⬆ Importar CSV</button>
+      <button class="btn" disabled=${!!busy} onClick=${exemplo}>${busy ?? "Carregar uma semana de exemplo"}</button>
+    </div>
+    <p class="small muted" style=${{ marginBottom: 0 }}>Os dados de exemplo ficam marcados e podem ser apagados em Configurações.</p>
+  </div>`;
+}
+
+/* ===== Novo lead / ajuda / importação ===== */
+function QuickLead({ onClose, go }) {
+  const st = useStore();
+  const [f, setF] = useState({ nome: "", telefone: "", email: "", origem: "Manual", interesse: "", observacao: "" });
+  const [err, setErr] = useState(null);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  async function submit(e, abrir) {
+    e.preventDefault();
+    if (!f.nome.trim()) return setErr("Informe o nome do lead.");
+    const lead = S.newLead(f, now(), st.cfg.settings);
+    await store.saveLead(lead);
+    onClose(); toast("Lead cadastrado."); if (abrir) go("lead", { id: lead.id });
+  }
+  const field = (k, label, extra = {}) => html`<div class=${extra.full ? "span-all" : ""}><label class="lbl" for=${"ql-" + k}>${label}</label><input id=${"ql-" + k} class="input" value=${f[k]} onInput=${set(k)} autoFocus=${!!extra.focus} placeholder=${extra.ph || ""} /></div>`;
+  return html`<${Modal} title="Novo lead" onClose=${onClose}>
+    <form class="form-grid" onSubmit=${(e) => submit(e, true)}>
+      ${field("nome", "Nome *", { full: true, focus: true })}
+      ${field("telefone", "Telefone / WhatsApp", { ph: "(11) 91234-5678" })}
+      ${field("email", "E-mail")}
+      ${field("origem", "Origem")}
+      ${field("interesse", "Interesse")}
+      <div class="span-all"><label class="lbl" for="ql-obs">Observação</label><textarea id="ql-obs" class="input" rows="2" value=${f.observacao} onInput=${set("observacao")}></textarea></div>
+      ${err && html`<p class="span-all" style=${{ color: "var(--bad)", margin: 0 }}>${err}</p>`}
+      <div class="span-all row" style=${{ justifyContent: "flex-end" }}>
+        <button type="button" class="btn" onClick=${(e) => submit(e, false)}>Salvar</button>
+        <button class="btn primary">Salvar e atender ↵</button>
+      </div>
+    </form><//>`;
+}
+function Help({ onClose }) {
+  const G = [
+    ["Em qualquer tela", [["N", "Novo lead"], ["Q", "Plantão"], ["L", "Leads"], ["R", "Reuniões"], ["D", "Dashboard"], ["?", "Esta ajuda"]]],
+    ["Na fila", [["J / ↓", "Próximo item"], ["K / ↑", "Item anterior"], ["Enter", "Abrir selecionado"], ["Espaço", "Abrir o 1º da fila"]]],
+    ["No atendimento", [["1", "Não atendeu"], ["2", "Atendeu - agendou"], ["3", "Retornar depois"], ["4", "Desqualificado"], ["5", "Número inválido"], ["6", "Mensagem enviada"], ["W", "Abrir WhatsApp"], ["C", "Copiar mensagem"], ["Esc", "Voltar para a fila"]]],
+  ];
+  return html`<${Modal} title="Atalhos de teclado" onClose=${onClose} wide>
+    <div class="form-grid">${G.map(([t, items]) => html`<div key=${t}><div class="eyebrow" style=${{ marginBottom: 6 }}>${t}</div>
+      ${items.map(([k, d]) => html`<div key=${k} class="row" style=${{ marginBottom: 4 }}><kbd style=${{ minWidth: 42, textAlign: "center" }}>${k}</kbd>${d}</div>`)}</div>`)}</div><//>`;
+}
+const CSV_EXEMPLO = "nome,telefone,email,origem,interesse,observacao\nMaria Fernandes,(11) 98765-4321,maria@exemplo.com.br,Planilha evento,Treinamento de vendas,Conheceu no evento\nJosé Almeida,21987654321,jose@exemplo.com.br,Planilha evento,Implantação de CRM,";
+function ImportCsv({ onClose }) {
+  const st = useStore();
+  const [rows, setRows] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const exRef = useRef(null);
+  function parse(file) {
+    if (!window.Papa) return setMsg("O leitor de CSV não carregou. Recarregue a página.");
+    Papa.parse(file, { header: true, skipEmptyLines: true, transformHeader: (h) => h.trim().toLowerCase(), complete: (r) => setRows(r.data), error: (e) => setMsg(e.message) });
+  }
+  async function send() {
+    setBusy(true);
+    const t = now(), out = [], bad = [];
+    rows.forEach((r, i) => { const input = S.normalizeLeadPayload(r); if (!input) bad.push(i + 2); else out.push(S.newLead({ ...input, origem: input.origem ?? "Importação CSV" }, t, st.cfg.settings)); });
+    await store.saveMany(out, (i, n) => setMsg(`Salvando ${i}/${n}…`));
+    setMsg(`${out.length} leads importados.${bad.length ? ` Linhas ignoradas (sem nome, telefone ou e-mail): ${bad.join(", ")}.` : ""}`);
+    setRows(null); setBusy(false);
+  }
+  return html`<${Modal} title="Importar leads por CSV" onClose=${onClose} wide>
+    <p style=${{ marginTop: 0 }}>A primeira linha deve ter o cabeçalho. Colunas reconhecidas: <code>nome, telefone, email, origem, interesse, observacao</code> (também <code>name, phone, source…</code>). A coluna <code>data</code> é opcional (ex.: <code>2026-09-28T10:15:00-03:00</code>).</p>
+    <input id="csv-file" type="file" accept=".csv,text/csv" onChange=${(e) => e.target.files[0] && parse(e.target.files[0])} />
+    ${rows && html`<div style=${{ marginTop: 12 }}><p><b>${rows.length}</b> linhas encontradas.</p>
+      <button class="btn primary" disabled=${busy} onClick=${send}>Importar ${rows.length} leads</button></div>`}
+    ${msg && html`<p style=${{ color: "var(--ok)" }}>${msg}</p>`}
+    <div class="row" style=${{ marginTop: 12, justifyContent: "space-between" }}><span class="eyebrow">Modelo de CSV</span>
+      <button class="btn sm" onClick=${async () => toast((await copyText(CSV_EXEMPLO, exRef.current)) ? "Modelo copiado." : "Selecione e copie o texto.")}>Copiar modelo</button></div>
+    <textarea ref=${exRef} class="input mono small" rows="4" readOnly value=${CSV_EXEMPLO} style=${{ marginTop: 6 }}></textarea><//>`;
+}
+
+/* ===== Atendimento do lead ===== */
+const BOTOES = [["NAO_ATENDEU", "1", "btn"], ["AGENDOU", "2", "btn go"], ["RETORNAR", "3", "btn violet"], ["DESQUALIFICADO", "4", "btn danger"], ["NUMERO_INVALIDO", "5", "btn danger"], ["ENVIADO", "6", "btn info"]];
+function LeadView({ id, taskId, go }) {
+  const st = useStore();
+  useNow(30000);
+  const config = st.cfg, cfg = config.settings;
+  const lead = st.lead(id);
+  const allLeads = st.activeLeads();
+  const task = lead?.tasks.find((t) => t.id === taskId && t.status === "PENDENTE") ?? null;
+  const [canal, setCanal] = useState(task?.canal ?? "LIGACAO");
+  const [nota, setNota] = useState("");
+  const [modal, setModal] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [resp, setResp] = useState(() => { try { const r = lead?.respostas ? JSON.parse(lead.respostas) : []; return [0, 1, 2].map((i) => r[i] ?? { ok: false, txt: "" }); } catch { return [0, 1, 2].map(() => ({ ok: false, txt: "" })); } });
+  useEffect(() => { if (task) setCanal(task.canal); }, [task?.id]);
+  const slots = useMemo(() => S.suggestSlots(now(), cfg, allLeads), [st.ver]);
+  const prox = lead?.meetings.find((m) => m.status === "AGENDADA" || m.status === "CONFIRMADA");
+  const vars = lead && { nome: S.primeiroNome(lead.nome), interesse: lead.interesse ?? "nossa solução", horario1: slots.horario1 ? S.fmtSlot(slots.horario1, now()) : null, horario2: slots.horario2 ? S.fmtSlot(slots.horario2, now()) : null, sdr: cfg.nomeSdr, empresa: cfg.empresa, produto: cfg.produto, reuniao: prox ? S.fmtSlot(prox.scheduledAt, now()) : null };
+
+  async function registrar(resultado, extra = {}) {
+    if (!lead || busy) return;
+    if (resultado === "AGENDOU" && !extra.scheduledAt) return setModal("AGENDOU");
+    if (resultado === "RETORNAR" && !extra.retornoAt) return setModal("RETORNAR");
+    setBusy(true);
+    try {
+      const t = now();
+      const { lead: upd } = S.registerAttempt(lead, { canal, resultado, nota, taskId: task?.id, ...extra }, t, config);
+      store.saveLead(upd);
+      setModal(null); setNota("");
+      toast(`${S.RESULTADO_LABEL[resultado]} registrado.`);
+      // Ação imediata da cadência (ex.: WhatsApp logo após a ligação): continua neste lead.
+      const imediata = upd.tasks.filter((x) => x.status === "PENDENTE" && x.tipo === "CADENCIA" && x.dueAt <= t + 5 * 60000).sort((a, b) => a.dueAt - b.dueAt)[0];
+      if (imediata) go("lead", { id: upd.id, taskId: imediata.id }); else go("plantao");
+    } catch (e) { toast(e.message, "bad"); }
+    finally { setBusy(false); }
+  }
+  useEffect(() => {
+    const k = (e) => {
+      if (typing(e) || e.metaKey || e.ctrlKey || e.altKey || modalOpen()) return;
+      const b = BOTOES.find((x) => x[1] === e.key);
+      if (b) { e.preventDefault(); registrar(b[0]); }
+      else if (e.key === "Escape") go("plantao");
+    };
+    window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
+  });
+
+  if (!lead) return html`<div class="card"><p>Este lead não existe mais.</p><button class="btn" onClick=${() => go("plantao")}>← Voltar para a fila</button></div>`;
+  const saveResp = (r) => { setResp(r); store.saveLead({ ...S.clone(lead), respostas: JSON.stringify(r), score: r.filter((x) => x.ok).length }); };
+  const slaItem = lead.status === "NOVO" && !lead.firstContactAt && lead.slaStartAt <= now() ? lead.slaStartAt + cfg.slaMinutos * 60000 : null;
+  const pend = lead.tasks.filter((x) => x.status === "PENDENTE").sort((a, b) => a.dueAt - b.dueAt);
+  const tplId = task?.templateId ?? (canal === "EMAIL" ? config.templates.find((x) => x.canal === "EMAIL")?.id : null);
+  const perguntas = [cfg.pergunta1, cfg.pergunta2, cfg.pergunta3];
+
+  return html`<div class="stack">
+    <div class="card lead-head">
+      <button class="btn link" onClick=${() => go("plantao")}>← Fila <kbd>Esc</kbd></button>
+      <div style=${{ minWidth: 0 }}>
+        <div class="row"><h1>${lead.nome}</h1><${Status} s=${lead.status} /><${Stars} v=${lead.score} />${lead.exemplo && html`<span class="tag">exemplo</span>`}</div>
+        <div class="contacts">
+          ${lead.telefone && html`<span class="mono">📞 ${lead.telefone}</span>`}
+          ${lead.email && html`<span>✉️ ${lead.email}</span>`}
+          <span>🏷️ ${lead.origem ?? "—"}</span><span>🎯 ${lead.interesse ?? "—"}</span>
+        </div>
+      </div>
+      <div class="row" style=${{ marginLeft: "auto", gap: 16 }}>
+        ${slaItem && html`<div style=${{ textAlign: "center" }}><div class="eyebrow">SLA</div><${Timer} deadline=${slaItem} /></div>`}
+        <div class="small muted" style=${{ textAlign: "right" }}>Entrou ${S.fmtDateTime(lead.createdAt)}${lead.foraDoHorario ? " (fora do horário)" : ""}<br />1º contato: <b style=${{ color: "var(--ink)" }}>${lead.firstContactAt ? S.fmtDuration(lead.speedToLeadSec) : "ainda não"}</b></div>
+        <button class="btn sm" onClick=${() => setModal("EDIT")}>Editar</button>
+      </div>
+      ${lead.observacao && html`<p class="banner-note" style=${{ width: "100%", margin: 0 }}>📝 ${lead.observacao}</p>`}
+    </div>
+
+    <div class="grid-lead">
+      <div class="stack">
+        <div class="card stack" style=${{ gap: 12 }}>
+          <div class="row">
+            <h3 class="sec-title" style=${{ margin: 0 }}>Registrar tentativa</h3>
+            ${task && html`<span class="tag" style=${{ background: "var(--accent-soft)", color: "var(--accent)" }}>Tarefa: ${task.titulo}</span>`}
+            <div class="seg" style=${{ marginLeft: "auto" }} role="group" aria-label="Canal">${S.CANAIS.map((c) => html`<button key=${c} aria-pressed=${canal === c} onClick=${() => setCanal(c)}>${S.CANAL_ICON[c]} ${S.CANAL_LABEL[c]}</button>`)}</div>
+          </div>
+          <div class="outcomes">${BOTOES.map(([r, k, cls]) => html`<button key=${r} class=${cls} disabled=${busy} onClick=${() => registrar(r)}><kbd>${k}</kbd> ${S.RESULTADO_LABEL[r]}</button>`)}</div>
+          <input id="nota" class="input" placeholder="Anotação (opcional)" value=${nota} onInput=${(e) => setNota(e.target.value)} />
+          ${S.STATUS_FECHADOS.includes(lead.status) && html`<p class="small muted" style=${{ margin: 0 }}>Este lead está como “${S.STATUS_LABEL[lead.status]}”. Registrar uma tentativa não reabre a cadência automaticamente.</p>`}
+        </div>
+
+        <div class="card script stack" style=${{ gap: 10 }}>
+          <h3 class="sec-title" style=${{ margin: 0 }}>📜 Script de ligação</h3>
+          <div><label class="lbl">Abertura</label><p>${S.render(cfg.scriptAbertura, vars)}</p></div>
+          <div><label class="lbl">Qualificação (marque ✓ se o lead se encaixa)</label>
+            <ol>${perguntas.map((p, i) => html`<li key=${i} class="q">
+              <div class="check"><input type="checkbox" id=${"q" + i} checked=${!!resp[i]?.ok} onChange=${(e) => saveResp(resp.map((r, j) => (j === i ? { ...r, ok: e.target.checked } : r)))} /><label for=${"q" + i}><b>${i + 1}.</b> ${S.render(p, vars)}</label></div>
+              <input id=${"qr" + i} class="input small" style=${{ marginTop: 6 }} placeholder="Resposta…" value=${resp[i]?.txt ?? ""} onInput=${(e) => setResp(resp.map((r, j) => (j === i ? { ...r, txt: e.target.value } : r)))} onBlur=${() => saveResp(resp)} />
+            </li>`)}</ol></div>
+          <div><label class="lbl">Fechamento: ofereça dois horários</label><p class="close">${S.render(cfg.scriptFechamento, vars)}</p></div>
+        </div>
+      </div>
+
+      <div class="stack">
+        ${prox && html`<div class="card tint-ok"><h3 class="sec-title">📅 Reunião</h3>
+          <p style=${{ margin: "0 0 8px" }}><b>${S.fmtSlot(prox.scheduledAt, now())}</b> <${Status} s=${prox.status} meeting /></p>
+          <${MeetingActions} lead=${lead} m=${prox} /></div>`}
+        <${TemplatePanel} key=${(task?.id || "") + canal} lead=${lead} templates=${config.templates} vars=${vars} preferId=${tplId} />
+        <div class="card"><h3 class="sec-title">Próximas tarefas <span class="count">${pend.length}</span></h3>
+          ${pend.length === 0 ? html`<p class="small muted" style=${{ margin: 0 }}>Nenhuma.</p>` : html`<ul class="timeline tasks">${pend.map((x) => html`<li key=${x.id} style=${{ display: "flex", fontWeight: x.id === task?.id ? 700 : 400 }}>
+            <span class="when small muted mono">${S.fmtDateTime(x.dueAt)}</span><${Canal} c=${x.canal} />
+            <button class="btn link" style=${{ textAlign: "left", flex: 1, minWidth: 0 }} onClick=${() => go("lead", { id: lead.id, taskId: x.id })}>${x.titulo}</button>
+            <button class="btn ghost small" title="Pular esta tarefa" onClick=${() => { const l = S.clone(lead); l.tasks.find((y) => y.id === x.id).status = "CANCELADA"; store.saveLead(l); }}>pular</button>
+          </li>`)}</ul>`}
+        </div>
+        <${Historico} lead=${lead} />
+      </div>
+    </div>
+    ${modal === "AGENDOU" && html`<${Modal} title=${"Agendar reunião com " + S.primeiroNome(lead.nome)} onClose=${() => setModal(null)}><${SlotPicker} slots=${slots} onPick=${(d) => registrar("AGENDOU", { scheduledAt: d })} /><//>`}
+    ${modal === "RETORNAR" && html`<${RetornoModal} cfg=${cfg} onClose=${() => setModal(null)} onPick=${(d) => registrar("RETORNAR", { retornoAt: d })} />`}
+    ${modal === "EDIT" && html`<${EditLead} lead=${lead} onClose=${() => setModal(null)} go=${go} />`}
+  </div>`;
+}
+function Historico({ lead }) {
+  const evs = [
+    { at: lead.createdAt, icon: "📥", text: html`Lead entrou (${lead.origem ?? "sem origem"})` },
+    ...lead.attempts.map((a) => ({ at: a.at, icon: S.CANAL_ICON[a.canal], text: html`<b>#${a.numero}</b> ${S.CANAL_LABEL[a.canal]}: ${S.RESULTADO_LABEL[a.resultado]}${a.nota ? html` <span class="muted">· “${a.nota}”</span>` : ""}` })),
+    ...lead.meetings.map((m) => ({ at: m.bookedAt, icon: "📅", text: html`Reunião para ${S.fmtDateTime(m.scheduledAt)} (tentativa ${m.attemptNumero}) <${Status} s=${m.status} meeting />` })),
+  ].sort((a, b) => b.at - a.at);
+  return html`<div class="card"><h3 class="sec-title">Histórico</h3><ul class="timeline">${evs.map((e, i) => html`<li key=${i}><span class="small muted mono">${S.fmtDateTime(e.at)}</span><span>${e.icon}</span><span>${e.text}</span></li>`)}</ul></div>`;
+}
+function TemplatePanel({ lead, templates, vars, preferId }) {
+  const [id, setId] = useState(preferId ?? templates.find((t) => t.canal === "WHATSAPP")?.id ?? templates[0]?.id);
+  const tpl = templates.find((t) => t.id === id) ?? null;
+  const rendered = tpl ? S.render(tpl.corpo, vars) : "";
+  const [texto, setTexto] = useState(rendered);
+  useEffect(() => setTexto(rendered), [rendered]);
+  const assunto = tpl?.assunto ? S.render(tpl.assunto, vars) : "";
+  const wa = S.waLink(lead.telefone, texto);
+  const waRef = useRef(null), taRef = useRef(null);
+  const copy = async () => toast((await copyText(tpl?.canal === "EMAIL" && assunto ? `${assunto}\n\n${texto}` : texto, taRef.current)) ? "Mensagem copiada." : "Texto selecionado: use Ctrl+C.");
+  useEffect(() => {
+    const k = (e) => {
+      if (typing(e) || e.metaKey || e.ctrlKey || modalOpen()) return;
+      const key = e.key.toLowerCase();
+      if (key === "c") copy(); else if (key === "w" && waRef.current) waRef.current.click();
+    };
+    window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
+  });
+  return html`<div class="card stack" style=${{ gap: 8 }}>
+    <div class="row"><h3 class="sec-title" style=${{ margin: 0 }}>Mensagem</h3>
+      <select id="tpl" class="input" style=${{ width: "auto", marginLeft: "auto", maxWidth: "100%" }} value=${id ?? ""} onChange=${(e) => setId(e.target.value)}>
+        ${["WHATSAPP", "EMAIL"].map((c) => html`<optgroup key=${c} label=${S.CANAL_LABEL[c]}>${templates.filter((t) => t.canal === c).map((t) => html`<option key=${t.id} value=${t.id}>${t.nome}</option>`)}</optgroup>`)}
+      </select></div>
+    ${tpl?.canal === "EMAIL" && html`<div class="small" style=${{ background: "var(--surface-2)", borderRadius: 6, padding: "4px 8px" }}><b>Para:</b> ${lead.email ?? "sem e-mail"} · <b>Assunto:</b> ${assunto}</div>`}
+    <textarea ref=${taRef} id="tpl-text" class="input" rows="7" value=${texto} onInput=${(e) => setTexto(e.target.value)}></textarea>
+    <div class="row">
+      <button class="btn" onClick=${copy}>📋 Copiar <kbd>C</kbd></button>
+      ${wa ? html`<a ref=${waRef} class="btn go" href=${wa} target="_blank" rel="noreferrer">💬 Abrir WhatsApp <kbd>W</kbd></a>` : html`<span class="small muted">Telefone inválido para WhatsApp</span>`}
+      ${tpl?.canal === "EMAIL" && lead.email && html`<button class="btn" onClick=${async () => toast((await copyText(lead.email)) ? "E-mail copiado." : lead.email)}>Copiar e-mail</button>`}
+    </div>
+  </div>`;
+}
+function SlotPicker({ slots, onPick }) {
+  const [custom, setCustom] = useState(S.toInputValue(now() + 2 * 3600000));
+  const Chips = ({ title, list }) => html`<div><div class="eyebrow" style=${{ marginBottom: 4 }}>${title}</div>
+    ${list.length === 0 ? html`<p class="small muted" style=${{ margin: 0 }}>Sem horários livres.</p>` : html`<div class="chips">${list.slice(0, 12).map((s) => html`<button key=${s} class="btn sm mono" onClick=${() => onPick(s)}>${S.fmtTime(s)}</button>`)}</div>`}</div>`;
+  return html`<div class="stack" style=${{ gap: 12 }}>
+    ${slots.horario1 && html`<div class="row">${[slots.horario1, slots.horario2].filter(Boolean).map((h, i) => html`<button key=${h} class="btn primary" autoFocus=${i === 0} onClick=${() => onPick(h)}>${S.fmtSlot(h, now())}</button>`)}</div>`}
+    <${Chips} title="Hoje" list=${slots.hoje} />
+    ${slots.amanha[0] && html`<${Chips} title=${S.fmtDate(slots.amanha[0])} list=${slots.amanha} />`}
+    <div class="row" style=${{ borderTop: "1px solid var(--line)", paddingTop: 12, alignItems: "flex-end" }}>
+      <div style=${{ flex: 1, minWidth: 180 }}><label class="lbl" for="slot-custom">Outra data e hora</label><input id="slot-custom" type="datetime-local" class="input" value=${custom} onInput=${(e) => setCustom(e.target.value)} /></div>
+      <button class="btn" onClick=${() => custom && onPick(S.fromInputValue(custom))}>Agendar</button>
+    </div></div>`;
+}
+function RetornoModal({ cfg, onPick, onClose }) {
+  const t = now(), am = S.nextBusinessDay(cfg, t);
+  const opts = [["Em 30 min", t + 30 * 60000], ["Em 1 hora", t + 3600000], ["Em 2 horas", t + 7200000], [`${S.fmtDate(am)} ${cfg.horaInicio}`, S.atMinutes(am, S.hm(cfg.horaInicio))], [`${S.fmtDate(am)} 14:00`, S.atMinutes(am, 840)]];
+  const [custom, setCustom] = useState(S.toInputValue(t + 3 * 3600000));
+  return html`<${Modal} title="Retornar quando?" onClose=${onClose}>
+    <div class="form-grid" style=${{ gridTemplateColumns: "1fr 1fr" }}>${opts.map(([l, d], i) => html`<button key=${l} class="btn" autoFocus=${i === 1} onClick=${() => onPick(d)}>${l}</button>`)}</div>
+    <div class="row" style=${{ marginTop: 12, alignItems: "flex-end" }}>
+      <div style=${{ flex: 1 }}><label class="lbl" for="ret-custom">Data e hora</label><input id="ret-custom" type="datetime-local" class="input" value=${custom} onInput=${(e) => setCustom(e.target.value)} /></div>
+      <button class="btn primary" onClick=${() => onPick(S.fromInputValue(custom))}>Salvar</button></div><//>`;
+}
+function EditLead({ lead, onClose, go }) {
+  const [f, setF] = useState({ nome: lead.nome, telefone: lead.telefone ?? "", email: lead.email ?? "", origem: lead.origem ?? "", interesse: lead.interesse ?? "", observacao: lead.observacao ?? "" });
+  const campos = [["nome", "Nome"], ["telefone", "Telefone"], ["email", "E-mail"], ["origem", "Origem"], ["interesse", "Interesse"], ["observacao", "Observação"]];
+  return html`<${Modal} title="Editar lead" onClose=${onClose}>
+    <form class="stack" style=${{ gap: 8 }} onSubmit=${(e) => { e.preventDefault(); if (!f.nome.trim()) return; const l = { ...S.clone(lead) }; for (const [k] of campos) l[k] = f[k].trim() || null; l.nome = f.nome.trim(); store.saveLead(l); onClose(); }}>
+      ${campos.map(([k, l]) => html`<div key=${k}><label class="lbl" for=${"ed-" + k}>${l}</label><input id=${"ed-" + k} class="input" value=${f[k]} onInput=${(e) => setF({ ...f, [k]: e.target.value })} /></div>`)}
+      <div class="row" style=${{ justifyContent: "space-between", marginTop: 6 }}>
+        <${ConfirmButton} label="Excluir lead" confirmLabel="Confirmar exclusão" onConfirm=${() => { store.deleteLead(lead.id); onClose(); go("leads"); }} />
+        <button class="btn primary">Salvar</button></div>
+    </form><//>`;
+}
+function MeetingActions({ lead, m }) {
+  const [re, setRe] = useState(false);
+  const st = useStore();
+  const past = m.scheduledAt < now();
+  const aberta = m.status === "AGENDADA" || m.status === "CONFIRMADA";
+  const patch = (p) => store.saveLead(S.updateMeeting(lead, m.id, p, now(), st.cfg));
+  const slots = re ? S.suggestSlots(now(), st.cfg.settings, st.activeLeads()) : null;
+  return html`<div class="row" style=${{ gap: 4 }}>
+    ${m.status === "AGENDADA" && html`<button class="btn sm" onClick=${() => patch({ status: "CONFIRMADA" })}>✔ Confirmada</button>`}
+    ${(aberta && past) || m.status === "NO_SHOW" ? html`<button class="btn sm" style=${{ color: "var(--ok)" }} onClick=${() => patch({ status: "REALIZADA" })}>🎯 Aconteceu</button>` : null}
+    ${aberta && past && html`<button class="btn sm danger" onClick=${() => patch({ status: "NO_SHOW" })}>👻 No-show</button>`}
+    ${m.status !== "REALIZADA" && html`<button class="btn sm" onClick=${() => setRe(true)}>↻ Reagendar</button>`}
+    ${aberta && html`<${ConfirmButton} className="btn sm ghost" label="Cancelar" confirmLabel="Cancelar reunião?" onConfirm=${() => patch({ status: "CANCELADA" })} />`}
+    ${re && html`<${Modal} title="Reagendar reunião" onClose=${() => setRe(false)}><${SlotPicker} slots=${slots} onPick=${(d) => { setRe(false); patch({ scheduledAt: d }); }} /><//>`}
+  </div>`;
+}
+
+/* ===== Leads ===== */
+function LeadsView({ go, openModal }) {
+  const st = useStore();
+  const [q, setQ] = useState(""); const [status, setStatus] = useState("");
+  const all = [...st.activeLeads(), ...st.archivedLeads()].sort((a, b) => b.createdAt - a.createdAt);
+  const ql = q.trim().toLowerCase();
+  const list = all.filter((l) => (!status || l.status === status) && (!ql || [l.nome, l.telefone, l.email].some((v) => v && v.toLowerCase().includes(ql)))).slice(0, 300);
+  return html`<div class="stack">
+    <div class="row"><h1>Leads</h1>
+      <input id="busca" class="input" style=${{ width: 260, maxWidth: "100%" }} placeholder="Buscar nome, telefone ou e-mail" value=${q} onInput=${(e) => setQ(e.target.value)} />
+      <select id="filtro-status" class="input" style=${{ width: "auto" }} value=${status} onChange=${(e) => setStatus(e.target.value)}><option value="">Todos os status</option>${Object.entries(S.STATUS_LABEL).map(([k, v]) => html`<option key=${k} value=${k}>${v}</option>`)}</select>
+      <button class="btn" style=${{ marginLeft: "auto" }} onClick=${() => openModal("import")}>⬆ Importar CSV</button>
+    </div>
+    <div class="card scroll-x" style=${{ padding: 0 }}>
+      ${list.length === 0 ? html`<div style=${{ padding: 16 }}><${Empty}>Nenhum lead encontrado.<//></div>` : html`<table class="data">
+        <thead><tr><th>Nome</th><th>Contato</th><th>Origem / interesse</th><th>Entrada</th><th>1º contato</th><th>Tent.</th><th>Status</th></tr></thead>
+        <tbody>${list.map((l) => html`<tr key=${l.id}>
+          <td><button class="btn link" style=${{ fontWeight: 700, textAlign: "left" }} onClick=${() => go("lead", { id: l.id, from: "leads" })}>${l.nome}</button> <${Stars} v=${l.score} /></td>
+          <td class="small">${l.telefone}<br />${l.email}</td><td class="small">${l.origem}<br />${l.interesse}</td>
+          <td class="small mono" style=${{ whiteSpace: "nowrap" }}>${S.fmtDateTime(l.createdAt)}</td><td class="small">${S.fmtDuration(l.speedToLeadSec)}</td>
+          <td class="mono" style=${{ textAlign: "center" }}>${l.attempts.length}</td><td><${Status} s=${l.status} /></td></tr>`)}</tbody></table>`}
+    </div>
+    ${all.length > 300 && html`<p class="small muted">Mostrando 300 de ${all.length}. Use a busca para achar os demais.</p>`}
+  </div>`;
+}
+
+/* ===== Reuniões ===== */
+function ReunioesView({ go }) {
+  const st = useStore();
+  useNow(30000);
+  const hoje = S.startOfDay(now());
+  const all = [];
+  for (const l of st.activeLeads()) for (const m of l.meetings) all.push({ m, lead: l });
+  all.sort((a, b) => a.m.scheduledAt - b.m.scheduledAt);
+  const pendentes = all.filter((x) => x.m.scheduledAt < hoje && x.m.scheduledAt > hoje - 5 * S.DAY && (x.m.status === "AGENDADA" || x.m.status === "CONFIRMADA"));
+  const dias = new Map();
+  for (const x of all) if (x.m.scheduledAt >= hoje && x.m.scheduledAt < hoje + 8 * S.DAY) { const k = S.startOfDay(x.m.scheduledAt); dias.set(k, [...(dias.get(k) || []), x]); }
+  const List = ({ list }) => html`<ul class="timeline" style=${{ gap: 0 }}>${list.map(({ m, lead }) => html`<li key=${m.id} style=${{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, padding: "8px 0", borderTop: "1px solid var(--line-2)", opacity: m.status === "CANCELADA" ? 0.5 : 1 }}>
+    <b class="mono" style=${{ width: 110 }}>${S.fmtDateTime(m.scheduledAt).slice(4)}</b>
+    <button class="btn link" style=${{ fontWeight: 700 }} onClick=${() => go("lead", { id: lead.id, from: "reunioes" })}>${lead.nome}</button>
+    <span class="small muted">${lead.interesse ?? ""} · ${m.attemptNumero}ª tentativa</span><${Status} s=${m.status} meeting />
+    <span style=${{ marginLeft: "auto" }}><${MeetingActions} lead=${lead} m=${m} /></span></li>`)}</ul>`;
+  return html`<div class="stack"><h1>Reuniões</h1>
+    ${pendentes.length > 0 && html`<div class="card tint-warn"><h2 class="sec-title">Registre o resultado das últimas reuniões</h2><${List} list=${pendentes} /></div>`}
+    ${dias.size === 0 ? html`<${Empty}>Nenhuma reunião nos próximos dias.<//>` : [...dias.entries()].map(([k, list]) => html`<div key=${k} class="card">
+      <h2 class="sec-title">${S.sameDay(k, now()) ? "Hoje" : S.fmtDate(k)} <span class="count">${list.filter((x) => x.m.status !== "CANCELADA").length}</span></h2><${List} list=${list} /></div>`)}
+  </div>`;
+}
+
+/* ===== Dashboard ===== */
+function Bars({ data, goal, goalLabel, fmtTip }) {
+  const [hover, setHover] = useState(null);
+  const W = 560, H = 230, pl = 30, pr = 10, pt = 22, pb = 28;
+  const maxV = Math.max(1, goal || 0, ...data.map((d) => d.value));
+  const step = maxV <= 5 ? 1 : maxV <= 12 ? 2 : Math.ceil(maxV / 5);
+  const top = Math.ceil(maxV / step) * step;
+  const y = (v) => pt + (H - pt - pb) * (1 - v / top);
+  const bw = (W - pl - pr) / data.length, barW = Math.min(44, bw * 0.62);
+  const ticks = []; for (let v = 0; v <= top; v += step) ticks.push(v);
+  return html`<div class="chart">
+    <svg viewBox=${`0 0 ${W} ${H}`} role="img" aria-label="Gráfico de barras">
+      ${ticks.map((v) => html`<g key=${v}><line x1=${pl} x2=${W - pr} y1=${y(v)} y2=${y(v)} stroke="var(--grid)" /><text x=${pl - 6} y=${y(v) + 4} text-anchor="end">${v}</text></g>`)}
+      ${data.map((d, i) => {
+        const x = pl + i * bw + (bw - barW) / 2, y0 = y(0), yv = y(d.value), h = y0 - yv, r = Math.min(4, h);
+        const path = h > 0 ? `M${x},${y0} V${yv + r} Q${x},${yv} ${x + r},${yv} H${x + barW - r} Q${x + barW},${yv} ${x + barW},${yv + r} V${y0} Z` : "";
+        return html`<g key=${i} onMouseEnter=${() => setHover(i)} onMouseLeave=${() => setHover(null)}>
+          <rect x=${pl + i * bw} y=${pt} width=${bw} height=${H - pt - pb} fill="transparent" />
+          ${path && html`<path d=${path} fill=${hover === i ? "var(--bar-hover)" : "var(--bar)"} />`}
+          ${d.value > 0 && html`<text class="val" x=${x + barW / 2} y=${yv - 6} text-anchor="middle">${d.value}</text>`}
+          <text x=${x + barW / 2} y=${H - 8} text-anchor="middle">${d.label}</text></g>`;
+      })}
+      ${goal ? html`<g><line x1=${pl} x2=${W - pr} y1=${y(goal)} y2=${y(goal)} stroke="var(--ink-3)" stroke-dasharray="4 4" /><text x=${W - pr} y=${y(goal) - 5} text-anchor="end">${goalLabel}</text></g>` : null}
+    </svg>
+    ${hover != null && html`<div class="tip" style=${{ left: `${((pl + hover * bw + bw / 2) / W) * 100}%`, top: `${(y(data[hover].value) / H) * 100}%` }}>${fmtTip ? fmtTip(data[hover]) : data[hover].value}</div>`}
+  </div>`;
+}
+function DashboardView() {
+  const st = useStore();
+  const [range, setRange] = useState("day");
+  const [ref, setRef] = useState(now());
+  const t = useNow(30000);
+  const cfg = st.cfg.settings;
+  const m = useMemo(() => S.computeMetrics([...st.activeLeads(), ...st.archivedLeads()], cfg, range, ref, now()), [st.ver, range, ref, t]);
+  const stepD = range === "day" ? 1 : 7;
+  const pm = Math.min(100, (m.reunioesAgendadas / Math.max(1, m.meta)) * 100);
+  const titulo = range === "day" ? S.fmtDate(m.inicio) : `${S.fmtDate(m.inicio)} a ${S.fmtDate(m.fim)}`;
+  const Kpi = ({ label, value, sub, good }) => html`<div class="card kpi"><div class="eyebrow">${label}</div><div class=${"v" + (good ? " good" : "")}>${value}</div>${sub && html`<div class="small muted">${sub}</div>`}</div>`;
+  const metaDia = m.meta / Math.max(1, m.diasUteis);
+  return html`<div class="stack">
+    <div class="row"><h1>Dashboard</h1>
+      <div class="seg" role="group" aria-label="Período">${[["day", "Dia"], ["week", "Semana"]].map(([k, l]) => html`<button key=${k} aria-pressed=${range === k} onClick=${() => setRange(k)}>${l}</button>`)}</div>
+      <button class="btn sm" onClick=${() => setRef(ref - stepD * S.DAY)} aria-label="Período anterior">‹</button>
+      <b style=${{ minWidth: 150, textAlign: "center" }}>${titulo}</b>
+      <button class="btn sm" onClick=${() => setRef(ref + stepD * S.DAY)} aria-label="Próximo período">›</button>
+      <button class="btn sm" onClick=${() => setRef(now())}>Hoje</button>
+    </div>
+    <div class="card">
+      <div class="row" style=${{ alignItems: "flex-end" }}>
+        <div><div class="eyebrow">Reuniões agendadas ${range === "day" ? "no dia" : "na semana"}</div><div class="goal-num">${m.reunioesAgendadas}<span class="muted" style=${{ fontSize: 20 }}> / ${m.meta}</span></div></div>
+        <div class="muted" style=${{ marginLeft: "auto" }}>${m.reunioesAgendadas >= m.meta ? "✅ Meta batida!" : `Faltam ${m.meta - m.reunioesAgendadas}`}</div>
+      </div>
+      <div class="bigbar" role="progressbar" aria-valuenow=${m.reunioesAgendadas} aria-valuemax=${m.meta}><div class=${pm >= 100 ? "done" : ""} style=${{ width: pm + "%" }}></div></div>
+    </div>
+    <div class=${"card " + (m.gargalo ? "tint-warn" : "tint-ok")}>
+      <div class="row" style=${{ alignItems: "flex-start", gap: 16 }}>
+        <div style=${{ flex: "1 1 240px", minWidth: 0 }}><div class="eyebrow">Gargalo</div>
+          ${m.gargalo ? html`<div style=${{ fontSize: 18, fontWeight: 800 }}>⚠️ ${m.gargalo.label}: ${pct(m.gargalo.valor)} <span class="small muted" style=${{ fontWeight: 500 }}>(meta ${pct(m.gargalo.meta)})</span></div><p style=${{ margin: "2px 0 0" }}>${m.gargalo.dica}</p>`
+            : html`<div style=${{ fontSize: 18, fontWeight: 800 }}>✅ ${m.etapas.some((e) => e.indice != null) ? "Todas as etapas dentro da meta" : "Ainda sem dados suficientes"}</div>`}
+        </div>
+        <div class="stages" style=${{ flex: "2 1 420px" }}>${m.etapas.map((e) => { const ok = e.indice == null ? null : e.indice >= 1; return html`<div key=${e.etapa} class="stage">
+          <div class="small muted">${e.label}</div><div><b>${ok == null ? "—" : ok ? "✔" : "✖"} ${pct(e.valor)}</b> <span class="small muted">/ meta ${pct(e.meta)}</span></div>
+          <div class="minibar"><div class=${ok ? "ok" : ""} style=${{ width: Math.min(100, (e.indice ?? 0) * 100) + "%" }}></div></div></div>`; })}</div>
+      </div>
+    </div>
+    <div class="kpis">
+      <${Kpi} label="Speed-to-lead médio" value=${S.fmtDuration(m.speedMedioSec)} sub=${`${m.leadsRecebidos} leads recebidos`} />
+      <${Kpi} label="Atendidos em até ${cfg.slaMinutos} min" value=${pct(m.pctDentroSla)} sub=${`${m.dentroSla} de ${m.avaliaveisSla} leads`} good=${m.pctDentroSla != null && m.pctDentroSla >= 0.8} />
+      <${Kpi} label="Taxa de contato" value=${pct(m.taxaContato)} sub=${`${m.conversas} conversas / ${m.trabalhados} leads trabalhados`} />
+      <${Kpi} label="Taxa de agendamento" value=${pct(m.taxaAgendamento)} sub=${`${m.agendaram} agendaram / ${m.conversas} conversas`} />
+      <${Kpi} label="Taxa de no-show" value=${pct(m.taxaNoShow)} sub=${`${m.noShows} no-show / ${m.realizadas + m.noShows} reuniões passadas`} />
+      <${Kpi} label="Reuniões realizadas" value=${String(m.realizadas)} sub="pela data da reunião" />
+      <${Kpi} label="Tentativas registradas" value=${String(m.tentativasTotal)} sub=${m.trabalhados ? `${(m.tentativasTotal / m.trabalhados).toFixed(1)} por lead trabalhado` : ""} />
+      <${Kpi} label="Conversão lead → reunião" value=${pct(m.leadsRecebidos ? m.reunioesAgendadas / m.leadsRecebidos : null)} sub="referência: ~17%" />
+    </div>
+    <div class="grid-lead" style=${{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
+      <div class="card"><h2 class="sec-title">Em qual tentativa as reuniões saem</h2>
+        <p class="small muted" style=${{ margin: "0 0 6px" }}>Reuniões agendadas no período, pelo número da tentativa em que o lead agendou.</p>
+        <${Bars} data=${m.tentativas} fmtTip=${(d) => `${d.label} tentativa: ${d.value} reunião(ões)`} /></div>
+      <div class="card">${range === "week" ? html`<h2 class="sec-title">Reuniões agendadas por dia</h2>
+          <p class="small muted" style=${{ margin: "0 0 6px" }}>Linha tracejada: meta diária (${Math.round(metaDia)}).</p>
+          <${Bars} data=${m.serie.map((d) => ({ ...d, label: S.fmtDate(d.dia).slice(0, 3), value: d.agendadas }))} goal=${metaDia} goalLabel="meta" fmtTip=${(d) => `${S.fmtDate(d.dia)}: ${d.agendadas} agendadas · ${d.leads} leads · ${d.realizadas} realizadas · ${d.noShow} no-show`} />`
+        : html`<h2 class="sec-title">Funil do dia</h2><ul class="funnel">${[["Leads recebidos", m.leadsRecebidos], ["Leads trabalhados", m.trabalhados], ["Conversas", m.conversas], ["Agendaram", m.agendaram]].map(([l, v], _, arr) => { const mx = Math.max(1, ...arr.map((a) => a[1])); return html`<li key=${l}><div class="row" style=${{ justifyContent: "space-between" }}><span>${l}</span><b class="mono">${v}</b></div><div class="bigbar" style=${{ height: 10 }}><div style=${{ width: (v / mx) * 100 + "%" }}></div></div></li>`; })}</ul>`}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ===== Configurações ===== */
+function ConfigView() {
+  const st = useStore();
+  const cfg = st.cfg;
+  return html`<div class="stack"><h1>Configurações</h1>
+    <${Geral} key=${"g" + JSON.stringify(cfg.settings)} cfg=${cfg} />
+    <${Cadencia} key=${"c" + JSON.stringify(cfg.cadence)} cfg=${cfg} />
+    <${Templates} cfg=${cfg} />
+    <${Dados} />
+  </div>`;
+}
+function Geral({ cfg }) {
+  const [f, setF] = useState(cfg.settings);
+  const set = (k, v) => setF({ ...f, [k]: v });
+  const dias = String(f.diasUteis).split(",").filter(Boolean).map(Number);
+  const txt = (k, label, rows) => html`<div class=${rows > 1 ? "span-all" : ""}><label class="lbl" for=${"cf-" + k}>${label}</label>${rows > 1 ? html`<textarea id=${"cf-" + k} class="input" rows=${rows} value=${f[k]} onInput=${(e) => set(k, e.target.value)}></textarea>` : html`<input id=${"cf-" + k} class="input" value=${f[k]} onInput=${(e) => set(k, e.target.value)} />`}</div>`;
+  const num = (k, label, p) => html`<div><label class="lbl" for=${"cf-" + k}>${label}</label><input id=${"cf-" + k} class="input" type="number" min="0" value=${p ? Math.round(f[k] * 100) : f[k]} onInput=${(e) => set(k, p ? Number(e.target.value) / 100 : Number(e.target.value))} /></div>`;
+  const save = () => {
+    if (!/^\d{2}:\d{2}$/.test(f.horaInicio) || !/^\d{2}:\d{2}$/.test(f.horaFim)) return toast("Use o formato HH:MM no horário.", "bad");
+    store.saveConfig({ ...cfg, settings: f }); toast("Configurações salvas.");
+  };
+  return html`<section class="card stack" style=${{ gap: 12 }}>
+    <h2 style=${{ fontSize: 16 }}>Geral</h2>
+    <div class="form-grid">
+      ${txt("nomeSdr", "Seu nome ({sdr})")}${txt("empresa", "Empresa ({empresa})")}
+      ${txt("produto", "Produto ou serviço em 1-2 frases ({produto})", 2)}
+      <div><label class="lbl" for="cf-ini">Início do expediente</label><input id="cf-ini" class="input" type="time" value=${f.horaInicio} onInput=${(e) => set("horaInicio", e.target.value)} /></div>
+      <div><label class="lbl" for="cf-fim">Fim do expediente</label><input id="cf-fim" class="input" type="time" value=${f.horaFim} onInput=${(e) => set("horaFim", e.target.value)} /></div>
+      <div><span class="lbl">Dias úteis</span><div class="seg">${S.DIAS.map((d, i) => html`<button key=${d} aria-pressed=${dias.includes(i)} onClick=${() => set("diasUteis", (dias.includes(i) ? dias.filter((x) => x !== i) : [...dias, i]).sort().join(","))}>${d}</button>`)}</div></div>
+      ${num("metaReunioes", "Meta de reuniões por dia")}${num("slaMinutos", "SLA do 1º contato (min)")}${num("duracaoReuniao", "Duração da reunião (min)")}
+    </div>
+    <h3 style=${{ fontSize: 15 }}>Script de ligação</h3>
+    <p class="small muted" style=${{ margin: 0 }}>Variáveis: {nome} {interesse} {horario1} {horario2} {sdr} {empresa} {produto}</p>
+    <div class="form-grid">${txt("scriptAbertura", "Abertura", 2)}${txt("pergunta1", "Pergunta de qualificação 1")}${txt("pergunta2", "Pergunta de qualificação 2")}${txt("pergunta3", "Pergunta de qualificação 3")}${txt("scriptFechamento", "Fechamento (ofereça dois horários)", 2)}</div>
+    <h3 style=${{ fontSize: 15 }}>Metas das taxas (usadas no indicador de gargalo)</h3>
+    <div class="form-grid">${num("metaContato", "Taxa de contato mínima (%)", true)}${num("metaAgendamento", "Taxa de agendamento mínima (%)", true)}${num("metaNoShow", "Taxa de no-show máxima (%)", true)}</div>
+    <div><button class="btn primary" onClick=${save}>Salvar configurações</button></div>
+  </section>`;
+}
+function Cadencia({ cfg }) {
+  const [list, setList] = useState(cfg.cadence.map((c) => ({ ...c })));
+  const upd = (i, p) => setList(list.map((s, j) => (j === i ? { ...s, ...p } : s)));
+  const move = (i, d) => { const j = i + d; if (j < 0 || j >= list.length) return; const n = [...list]; [n[i], n[j]] = [n[j], n[i]]; setList(n); };
+  const save = () => {
+    if (!list.length) return toast("A cadência precisa de ao menos um passo.", "bad");
+    if (list.some((s) => !s.titulo.trim() || !(s.dia >= 0))) return toast("Preencha dia e título de todos os passos.", "bad");
+    const sorted = list.map((s, i) => ({ ...s, i })).sort((a, b) => a.dia - b.dia || a.i - b.i).map(({ i, ...s }) => s);
+    store.saveConfig({ ...cfg, cadence: sorted }); toast("Cadência salva. Vale para os próximos leads.");
+  };
+  return html`<section class="card stack" style=${{ gap: 10 }}>
+    <h2 style=${{ fontSize: 16 }}>Cadência</h2>
+    <p class="small muted" style=${{ margin: 0 }}>O 1º passo é a tentativa inicial. Quando ela não dá certo, os demais passos viram tarefas. D0 = imediato; Dn = n dias úteis depois, no mesmo horário da 1ª tentativa.</p>
+    <div class="scroll-x"><table class="data" style=${{ minWidth: 640 }}>
+      <thead><tr><th style=${{ width: 70 }}>Dia</th><th style=${{ width: 130 }}>Canal</th><th>Título</th><th style=${{ width: 200 }}>Template</th><th style=${{ width: 50 }}>Ativo</th><th style=${{ width: 90 }}></th></tr></thead>
+      <tbody>${list.map((s, i) => html`<tr key=${i} style=${{ opacity: s.ativo === false ? 0.5 : 1 }}>
+        <td><input id=${"cd-dia-" + i} class="input" type="number" min="0" value=${s.dia} onInput=${(e) => upd(i, { dia: Number(e.target.value) })} aria-label="Dia" /></td>
+        <td><select id=${"cd-canal-" + i} class="input" value=${s.canal} onChange=${(e) => upd(i, { canal: e.target.value, templateId: null })} aria-label="Canal">${S.CANAIS.map((c) => html`<option key=${c} value=${c}>${S.CANAL_LABEL[c]}</option>`)}</select></td>
+        <td><input id=${"cd-tit-" + i} class="input" value=${s.titulo} onInput=${(e) => upd(i, { titulo: e.target.value })} aria-label="Título" /></td>
+        <td><select id=${"cd-tpl-" + i} class="input" value=${s.templateId ?? ""} onChange=${(e) => upd(i, { templateId: e.target.value || null })} aria-label="Template"><option value="">—</option>${cfg.templates.filter((t) => t.canal === s.canal).map((t) => html`<option key=${t.id} value=${t.id}>${t.nome}</option>`)}</select></td>
+        <td style=${{ textAlign: "center" }}><input id=${"cd-at-" + i} type="checkbox" checked=${s.ativo !== false} onChange=${(e) => upd(i, { ativo: e.target.checked })} aria-label="Ativo" /></td>
+        <td style=${{ whiteSpace: "nowrap" }}><button class="btn ghost" onClick=${() => move(i, -1)} aria-label="Subir">↑</button><button class="btn ghost" onClick=${() => move(i, 1)} aria-label="Descer">↓</button><button class="btn ghost" onClick=${() => setList(list.filter((_, j) => j !== i))} aria-label="Remover">✕</button></td>
+      </tr>`)}</tbody></table></div>
+    <div class="row"><button class="btn" onClick=${() => setList([...list, { dia: (list.at(-1)?.dia ?? 0) + 1, canal: "LIGACAO", titulo: "Nova tentativa", templateId: null, ativo: true }])}>+ Passo</button><button class="btn primary" onClick=${save}>Salvar cadência</button></div>
+  </section>`;
+}
+function Templates({ cfg }) {
+  const [edit, setEdit] = useState(null);
+  const save = () => {
+    if (!edit.nome?.trim() || !edit.corpo?.trim()) return toast("Preencha nome e texto do template.", "bad");
+    const list = edit.id ? cfg.templates.map((t) => (t.id === edit.id ? edit : t)) : [...cfg.templates, { ...edit, id: S.uid("tpl") }];
+    store.saveConfig({ ...cfg, templates: list }); setEdit(null); toast("Template salvo.");
+  };
+  const del = (id) => store.saveConfig({ ...cfg, templates: cfg.templates.filter((t) => t.id !== id), cadence: cfg.cadence.map((c) => (c.templateId === id ? { ...c, templateId: null } : c)) });
+  return html`<section class="card stack" style=${{ gap: 10 }}>
+    <div class="row"><h2 style=${{ fontSize: 16 }}>Templates de mensagem</h2><button class="btn sm" style=${{ marginLeft: "auto" }} onClick=${() => setEdit({ canal: "WHATSAPP", nome: "", corpo: "" })}>+ Template</button></div>
+    <p class="small muted" style=${{ margin: 0 }}>Variáveis: {nome} {interesse} {horario1} {horario2} {sdr} {empresa} {produto} {reuniao}</p>
+    ${edit && html`<div class="card tint-accent stack" style=${{ gap: 8, boxShadow: "none" }}>
+      <div class="form-grid"><select id="tp-canal" class="input" value=${edit.canal} onChange=${(e) => setEdit({ ...edit, canal: e.target.value })}><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">E-mail</option></select>
+        <input id="tp-nome" class="input" placeholder="Nome do template" value=${edit.nome} onInput=${(e) => setEdit({ ...edit, nome: e.target.value })} /></div>
+      ${edit.canal === "EMAIL" && html`<input id="tp-assunto" class="input" placeholder="Assunto" value=${edit.assunto ?? ""} onInput=${(e) => setEdit({ ...edit, assunto: e.target.value })} />`}
+      <textarea id="tp-corpo" class="input" rows="6" value=${edit.corpo} onInput=${(e) => setEdit({ ...edit, corpo: e.target.value })}></textarea>
+      <div class="row"><button class="btn primary" onClick=${save}>Salvar template</button><button class="btn" onClick=${() => setEdit(null)}>Cancelar</button></div></div>`}
+    <div class="form-grid" style=${{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>${cfg.templates.map((t) => html`<div key=${t.id} style=${{ border: "1px solid var(--line)", borderRadius: 10, padding: 10, minWidth: 0 }}>
+      <div class="row" style=${{ gap: 6 }}><b>${t.nome}</b><span class="small muted">${S.CANAL_LABEL[t.canal]}</span>
+        <button class="btn link small" style=${{ marginLeft: "auto" }} onClick=${() => setEdit({ ...t })}>editar</button>
+        <${ConfirmButton} className="btn ghost small" label="excluir" confirmLabel="confirmar" onConfirm=${() => del(t.id)} /></div>
+      ${t.assunto && html`<div class="small muted">Assunto: ${t.assunto}</div>`}
+      <div class="small" style=${{ whiteSpace: "pre-line", color: "var(--ink-2)", maxHeight: 60, overflow: "hidden" }}>${t.corpo}</div></div>`)}</div>
+  </section>`;
+}
+function Dados() {
+  const st = useStore();
+  const [busy, setBusy] = useState(null);
+  const active = st.activeLeads(), arch = st.archivedLeads();
+  const exemplos = active.filter((l) => l.exemplo).map((l) => l.id);
+  const run = async (fn) => { setBusy("Processando…"); try { await fn(); } finally { setBusy(null); } };
+  return html`<section class="card stack" style=${{ gap: 10 }}>
+    <h2 style=${{ fontSize: 16 }}>Dados</h2>
+    <p style=${{ margin: 0 }}>${active.length} leads ativos${arch.length ? `, ${arch.length} arquivados` : ""}. ${st.mode === "db" ? "Os dados ficam salvos neste artefato e aparecem em qualquer aparelho em que você abrir o link." : "Modo local: os dados ficam só neste navegador."}</p>
+    <p class="small muted" style=${{ margin: 0 }}>Leads encerrados com mais de 45 dias são compactados automaticamente quando houver mais de ${ARCHIVE_AT} leads ativos. Eles continuam contando nas métricas.</p>
+    ${busy && html`<p class="small" style=${{ margin: 0 }}>${busy}</p>`}
+    <div class="row">
+      <button class="btn" disabled=${!!busy} onClick=${() => run(async () => { const l = S.generateExample(st.cfg, now(), { seed: Math.floor(Math.random() * 1e6) }); await store.saveMany(l, (i, n) => setBusy(`Salvando ${i}/${n}…`)); toast(`${l.length} leads de exemplo carregados.`); })}>Carregar semana de exemplo</button>
+      ${exemplos.length > 0 && html`<${ConfirmButton} label=${`Apagar ${exemplos.length} leads de exemplo`} confirmLabel="Confirmar: apagar exemplos" onConfirm=${() => run(async () => { await store.deleteMany(exemplos, (i, n) => setBusy(`Apagando ${i}/${n}…`)); toast("Exemplos apagados."); })} />`}
+      ${(active.length > 0 || arch.length > 0) && html`<${ConfirmButton} label="Apagar todos os leads" confirmLabel="Confirmar: apagar tudo" onConfirm=${() => run(async () => { await store.deleteMany(active.map((l) => l.id), (i, n) => setBusy(`Apagando ${i}/${n}…`)); await store.clearArchive(); toast("Todos os leads foram apagados."); })} />`}
+      <${ConfirmButton} className="btn" label="Restaurar configurações padrão" confirmLabel="Confirmar restauração" onConfirm=${() => { store.saveConfig(S.defaultConfig()); toast("Configurações restauradas."); }} />
+    </div>
+  </section>`;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(html`<${App} />`);
+store.init();
+})();
+</script>

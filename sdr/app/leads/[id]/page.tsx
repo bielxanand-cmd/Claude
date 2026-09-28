@@ -94,7 +94,7 @@ export default function LeadPage() {
       // Se a cadência pede uma ação imediata (ex.: WhatsApp logo após a ligação), continua neste lead.
       const fresh = await api<LeadFull>(`/api/leads/${id}`);
       const now = Date.now() + 5 * 60_000;
-      const imediata = fresh.tasks.find((t) => t.status === "PENDENTE" && new Date(t.dueAt).getTime() <= now);
+      const imediata = fresh.tasks.find((t) => t.status === "PENDENTE" && t.tipo === "CADENCIA" && new Date(t.dueAt).getTime() <= now);
       if (imediata) router.replace(`/leads/${id}?task=${imediata.id}`);
       else router.push("/");
       reload();
