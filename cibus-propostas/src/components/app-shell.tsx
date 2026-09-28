@@ -1,6 +1,6 @@
 import { LogOut, Settings2, LayoutGrid, Users } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { IdentityButton } from '@/components/identity-dialog'
+import { AccountMenu } from '@/components/account-menu'
 import { CibusLogo } from '@/components/slides/primitives'
 import { useAppData } from '@/lib/app-data'
 import { repo, supabase } from '@/lib/repo'
@@ -31,7 +31,7 @@ export function AppShell() {
             <NavLink to="/admin" className={link}>
               <Settings2 /> <span className="hidden sm:inline">Configurações</span>
             </NavLink>
-            <IdentityButton />
+            <AccountMenu />
             {supabase && (
               <button className={link({ isActive: false })} onClick={() => supabase!.auth.signOut()} title="Sair">
                 <LogOut />
@@ -43,7 +43,7 @@ export function AppShell() {
       <Outlet />
       {repo.mode !== 'supabase' && (
         <div className="pointer-events-none fixed bottom-3 left-3 z-30 rounded-full border bg-white/90 px-3 py-1 text-[11px] font-medium text-muted-foreground shadow-sm">
-          {repo.mode === 'shared' ? 'Banco compartilhado · a equipe vê as mesmas propostas' : 'Modo local · dados salvos neste navegador'}
+          {repo.mode === 'shared' ? 'Banco da equipe · tudo salvo automaticamente' : 'Modo local · dados salvos neste navegador'}
         </div>
       )}
     </div>

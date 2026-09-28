@@ -2,7 +2,7 @@ import { createStore, get, set } from 'idb-keyval'
 import { DEFAULT_SETTINGS, SEED_CASES, SEED_EXECUTIVES, SEED_MODULES } from '@/data/seed'
 import { blobToDataURL, prepareImage } from '../image'
 import type { AppSettings, CaseDef, Executive, ModuleDef, Proposal } from '../types'
-import type { Repository } from './types'
+import type { Account, Repository } from './types'
 
 /** Persistência no navegador (IndexedDB) — usada quando o Supabase não está configurado. */
 const store = createStore('cibus-propostas', 'kv')
@@ -63,5 +63,7 @@ export function createLocalRepository(): Repository {
 
     whoAmI: async () => null,
     resolvePeople: async () => ({}),
+    listAccounts: () => coll<Account>('accounts', []),
+    saveAccount: (a) => upsert('accounts', [], a),
   }
 }

@@ -18,14 +18,19 @@ Sem variáveis de ambiente, o app roda em **modo local**: os dados ficam no Inde
 
 ## Link de teste com banco compartilhado
 
-O build do link de teste no claude.ai (`VITE_SHARED=artifact`) usa o banco do próprio link. Todas as pessoas com acesso ao link veem e editam as mesmas propostas, cases, itens, executivos e configurações. Cada proposta registra quem a criou e quem fez a última alteração.
+O build do link de teste no claude.ai (`VITE_SHARED=artifact`) usa o banco do próprio link. Se o banco não conectar, o app não abre (mostra *Tentar de novo*), para nada ser salvo só no navegador. Todas as pessoas com acesso ao link veem e editam as mesmas propostas, cases, itens, executivos e configurações. Cada proposta registra quem a criou e quem fez a última alteração.
 
-- **Quem é você?:** no primeiro acesso, cada pessoa escolhe o seu nome na lista de executivos (ou cadastra o nome, em *Não estou na lista*). Esse nome aparece como autor das propostas que ela cria ou altera, e ela passa a ser o executivo responsável das propostas novas. Dá para trocar pelo botão com o nome, no canto superior direito. A escolha fica em `people/<id da pessoa>` no banco e vale também para as propostas que ela já tinha criado.
+- **Login por e-mail e senha:** cada pessoa cria a própria conta na tela de entrada (nome, e-mail único, senha de 8+ caracteres e o executivo que ela é). A sessão fica lembrada no navegador até *Sair*. A primeira conta criada é administradora.
+- **Usuários** (*Configurações › Usuários*): o administrador redefine senhas (gera uma senha provisória, trocada no primeiro acesso), muda o executivo vinculado, promove administradores e desativa contas. Não há envio de e-mail: a senha provisória é repassada pelo administrador.
+- **Propostas antigas:** as criadas antes do login (identificadas pela conta do claude.ai) passam para a conta de quem entrar com aquela mesma conta do claude.ai.
+- **Nada se perde:** cada alteração é guardada neste navegador antes de ir para o banco e só sai de lá quando o banco confirma. Se a gravação falhar, o app tenta de novo, avisa e, ao reabrir a proposta, recupera as alterações e as envia.
 - **Minhas propostas:** alterna entre *Minhas* e *Toda a equipe*.
 - **Painel da equipe:** resumo por pessoa (quantidade de propostas, valor em negociação e aprovado, última atividade) e a tabela de todas as propostas, com filtros por pessoa, produto e status.
 - **Propostas antigas:** as que estavam só no navegador aparecem num aviso *Enviar para a equipe*, que as copia para o banco compartilhado junto com cases, executivos e configurações.
 
 Nesse modo o link é interno: cada colega precisa ser convidado pelo botão *Share* do link.
+
+As senhas ficam no banco do link como hash PBKDF2-SHA256 (210 mil iterações, sal próprio), nunca em texto. O login separa as pessoas da equipe; ele não é uma barreira contra quem já tem acesso ao link, porque o banco do link é lido pelo navegador de todos os convidados. Para um acesso realmente restrito, publique o app com o Supabase (abaixo), que usa o login do próprio Supabase.
 
 ```bash
 VITE_ROUTER=memory VITE_SHARED=artifact npx vite build --base ./ --outDir dist-artifact

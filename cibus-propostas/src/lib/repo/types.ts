@@ -6,10 +6,23 @@ export interface PersonProfile {
   color: string | null
 }
 
-/** Com qual executivo a pessoa do link se identificou. */
-export interface Identity {
-  executiveId: string | null
+/** Conta de acesso (e-mail e senha) do link compartilhado e do modo local. */
+export interface Account {
+  id: string // acc_<uuid>
+  email: string // minúsculo, único
   name: string
+  executiveId: string | null
+  role: 'admin' | 'member'
+  active: boolean
+  passwordSalt: string
+  passwordHash: string
+  passwordIterations: number
+  /** senha provisória definida por um administrador: troca obrigatória no próximo acesso */
+  mustChangePassword?: boolean
+  /** contas do claude.ai que já entraram com este login (propostas antigas delas passam para cá) */
+  claudeUserIds?: string[]
+  createdAt: string
+  lastLoginAt?: string
 }
 
 export interface Repository {
@@ -42,7 +55,7 @@ export interface Repository {
   whoAmI(): Promise<PersonRef | null>
   /** Nomes e avatares atuais das pessoas, pelo id. */
   resolvePeople(ids: string[]): Promise<Record<string, PersonProfile>>
-  /** Identificação da pessoa (só no banco compartilhado do link). */
-  getIdentity?(): Promise<Identity | null>
-  setIdentity?(i: Identity): Promise<void>
+  /** Contas de acesso (link compartilhado e modo local; o Supabase usa o próprio login). */
+  listAccounts?(): Promise<Account[]>
+  saveAccount?(a: Account): Promise<void>
 }

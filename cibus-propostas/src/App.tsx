@@ -3,6 +3,7 @@ import { BrowserRouter, MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { Session } from '@supabase/supabase-js'
 import { Toaster } from 'sonner'
 import { AppShell } from '@/components/app-shell'
+import { AccountGate } from '@/components/account-gate'
 import { AppDataProvider } from '@/lib/app-data'
 import { supabase } from '@/lib/repo'
 import Dashboard from '@/pages/dashboard'
@@ -18,24 +19,26 @@ const Team = lazy(() => import('@/pages/team'))
 function Routed() {
   return (
     <AppDataProvider>
-      <Suspense fallback={<Loading />}>
-        <Routes>
-          <Route element={<AppShell />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/equipe" element={<Team />} />
-          </Route>
-          <Route path="/propostas/:id" element={<Wizard />} />
-          <Route path="/propostas/:id/editor" element={<Editor />} />
-          <Route path="/propostas/:id/apresentar" element={<Present />} />
-          <Route path="*" element={<Dashboard />} />
-        </Routes>
-      </Suspense>
+      <AccountGate>
+        <Suspense fallback={<Loading />}>
+          <Routes>
+            <Route element={<AppShell />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/equipe" element={<Team />} />
+            </Route>
+            <Route path="/propostas/:id" element={<Wizard />} />
+            <Route path="/propostas/:id/editor" element={<Editor />} />
+            <Route path="/propostas/:id/apresentar" element={<Present />} />
+            <Route path="*" element={<Dashboard />} />
+          </Routes>
+        </Suspense>
+      </AccountGate>
     </AppDataProvider>
   )
 }
 
-/** Com Supabase configurado, exige login; no modo local abre direto. */
+/** Com Supabase, login do Supabase; nos demais modos, as contas do próprio app (AccountGate). */
 function AuthGate() {
   const [session, setSession] = useState<Session | null | undefined>(supabase ? undefined : null)
   useEffect(() => {

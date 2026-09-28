@@ -6,6 +6,8 @@ import { hexToRgbTriplet } from './utils'
 
 interface AppData {
   ready: boolean
+  /** falha ao conectar ao banco (o app não abre para não salvar em outro lugar) */
+  error: string | null
   settings: AppSettings
   modules: ModuleDef[]
   cases: CaseDef[]
@@ -18,6 +20,7 @@ const Ctx = createContext<AppData | null>(null)
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<Omit<AppData, 'reload'>>({
     ready: false,
+    error: null,
     settings: DEFAULT_SETTINGS,
     modules: [],
     cases: [],
@@ -34,6 +37,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     ])
     setState({
       ready: true,
+      error: null,
       settings: {
         ...DEFAULT_SETTINGS,
         ...settings,
@@ -49,7 +53,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     reload().catch((e) => {
       console.error(e)
-      setState((s) => ({ ...s, ready: true }))
+      setState((s) => ({ ...s, ready: true, error: e instanceof Error ? e.message : String(e) }))
     })
   }, [reload])
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Blocks, BookOpenCheck, Pencil, Plus, Save, Settings2, Trash2, Users } from 'lucide-react'
+import { Blocks, BookOpenCheck, KeyRound, Pencil, Plus, Save, Settings2, Trash2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,6 +15,7 @@ import { SlideFrame } from '@/components/slides/frame'
 import { CaseSlide } from '@/components/slides/slides'
 import { useAppData } from '@/lib/app-data'
 import { repo } from '@/lib/repo'
+import { UsersAdmin } from './admin-users'
 import { TEMPLATES, uid } from '@/lib/templates'
 import { MODULE_CATEGORIES, SEGMENTS, type AppSettings, type CaseDef, type Executive, type ModuleDef } from '@/lib/types'
 import { cn, initials } from '@/lib/utils'
@@ -40,6 +41,11 @@ export default function Admin() {
           <TabsTrigger value="settings">
             <Settings2 /> Geral
           </TabsTrigger>
+          {repo.listAccounts && (
+            <TabsTrigger value="users">
+              <KeyRound /> Usuários
+            </TabsTrigger>
+          )}
         </TabsList>
         <TabsContent value="modules">
           <ModulesAdmin />
@@ -53,6 +59,11 @@ export default function Admin() {
         <TabsContent value="settings">
           <SettingsAdmin />
         </TabsContent>
+        {repo.listAccounts && (
+          <TabsContent value="users">
+            <UsersAdmin />
+          </TabsContent>
+        )}
       </Tabs>
     </main>
   )
