@@ -1,6 +1,6 @@
 <title>Rumo Projetos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: barra lateral estreita e neutra + área de trabalho branca; hierarquia só com peso, tamanho e cinzas. */
 :root {
@@ -12,8 +12,8 @@
   --ok: #16a34a; --bad: #dc2626; --warn: #d97706;
   --p1: #dc2626; --p2: #ea8a0c; --p3: #2563eb; --p4: #c4c4ca;
   --bar: #27272a; --bar-hover: #2563eb; --grid: #f0f0f1;
-  --f-ui: "Roboto", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
-  --f-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --f-ui: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #111113; --side: #141416; --surface: #111113; --hover: #1c1c1f; --sel: #232327;
@@ -37,7 +37,7 @@
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
-body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
 button, input, select, textarea { font: inherit; color: inherit; }
 h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 500; }
 h1 { font-size: 22px; letter-spacing: -.01em; }
