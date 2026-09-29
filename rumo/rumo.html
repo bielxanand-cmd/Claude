@@ -206,7 +206,7 @@ label.lbl, span.lbl { display: block; font-size: 12px; font-weight: 500; color: 
 .streak { font-size: 20px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
 
 /* Claude */
-.ai { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--surface); border-radius: 10px; padding: 14px 16px; }
+.ai:not(.msg) { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--surface); border-radius: 10px; padding: 14px 16px; }
 .ai-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--ink); }
 .ai-badge .ic { color: var(--accent); }
 .msgs { display: flex; flex-direction: column; gap: 10px; }
@@ -241,6 +241,27 @@ label.lbl, span.lbl { display: block; font-size: 12px; font-weight: 500; color: 
 .tpl[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
 .tpl b { display: block; margin-bottom: 2px; font-weight: 500; }
 .note { background: var(--accent-soft); border-radius: 8px; padding: 8px 12px; font-size: 13px; color: var(--ink-2); }
+.proj-actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; margin-left: auto; width: 240px; max-width: 100%; }
+.btn.cta { height: 40px; font-size: 14px; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 14px color-mix(in srgb, var(--primary) 35%, transparent); }
+.proj-tools { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: flex-end; }
+.proj-tools .btn { height: 26px; font-size: 12px; padding: 0 6px; }
+.proj-tools .btn.danger { color: var(--bad); }
+.head.proj { align-items: flex-start; }
+.pill-state { display: inline-flex; align-items: center; gap: 6px; }
+.pill-state i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); display: inline-block; }
+.pill-state.off i { background: var(--ink-3); }
+.search-box { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); padding: 0 4px 12px; margin-bottom: 8px; color: var(--ink-3); }
+.search-box input { border: 0; outline: none; background: none; flex: 1; font-size: 16px; color: var(--ink); min-width: 0; }
+.results { list-style: none; margin: 0; padding: 0; max-height: 55vh; overflow-y: auto; }
+.results li button { width: 100%; text-align: left; border: 0; background: none; padding: 8px 10px; border-radius: 7px; cursor: pointer; display: flex; gap: 10px; align-items: flex-start; }
+.results li button.sel { background: var(--accent-soft); }
+.results .rt { font-size: 13.5px; } .results .rs { font-size: 12px; color: var(--ink-3); }
+.results .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); padding: 10px 10px 4px; }
+mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: inherit; border-radius: 2px; padding: 0 1px; }
+.side-search { display: flex; align-items: center; gap: 10px; width: 100%; height: 34px; padding: 0 10px; margin-bottom: 14px; border-radius: 7px; border: 1px solid var(--side-line); background: var(--side-hover); color: var(--side-ink-2); cursor: pointer; font-size: 13.5px; }
+.side-search:hover { background: var(--side-sel); color: var(--side-ink); }
+.side-search kbd { margin-left: auto; background: transparent; border-color: var(--side-line); color: var(--side-ink-3); }
+@media (max-width: 860px) { .side-search { width: auto; margin: 0; flex: none; } .side-search kbd { display: none; } }
 .menu { position: absolute; right: 0; top: 30px; z-index: 10; padding: 4px; width: 210px; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
 </style>
 
@@ -500,7 +521,9 @@ Tarefas abertas:
 ${abertas}
 Tarefas concluídas: ${feitas}. Hoje é ${fmtDay(t)} (${t}).
 
-Responda SOMENTE com JSON: {"mensagem":"sua resposta","tarefas":[{"titulo":"...","emDias":0,"prioridade":2}]}. Inclua "tarefas" apenas quando sugerir tarefas novas concretas (no máximo 8); caso contrário use [].`;
+${project.iaTarefas === false
+  ? `A pessoa PAUSOU a geração de tarefas pelo Claude neste projeto: não proponha tarefas novas, apenas oriente. Responda SOMENTE com JSON: {"mensagem":"sua resposta","tarefas":[]}.`
+  : `Responda SOMENTE com JSON: {"mensagem":"sua resposta","tarefas":[{"titulo":"...","emDias":0,"prioridade":2}]}. Inclua "tarefas" apenas quando sugerir tarefas novas concretas (no máximo 8); caso contrário use [].`}`;
   }
 
   return { pad, ymd, parseYmd, addDays, today, dow, DIAS, DIAS_LONGO, MESES, MESES_LONGO, diffDays, fmtDay, relDay, norm, uid, RECORRENCIA, nextOccurrence, parseQuick, PROJECT_COLORS, DEFAULT_STAGES, INBOX, firstOpenStage, finalStage, newTask, setDone, moveToStage, doneDay, metrics, template, buildProject, interviewInstructions, normalizePlan, dayPlanPrompt, projectChatInstructions, clampP };
@@ -637,6 +660,8 @@ const ICONS = {
   arrowL: "m12 19-7-7 7-7 M19 12H5", arrowR: "M5 12h14 m-7-7 7 7-7 7",
   ext: "M15 3h6v6 M10 14 21 3 M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6",
   flag: "M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z M4 22v-7",
+  search: "M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14 M21 21l-4.35-4.35",
+  pause: "M10 4H6v16h4z M18 4h-4v16h4z", play: "M6 3l14 9-14 9z",
 };
 const Icon = ({ n, s = 16, w = 1.75 }) => html`<svg class="ic" width=${s} height=${s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=${n === "more" ? 3 : w} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d=${ICONS[n]} /></svg>`;
 const PDot = ({ c }) => html`<span class="dot" style=${{ background: c }}></span>`;
@@ -730,6 +755,7 @@ function App() {
   const go = useCallback((view, extra = {}) => { setRoute({ view, ...extra }); window.scrollTo(0, 0); }, []);
   useEffect(() => {
     const k = (e) => {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "f") { e.preventDefault(); setModal("busca"); return; }
       if (typing(e) || e.metaKey || e.ctrlKey || e.altKey || modalOpen()) return;
       if (e.key === "n" || e.key === "q") { e.preventDefault(); const f = () => document.querySelector(".quick-box input")?.focus(); if (document.querySelector(".quick-box input")) f(); else { go("hoje"); setTimeout(f, 50); } }
       else if (e.key === "?") setModal("help");
@@ -755,6 +781,7 @@ function App() {
   return html`<div class="shell">
     <aside class="side">
       <div class="logo"><i>R</i>Rumo</div>
+      <button class="side-search" onClick=${() => setModal("busca")}><${Icon} n="search" /><span>Buscar</span><kbd>Ctrl F</kbd></button>
       <${Nav} v="hoje" ico=${html`<${Icon} n="sun" />`} label="Hoje" n=${nToday} cur=${route.view === "hoje"} />
       <${Nav} v="proximos" ico=${html`<${Icon} n="week" />`} label="Próximos 7 dias" cur=${route.view === "proximos"} />
       <${Nav} v="calendario" ico=${html`<${Icon} n="cal" />`} label="Calendário" cur=${route.view === "calendario"} />
@@ -774,6 +801,8 @@ function App() {
     ${modal === "ajustes" && html`<${Settings} onClose=${() => setModal(null)} />`}
     ${modal === "help" && html`<${Help} onClose=${() => setModal(null)} />`}
     ${modal?.editProject && html`<${EditProject} id=${modal.editProject} onClose=${() => setModal(null)} go=${go} />`}
+    ${modal?.newTask && html`<${NewTaskModal} projectId=${modal.newTask} onClose=${() => setModal(null)} today=${today} />`}
+    ${modal === "busca" && html`<${SearchModal} onClose=${() => setModal(null)} open=${openTask} go=${go} today=${today} />`}
     <${Toasts} />
   </div>`;
 }
@@ -917,10 +946,19 @@ function ProjectView({ id, tab: tab0, go, open, today, openModal }) {
   const done = tasks.filter((t) => t.concluida).length;
   const TABS = [["quadro", "Quadro"], ["lista", "Lista"], ["calendario", "Calendário"], ["claude", "Claude"]];
   return html`<div class="stack">
-    <div class="head"><div style=${{ minWidth: 0 }}><h1 class="row" style=${{ gap: 10 }}><span class="dot" style=${{ background: p.cor, width: 10, height: 10 }}></span>${p.nome}</h1>${p.descricao && html`<div class="sub" style=${{ maxWidth: 720 }}>${p.descricao}</div>`}</div>
-      <div class="row" style=${{ marginLeft: "auto" }}>
-        <div style=${{ width: 160 }}><div class="small muted">${done}/${tasks.length} concluídas</div><div class="bar-track"><div class="bar-fill" style=${{ width: (tasks.length ? (done / tasks.length) * 100 : 0) + "%" }}></div></div></div>
-        <button class="btn sm" onClick=${() => openModal({ editProject: id })}>Editar projeto</button></div></div>
+    <div class="head proj"><div style=${{ minWidth: 0, flex: "1 1 360px" }}><h1 class="row" style=${{ gap: 10 }}><span class="dot" style=${{ background: p.cor, width: 10, height: 10 }}></span>${p.nome}</h1>${p.descricao && html`<div class="sub" style=${{ maxWidth: 720 }}>${p.descricao}</div>`}</div>
+      <div class="proj-actions">
+        <div class="row" style=${{ flexWrap: "nowrap" }}>
+          <div style=${{ flex: 1, minWidth: 0 }}><div class="small muted">${done}/${tasks.length} concluídas</div><div class="bar-track"><div class="bar-fill" style=${{ width: (tasks.length ? (done / tasks.length) * 100 : 0) + "%" }}></div></div></div>
+          <button class="btn sm" onClick=${() => openModal({ editProject: id })}>Editar projeto</button></div>
+        <button class="btn primary cta" onClick=${() => openModal({ newTask: id })}><${Icon} n="plus" />Nova tarefa</button>
+        <div class="proj-tools">
+          <button class="btn ghost" onClick=${() => { const on = p.iaTarefas === false; store.saveProject({ ...p, iaTarefas: on }); toast(on ? "O Claude voltou a sugerir tarefas neste projeto." : "O Claude parou de gerar tarefas neste projeto."); }}
+            title="Quando pausado, o Claude só orienta e não propõe tarefas neste projeto">
+            <span class=${"pill-state" + (p.iaTarefas === false ? " off" : "")}><i></i>${p.iaTarefas === false ? "Tarefas do Claude pausadas" : "Pausar tarefas do Claude"}</span></button>
+          ${tasks.length > 0 && html`<${Confirm} className="btn ghost danger" label=${`Excluir todas as tarefas (${tasks.length})`} confirmLabel=${`Confirmar: excluir ${tasks.length} tarefas`}
+            onConfirm=${async () => { const ids = tasks.map((t) => t.id); toast(`Excluindo ${ids.length} tarefas…`); for (const i of ids) await store.deleteTask(i); toast(`${ids.length} tarefas excluídas. O projeto foi mantido.`); }} />`}
+        </div></div></div>
     <div class="seg" role="tablist">${TABS.map(([k, l]) => html`<button key=${k} role="tab" aria-pressed=${tab === k} onClick=${() => setTab(k)}>${k === "claude" ? html`<${Icon} n="spark" s=${13} />` : ""}${l}</button>`)}</div>
     ${tab === "quadro" && html`<${Board} p=${p} tasks=${tasks} open=${open} today=${today} />`}
     ${tab === "lista" && html`<${ProjectList} p=${p} tasks=${tasks} open=${open} today=${today} />`}
@@ -1023,7 +1061,7 @@ function ProjectAI({ p, tasks, today }) {
       const reply = String(j?.mensagem || "").trim() || "Certo.";
       store.saveProject({ ...withMine, chat: [...withMine.chat, { role: "assistant", content: reply }].slice(-30) });
       const plan = R.normalizePlan({ plano: { tarefas: j?.tarefas } });
-      if (plan.tarefas.length) setSug({ list: plan.tarefas, sel: plan.tarefas.map(() => true) });
+      if (plan.tarefas.length && p.iaTarefas !== false) setSug({ list: plan.tarefas, sel: plan.tarefas.map(() => true) });
     } catch (e2) { if (e2?.code !== "cancelled") setErr(aiError(e2)); }
     finally { setBusy(false); }
   }
@@ -1039,6 +1077,7 @@ function ProjectAI({ p, tasks, today }) {
       ${p.plano?.dicas?.length > 0 && html`<div><div class="eyebrow" style=${{ marginBottom: 4 }}>Dicas</div><ul style=${{ margin: 0, paddingLeft: 18 }}>${p.plano.dicas.map((d, i) => html`<li key=${i}>${d}</li>`)}</ul></div>`}
     </div>
     <div class="card stack" style=${{ gap: 10 }}><span class="ai-badge"><${Icon} n="spark" s=${14} />Converse com o Claude sobre este projeto</span>
+      ${p.iaTarefas === false && html`<p class="note" style=${{ margin: 0 }}>Geração de tarefas pausada: o Claude só vai orientar, sem propor tarefas. Reative no botão “Tarefas do Claude pausadas” no topo do projeto.</p>`}
       ${ai === false ? html`<p class="muted">O Claude não está disponível nesta visualização.</p>` : html`
       <div class="msgs">${chat.length === 0 && html`<div class="msg ai">Posso sugerir próximas tarefas, reorganizar prioridades ou ajustar as etapas. O que você precisa?</div>`}
         ${chat.map((m, i) => html`<div key=${i} class=${"msg " + (m.role === "user" ? "me" : "ai")}>${m.content}</div>`)}
@@ -1192,6 +1231,94 @@ function TaskModal({ id, onClose, today }) {
     </div><//>`;
 }
 
+/* ===== Nova tarefa (formulário completo) ===== */
+function NewTaskModal({ projectId, onClose, today }) {
+  const p = store.project(projectId) ?? R.INBOX;
+  const [f, setF] = useState({ titulo: "", stageId: R.firstOpenStage(p).id, data: "", hora: "", prioridade: 4, recorrencia: "none", notas: "" });
+  const [more, setMore] = useState(false);
+  const upd = (x) => setF({ ...f, ...x });
+  const parsed = R.parseQuick(f.titulo, [p], today);
+  function save(e, again) {
+    e.preventDefault();
+    const titulo = parsed.titulo || f.titulo.trim();
+    if (!titulo) return;
+    const t = R.newTask({ titulo, stageId: f.stageId, notas: f.notas, data: f.data || parsed.data, hora: f.hora || parsed.hora,
+      prioridade: f.prioridade !== 4 ? f.prioridade : parsed.prioridade ?? 4, recorrencia: f.recorrencia !== "none" ? f.recorrencia : parsed.recorrencia ?? "none" }, p, today);
+    const st = p.stages.find((s) => s.id === f.stageId);
+    const final = st?.final ? R.setDone(t, p, true, today) : { task: t, next: null };
+    store.saveTask({ ...final.task, stageId: f.stageId }); if (final.next) store.saveTask(final.next);
+    toast("Tarefa criada.");
+    if (again) setF({ ...f, titulo: "", notas: "" }); else onClose();
+  }
+  return html`<${Modal} title=${`Nova tarefa em ${p.nome}`} onClose=${onClose} wide>
+    <form class="stack" style=${{ gap: 14 }} onSubmit=${(e) => save(e, false)}>
+      <div><input id="nt-titulo" class="input" style=${{ height: 42, fontSize: 16 }} autoFocus value=${f.titulo} onInput=${(e) => upd({ titulo: e.target.value })} placeholder="O que precisa ser feito? Ex.: Resolver 30 questões de Português amanhã 19h p2" />
+        ${(parsed.data || parsed.hora || parsed.prioridade || parsed.recorrencia) && html`<div class="chips" style=${{ marginTop: 6 }}>
+          ${parsed.data && html`<span class="chip">${R.relDay(parsed.data, today)}${parsed.hora ? " " + parsed.hora : ""}</span>`}${parsed.recorrencia && html`<span class="chip">${R.RECORRENCIA[parsed.recorrencia]}</span>`}${parsed.prioridade && html`<span class="chip">P${parsed.prioridade}</span>`}</div>`}</div>
+      <div class="form-grid">
+        <div><label class="lbl" for="nt-stage">Etapa</label><select id="nt-stage" class="input" value=${f.stageId} onChange=${(e) => upd({ stageId: e.target.value })}>${p.stages.map((s) => html`<option key=${s.id} value=${s.id}>${s.nome}</option>`)}</select></div>
+        <div><label class="lbl" for="nt-data">Data</label><input id="nt-data" type="date" class="input" value=${f.data} onInput=${(e) => upd({ data: e.target.value })} /></div>
+        <div><label class="lbl" for="nt-hora">Horário</label><input id="nt-hora" type="time" class="input" value=${f.hora} onInput=${(e) => upd({ hora: e.target.value })} /></div>
+        <div><label class="lbl" for="nt-prio">Prioridade</label><select id="nt-prio" class="input" value=${f.prioridade} onChange=${(e) => upd({ prioridade: Number(e.target.value) })}>${[1, 2, 3, 4].map((n) => html`<option key=${n} value=${n}>${PRIO_LABEL[n]}</option>`)}</select></div>
+      </div>
+      ${more ? html`<div class="form-grid">
+          <div><label class="lbl" for="nt-rec">Repetir</label><select id="nt-rec" class="input" value=${f.recorrencia} onChange=${(e) => upd({ recorrencia: e.target.value })}>${Object.entries(R.RECORRENCIA).map(([k, v]) => html`<option key=${k} value=${k}>${v}</option>`)}</select></div>
+          <div class="span-all"><label class="lbl" for="nt-notas">Anotações</label><textarea id="nt-notas" class="input" rows="3" value=${f.notas} onInput=${(e) => upd({ notas: e.target.value })}></textarea></div></div>`
+        : html`<button type="button" class="btn link" style=${{ alignSelf: "flex-start" }} onClick=${() => setMore(true)}>+ Repetição e anotações</button>`}
+      <div class="row" style=${{ justifyContent: "flex-end" }}>
+        <button type="button" class="btn" disabled=${!f.titulo.trim()} onClick=${(e) => save(e, true)}>Criar e adicionar outra</button>
+        <button class="btn primary" disabled=${!f.titulo.trim()}>Criar tarefa</button></div>
+    </form><//>`;
+}
+
+/* ===== Busca global ===== */
+function Hl({ text, q }) {
+  if (!q) return text;
+  const n = R.norm(text), i = n.indexOf(q);
+  if (i < 0 || n.length !== text.length) return text;
+  return html`${text.slice(0, i)}<mark>${text.slice(i, i + q.length)}</mark>${text.slice(i + q.length)}`;
+}
+function SearchModal({ onClose, open, go, today }) {
+  const st = useStore();
+  const [q, setQ] = useState("");
+  const [sel, setSel] = useState(0);
+  const [done, setDone] = useState(false);
+  const nq = R.norm(q.trim());
+  const results = useMemo(() => {
+    if (!nq) return [];
+    const ps = st.projectList().filter((p) => R.norm(`${p.nome} ${p.descricao || ""}`).includes(nq)).map((p) => ({ kind: "p", p, key: "p" + p.id }));
+    const ts = st.taskList().filter((t) => (done || !t.concluida) && R.norm([t.titulo, t.notas, ...(t.subtarefas || []).map((x) => x.t)].join(" ")).includes(nq))
+      .sort((a, b) => a.concluida - b.concluida || (a.data || "9999").localeCompare(b.data || "9999")).slice(0, 60).map((t) => ({ kind: "t", t, key: "t" + t.id }));
+    return [...ps, ...ts];
+  }, [nq, done, st.ver]);
+  useEffect(() => setSel(0), [nq, done]);
+  useEffect(() => { document.getElementById("sr-" + sel)?.scrollIntoView({ block: "nearest" }); }, [sel]);
+  const pick = (r) => { onClose(); if (r.kind === "p") go("projeto", { id: r.p.id }); else open(r.t.id); };
+  const onKey = (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setSel((s) => Math.min(results.length - 1, s + 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setSel((s) => Math.max(0, s - 1)); }
+    else if (e.key === "Enter" && results[sel]) { e.preventDefault(); pick(results[sel]); }
+  };
+  const firstT = results.findIndex((r) => r.kind === "t");
+  return html`<${Modal} title="Buscar" onClose=${onClose} wide>
+    <div class="search-box"><${Icon} n="search" s=${18} /><input id="busca" autoFocus value=${q} onInput=${(e) => setQ(e.target.value)} onKeyDown=${onKey} placeholder="Buscar tarefas, anotações, subtarefas e projetos…" aria-label="Buscar" />
+      <label class="small row" style=${{ gap: 6, flexWrap: "nowrap" }}><input type="checkbox" id="busca-feitas" checked=${done} onChange=${(e) => setDone(e.target.checked)} />Incluir concluídas</label></div>
+    ${!nq ? html`<p class="small muted" style=${{ margin: "8px 4px" }}>Digite para buscar em todos os projetos. Use ↑ ↓ para navegar e Enter para abrir.</p>`
+      : results.length === 0 ? html`<p class="small muted" style=${{ margin: "8px 4px" }}>Nada encontrado para “${q.trim()}”.</p>`
+      : html`<ul class="results">${results.map((r, i) => {
+          const head = i === 0 && r.kind === "p" ? "Projetos" : i === firstT ? "Tarefas" : null;
+          if (r.kind === "p") return html`<li key=${r.key}>${head && html`<div class="grp">${head}</div>`}<button id=${"sr-" + i} class=${sel === i ? "sel" : ""} onMouseEnter=${() => setSel(i)} onClick=${() => pick(r)}>
+            <span class="dot" style=${{ background: r.p.cor, marginTop: 6 }}></span><span><div class="rt"><${Hl} text=${r.p.nome} q=${nq} /></div>${r.p.descricao && html`<div class="rs">${r.p.descricao.slice(0, 90)}</div>`}</span></button></li>`;
+          const t = r.t, p = store.project(t.projectId);
+          const stage = p?.stages.find((s) => s.id === t.stageId)?.nome;
+          return html`<li key=${r.key}>${head && html`<div class="grp">${head}</div>`}<button id=${"sr-" + i} class=${sel === i ? "sel" : ""} onMouseEnter=${() => setSel(i)} onClick=${() => pick(r)}>
+            <span class=${"check p" + t.prioridade + (t.concluida ? " on" : "")} style=${{ marginTop: 1 }}><${Icon} n="check" s=${11} w=${3} /></span>
+            <span style=${{ minWidth: 0 }}><div class="rt" style=${t.concluida ? { textDecoration: "line-through", color: "var(--ink-3)" } : null}><${Hl} text=${t.titulo} q=${nq} /></div>
+              <div class="rs">${[p?.nome, stage, t.data && `${R.relDay(t.data, today)}${t.hora ? " " + t.hora : ""}`].filter(Boolean).join(" · ")}</div></span></button></li>`;
+        })}</ul>`}
+  <//>`;
+}
+
 /* ===== Dashboard ===== */
 function DashboardView({ today, openModal }) {
   const st = useStore();
@@ -1234,7 +1361,7 @@ function Settings({ onClose }) {
 }
 function Help({ onClose }) {
   return html`<${Modal} title="Como usar" onClose=${onClose} wide><div class="grid-2">
-    <div><b>Atalhos</b><ul style=${{ paddingLeft: 18 }}><li><kbd>N</kbd> nova tarefa</li><li><kbd>H</kbd> Hoje · <kbd>P</kbd> Próximos · <kbd>C</kbd> Calendário · <kbd>D</kbd> Dashboard</li><li><kbd>Esc</kbd> fecha janelas (e salva a tarefa aberta)</li></ul></div>
+    <div><b>Atalhos</b><ul style=${{ paddingLeft: 18 }}><li><kbd>Ctrl</kbd> + <kbd>F</kbd> buscar</li><li><kbd>N</kbd> nova tarefa</li><li><kbd>H</kbd> Hoje · <kbd>P</kbd> Próximos · <kbd>C</kbd> Calendário · <kbd>D</kbd> Dashboard</li><li><kbd>Esc</kbd> fecha janelas (e salva a tarefa aberta)</li></ul></div>
     <div><b>Escreva naturalmente</b><ul style=${{ paddingLeft: 18 }}><li><b>hoje, amanhã, sexta, 12/10, em 3 dias</b></li><li><b>14h, 9h30, 16:45</b></li><li><b>#nome-do-projeto</b></li><li><b>p1</b> a <b>p4</b> (prioridade)</li><li><b>todo dia, dias úteis, toda semana, todo mês</b></li></ul></div>
   </div><//>`;
 }
