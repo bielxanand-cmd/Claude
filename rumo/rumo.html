@@ -163,6 +163,8 @@ label.lbl, span.lbl { display: block; font-size: 12px; font-weight: 500; color: 
 .kcard.dragging { opacity: .35; }
 .kcard.drop-before { box-shadow: 0 -2px 0 var(--accent); }
 .kcard .title { overflow-wrap: anywhere; font-size: 13.5px; }
+.knote { margin-top: 4px; font-size: 12.5px; line-height: 1.45; color: var(--ink-2); white-space: pre-line; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.kcard.done .knote { color: var(--ink-3); }
 .add-col { flex: 0 0 220px; padding-top: 4px; }
 
 /* Calendário */
@@ -682,13 +684,13 @@ function DueChip({ t, today }) {
   const cls = !t.concluida && t.data < today ? "due late" : t.data === today ? "due today" : "due";
   return html`<span class=${cls}><${Icon} n="cal" s=${12} />${R.relDay(t.data, today)}${t.hora ? " " + t.hora : ""}</span>`;
 }
-function TaskMeta({ t, today, showProject = true }) {
+function TaskMeta({ t, today, showProject = true, showNoteIcon = true }) {
   const p = showProject ? store.project(t.projectId) : null;
   const sub = t.subtarefas?.length ? `${t.subtarefas.filter((s) => s.ok).length}/${t.subtarefas.length}` : null;
   return html`<div class="meta"><${DueChip} t=${t} today=${today} />
     ${t.recorrencia !== "none" && html`<span title=${R.RECORRENCIA[t.recorrencia]}><${Icon} n="repeat" s=${12} />${R.RECORRENCIA[t.recorrencia]}</span>`}
     ${sub && html`<span><${Icon} n="subtasks" s=${12} />${sub}</span>`}
-    ${t.notas && html`<span title="Tem anotações"><${Icon} n="note" s=${12} /></span>`}
+    ${t.notas && showNoteIcon && html`<span title="Tem anotações"><${Icon} n="note" s=${12} /></span>`}
     ${p && html`<span><${PDot} c=${p.cor} />${p.nome}</span>`}</div>`;
 }
 function TaskRow({ t, today, open, showProject }) {
@@ -1010,7 +1012,7 @@ function Board({ p, tasks, open, today }) {
             onDragStart=${(e) => { e.dataTransfer.setData("text/plain", t.id); e.dataTransfer.effectAllowed = "move"; setDrag(t.id); }} onDragEnd=${() => { setDrag(null); setOver(null); setBefore(null); }}
             onDragOver=${(e) => { e.preventDefault(); setOver(s.id); setBefore(t.id); }} onClick=${() => open(t.id)}>
           <button class=${"check p" + t.prioridade + (t.concluida ? " on" : "")} onClick=${(e) => { e.stopPropagation(); toggleDone(t); }} aria-label="Concluir"><${Icon} n="check" s=${11} w=${3} /></button>
-          <div style=${{ minWidth: 0, flex: 1 }}><div class="title">${t.titulo}</div><${TaskMeta} t=${t} today=${today} showProject=${false} /></div></div>`)}
+          <div style=${{ minWidth: 0, flex: 1 }}><div class="title">${t.titulo}</div>${t.notas?.trim() && html`<div class="knote" title=${t.notas}>${t.notas.trim()}</div>`}<${TaskMeta} t=${t} today=${today} showProject=${false} showNoteIcon=${false} /></div></div>`)}
           <div style=${{ minHeight: 8 }} onDragOver=${(e) => { e.preventDefault(); setOver(s.id); setBefore(null); }}></div></div>
         ${adding === s.id ? html`<${QuickAdd} defaults=${{ projectId: p.id, stageId: s.id }} autoFocus placeholder="Título, data, p1…" />
           <button class="btn ghost sm" onClick=${() => setAdding(null)}>Fechar</button>` : html`<button class="btn ghost sm" style=${{ justifyContent: "flex-start" }} onClick=${() => setAdding(s.id)}><${Icon} n="plus" s=${14} />Adicionar tarefa</button>`}
