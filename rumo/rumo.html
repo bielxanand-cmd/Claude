@@ -315,6 +315,32 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .side-profile .nm { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .side-profile .mt { font-size: 11.5px; color: var(--side-ink-2); }
 @media (max-width: 860px) { .side-profile { width: auto; margin: 0; flex: none; padding: 4px 8px; } .side-profile .mt { display: none; } }
+.side-top { display: flex; align-items: center; gap: 6px; margin: 0 0 14px; }
+.user-btn { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; border: 0; background: none; color: var(--side-ink); padding: 4px 6px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13.5px; }
+.user-btn:hover { background: var(--side-hover); }
+.user-btn .avatar { width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,.2); display: grid; place-items: center; font-size: 12px; object-fit: cover; }
+.user-btn .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon-btn { position: relative; width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 8px; border: 0; cursor: pointer; background: var(--side-hover); color: var(--side-ink); }
+.icon-btn:hover { background: var(--side-sel); }
+.icon-btn.alert { background: #fff1e8; color: #f26a1b; }
+.icon-btn .badge { position: absolute; top: 6px; right: 7px; width: 8px; height: 8px; border-radius: 50%; background: #f26a1b; box-shadow: 0 0 0 2px var(--side); }
+.icon-btn.alert .badge { box-shadow: 0 0 0 2px #fff1e8; }
+.topbar { display: flex; align-items: center; gap: 6px; margin: -12px 0 18px; }
+.topbar .icon-btn { background: var(--surface); color: var(--ink-2); border: 1px solid var(--line); }
+.topbar .icon-btn:hover { background: var(--hover); color: var(--ink); }
+.topbar .icon-btn .badge { box-shadow: 0 0 0 2px var(--surface); }
+.topbar .icon-btn.alert { background: #fff1e8; color: #f26a1b; border-color: #ffd9c2; }
+.shell.full { grid-template-columns: minmax(0, 1fr); }
+.shell.full aside.side { display: none; }
+.notif-pop { position: fixed; z-index: 45; width: 340px; max-width: calc(100vw - 24px); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 40px rgba(10, 20, 50, .2); overflow: hidden; }
+.notif-pop header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--line-2); font-weight: 600; }
+.notif-list { list-style: none; margin: 0; padding: 4px; max-height: 320px; overflow-y: auto; }
+.notif-list li button { width: 100%; text-align: left; border: 0; background: none; padding: 10px; border-radius: 8px; cursor: pointer; display: flex; gap: 10px; align-items: flex-start; color: inherit; }
+.notif-list li button:hover { background: var(--hover); }
+.notif-list .unread { background: var(--accent-soft); }
+.notif-list .ico { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: #fff1e8; color: #f26a1b; flex: none; }
+.notif-list .when { font-size: 11.5px; color: var(--ink-3); }
+.notif-pop .sec { padding: 8px 14px 12px; border-top: 1px solid var(--line-2); font-size: 12.5px; color: var(--ink-2); display: flex; flex-direction: column; gap: 6px; }
 .menu { position: absolute; right: 0; top: 30px; z-index: 10; padding: 4px; width: 210px; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
 </style>
 
@@ -593,7 +619,19 @@ ${project.iaTarefas === false
   : `Responda SOMENTE com JSON: {"mensagem":"sua resposta","tarefas":[{"titulo":"...","emDias":0,"prioridade":2}]}. Inclua "tarefas" apenas quando sugerir tarefas novas concretas (no máximo 8); caso contrário use [].`}`;
   }
 
-  return { TAG_COLORS, resolveTags, pad, ymd, parseYmd, addDays, today, dow, DIAS, DIAS_LONGO, MESES, MESES_LONGO, diffDays, fmtDay, relDay, norm, uid, RECORRENCIA, nextOccurrence, parseQuick, PROJECT_COLORS, DEFAULT_STAGES, INBOX, firstOpenStage, finalStage, newTask, setDone, moveToStage, doneDay, metrics, template, buildProject, interviewInstructions, normalizePlan, dayPlanPrompt, projectChatInstructions, clampP };
+  // Lembretes: tarefas abertas de hoje com horário, entre `antes` min antes e `depois` min depois do início.
+  function dueReminders(tasks, now = new Date(), antes = 10, depois = 15) {
+    const t = ymd(now), out = [];
+    for (const k of tasks) {
+      if (k.concluida || k.data !== t || !k.hora) continue;
+      const [h, m] = k.hora.split(":").map(Number);
+      const ini = new Date(now); ini.setHours(h, m, 0, 0);
+      const diff = (ini - now) / 60000;
+      if (diff <= antes && diff >= -depois) out.push({ task: k, key: `${k.id}@${k.data}T${k.hora}`, minutos: Math.round(diff) });
+    }
+    return out;
+  }
+  return { dueReminders, TAG_COLORS, resolveTags, pad, ymd, parseYmd, addDays, today, dow, DIAS, DIAS_LONGO, MESES, MESES_LONGO, diffDays, fmtDay, relDay, norm, uid, RECORRENCIA, nextOccurrence, parseQuick, PROJECT_COLORS, DEFAULT_STAGES, INBOX, firstOpenStage, finalStage, newTask, setDone, moveToStage, doneDay, metrics, template, buildProject, interviewInstructions, normalizePlan, dayPlanPrompt, projectChatInstructions, clampP };
 })();
 if (typeof window !== "undefined") window.RUMO = RUMO;
 </script>
@@ -753,6 +791,9 @@ const ICONS = {
   ext: "M15 3h6v6 M10 14 21 3 M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6",
   flag: "M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z M4 22v-7",
   search: "M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14 M21 21l-4.35-4.35",
+  bell: "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9 M10.3 21a1.94 1.94 0 0 0 3.4 0",
+  panel: "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z M9 3v18",
+  clock: "M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18 M12 7v5l3 2",
   tag: "M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0 0-2 2v7.17a2 2 0 0 0 .59 1.41l8.83 8.83a2 2 0 0 0 2.83 0l7.17-7.17a2 2 0 0 0 0-2.83z M7.5 7.5h.01",
   pause: "M10 4H6v16h4z M18 4h-4v16h4z", play: "M6 3l14 9-14 9z",
 };
@@ -886,13 +927,100 @@ function Ring({ value, max }) {
     <div class="c"><div><b>${value}</b><div class="small muted">de ${max}</div></div></div></div>`;
 }
 
+/* ===== Notificações (10 min antes do horário da tarefa) ===== */
+let audioCtx = null;
+const unlockAudio = () => { try { audioCtx ??= new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === "suspended") audioCtx.resume(); } catch {} };
+function chime() {
+  if (!audioCtx || audioCtx.state !== "running") return;
+  [880, 1175].forEach((f, i) => { const o = audioCtx.createOscillator(), g = audioCtx.createGain(), t0 = audioCtx.currentTime + i * 0.16;
+    o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.35);
+    o.connect(g).connect(audioCtx.destination); o.start(t0); o.stop(t0 + 0.4); });
+}
+const lsGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || "null") ?? d; } catch { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+function useReminders(active) {
+  const key = `rumo-notifs-${store.me?.id || "local"}`;
+  const [state, setState] = useState(() => lsGet(key, { sent: {}, items: [], som: true }));
+  const ref = useRef(state); ref.current = state;
+  const save = (n) => { ref.current = n; setState(n); lsSet(key, n); };
+  useEffect(() => {
+    if (!active) return;
+    const check = () => {
+      const now = new Date(), cur = ref.current, sent = { ...cur.sent };
+      for (const [k, at] of Object.entries(sent)) if (Date.now() - at > 3 * 86400000) delete sent[k];
+      const novos = R.dueReminders(store.taskList(), now).filter((r) => !sent[r.key]);
+      if (!novos.length) { if (Object.keys(sent).length !== Object.keys(cur.sent).length) save({ ...cur, sent }); return; }
+      const items = [...cur.items];
+      for (const r of novos) {
+        sent[r.key] = Date.now();
+        const p = store.project(r.task.projectId);
+        const msg = r.minutos > 0 ? `Em ${r.minutos} min` : r.minutos === 0 ? "Começa agora" : `Começou há ${-r.minutos} min`;
+        items.unshift({ id: R.uid("n"), taskId: r.task.id, titulo: r.task.titulo, hora: r.task.hora, projeto: p?.nome || "", quando: msg, at: Date.now(), read: false });
+        toast(`${msg}: ${r.task.titulo} (${r.task.hora})`, "", { label: "Abrir", fn: () => window.dispatchEvent(new CustomEvent("rumo:open", { detail: r.task.id })) });
+        try { if (window.Notification && Notification.permission === "granted") new Notification(`${msg}: ${r.task.titulo}`, { body: `${r.task.hora}${p ? " · " + p.nome : ""}`, tag: r.key }); } catch {}
+      }
+      if (cur.som !== false) chime();
+      save({ ...cur, sent, items: items.slice(0, 30) });
+    };
+    check();
+    const id = setInterval(check, 15000);
+    let t = null; const onChange = () => { clearTimeout(t); t = setTimeout(check, 600); };
+    store.subs.add(onChange);
+    return () => { clearInterval(id); clearTimeout(t); store.subs.delete(onChange); };
+  }, [active, key]);
+  const unread = state.items.filter((x) => !x.read).length;
+  useEffect(() => { document.title = unread ? `(${unread}) Rumo Projetos` : "Rumo Projetos"; }, [unread]);
+  return {
+    items: state.items, unread, som: state.som !== false,
+    markAll: () => save({ ...ref.current, items: ref.current.items.map((x) => ({ ...x, read: true })) }),
+    read: (id) => save({ ...ref.current, items: ref.current.items.map((x) => (x.id === id ? { ...x, read: true } : x)) }),
+    clear: () => save({ ...ref.current, items: [] }),
+    toggleSom: () => { unlockAudio(); save({ ...ref.current, som: !(ref.current.som !== false) }); },
+  };
+}
+function Bell({ rem, open, today }) {
+  const [pos, setPos] = useState(null);
+  const btn = useRef(null);
+  const toggle = () => {
+    unlockAudio();
+    if (pos) return setPos(null);
+    const r = btn.current.getBoundingClientRect();
+    setPos({ top: r.bottom + 8, left: Math.max(12, Math.min(r.left, window.innerWidth - 352)) });
+  };
+  useEffect(() => {
+    if (!pos) return;
+    const close = (e) => { if (!e.target.closest(".notif-pop") && !btn.current?.contains(e.target)) setPos(null); };
+    const esc = (e) => e.key === "Escape" && setPos(null);
+    window.addEventListener("mousedown", close); window.addEventListener("keydown", esc);
+    return () => { window.removeEventListener("mousedown", close); window.removeEventListener("keydown", esc); };
+  }, [pos]);
+  const proximas = store.taskList().filter((t) => !t.concluida && t.data === today && t.hora && new Date(`${t.data}T${t.hora}`) > new Date()).sort((a, b) => a.hora.localeCompare(b.hora)).slice(0, 5);
+  const perm = window.Notification ? Notification.permission : "unsupported";
+  return html`<button ref=${btn} class=${"icon-btn" + (rem.unread ? " alert" : "")} onClick=${toggle} aria-label=${`Notificações${rem.unread ? ` (${rem.unread} novas)` : ""}`} title="Notificações"><${Icon} n="bell" s=${17} />${rem.unread > 0 && html`<span class="badge"></span>`}</button>
+    ${pos && html`<div class="notif-pop" style=${{ top: pos.top, left: pos.left }} role="dialog" aria-label="Notificações">
+      <header><span>Notificações</span>${rem.items.length > 0 && html`<span class="row" style=${{ gap: 4 }}>${rem.unread > 0 && html`<button class="btn ghost sm" onClick=${rem.markAll}>Marcar como lidas</button>`}<button class="btn ghost sm" onClick=${rem.clear}>Limpar</button></span>`}</header>
+      ${rem.items.length === 0 ? html`<p class="small muted" style=${{ margin: 0, padding: "14px" }}>Nenhuma notificação. Você será avisado 10 minutos antes de cada tarefa com horário.</p>`
+        : html`<ul class="notif-list">${rem.items.map((n) => html`<li key=${n.id}><button class=${n.read ? "" : "unread"} onClick=${() => { rem.read(n.id); setPos(null); open(n.taskId); }}>
+          <span class="ico"><${Icon} n="clock" s=${15} /></span><span style=${{ minWidth: 0 }}><div style=${{ fontWeight: n.read ? 400 : 600 }}>${n.titulo}</div><div class="when">${n.quando} · ${n.hora}${n.projeto ? " · " + n.projeto : ""}</div></span></button></li>`)}</ul>`}
+      <div class="sec">
+        ${proximas.length > 0 && html`<div><b>Próximos lembretes hoje</b>${proximas.map((t) => html`<div key=${t.id}>${t.hora} · ${t.titulo}</div>`)}</div>`}
+        <label class="row" style=${{ gap: 6 }}><input type="checkbox" id="notif-som" checked=${rem.som} onChange=${rem.toggleSom} />Tocar som ao avisar</label>
+        ${perm === "default" && html`<button class="btn sm" style=${{ alignSelf: "flex-start" }} onClick=${async () => { try { await Notification.requestPermission(); } catch {} setPos(null); }}>Avisar também fora desta aba</button>`}
+        <span class="muted">Os avisos aparecem com o Rumo aberto.</span>
+      </div></div>`}`;
+}
+
 /* ===== App ===== */
 function App() {
   const st = useStore();
   const [route, setRoute] = useState({ view: "hoje" });
   const [modal, setModal] = useState(null);
   const [taskId, setTaskId] = useState(null);
+  const [sideHidden, setSideHidden] = useState(() => lsGet("rumo-side-hidden", false));
+  const toggleSide = () => setSideHidden((v) => { lsSet("rumo-side-hidden", !v); return !v; });
   const today = useToday();
+  const rem = useReminders(st.ready && !!st.cfg.cadastrado);
+  useEffect(() => { const f = (e) => setTaskId(e.detail); window.addEventListener("rumo:open", f); window.addEventListener("pointerdown", unlockAudio); return () => { window.removeEventListener("rumo:open", f); window.removeEventListener("pointerdown", unlockAudio); }; }, []);
   const go = useCallback((view, extra = {}) => { setRoute({ view, ...extra }); window.scrollTo(0, 0); }, []);
   useEffect(() => {
     const k = (e) => {
@@ -900,6 +1028,7 @@ function App() {
       if (typing(e) || e.metaKey || e.ctrlKey || e.altKey || modalOpen()) return;
       if (e.key === "n" || e.key === "q") { e.preventDefault(); const f = () => document.querySelector(".quick-box input")?.focus(); if (document.querySelector(".quick-box input")) f(); else { go("hoje"); setTimeout(f, 50); } }
       else if (e.key === "?") setModal("help");
+      else if (e.key === "m") setSideHidden((v) => { lsSet("rumo-side-hidden", !v); return !v; });
       else if (e.key === "h") go("hoje"); else if (e.key === "c") go("calendario"); else if (e.key === "d") go("dashboard"); else if (e.key === "p") go("proximos");
     };
     window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
@@ -920,9 +1049,16 @@ function App() {
   else body = html`<${TodayView} open=${openTask} today=${today} go=${go} openModal=${setModal} />`;
 
   const Nav = ({ v, ico, label, n, extra, cur }) => html`<button class="nav-btn" aria-current=${cur ? "page" : undefined} onClick=${() => go(v, extra)}><span class="ico">${ico}</span><span class="nl">${label}</span>${n ? html`<span class="cnt">${n}</span>` : null}</button>`;
-  return html`<div class="shell">
+  const firstName = (st.cfg.nome || st.me?.name || "Meu perfil").split(/\s+/)[0];
+  const avatar = st.me?.avatarUrl ? html`<img class="avatar" src=${st.me.avatarUrl} alt="" />` : html`<span class="avatar">${firstName.slice(0, 1).toUpperCase()}</span>`;
+  return html`<div class=${"shell" + (sideHidden ? " full" : "")}>
     <aside class="side">
       <div class="logo"><img src=${LOGO} alt="" />Rumo</div>
+      <div class="side-top">
+        <button class="user-btn" onClick=${() => setModal("ajustes")} title="Meu perfil">${avatar}<span class="nm">${firstName}</span><${Icon} n="down" s=${14} /></button>
+        <${Bell} rem=${rem} open=${openTask} today=${today} />
+        <button class="icon-btn" onClick=${toggleSide} aria-label="Ocultar menu lateral" title="Ocultar menu (M)"><${Icon} n="panel" s=${17} /></button>
+      </div>
       <button class="side-search" onClick=${() => setModal("busca")}><${Icon} n="search" /><span>Buscar</span><kbd>Ctrl F</kbd></button>
       <${Nav} v="hoje" ico=${html`<${Icon} n="sun" />`} label="Hoje" n=${nToday} cur=${route.view === "hoje"} />
       <${Nav} v="proximos" ico=${html`<${Icon} n="week" />`} label="Próximos 7 dias" cur=${route.view === "proximos"} />
@@ -931,11 +1067,9 @@ function App() {
       <div class="side-sep"><span class="eyebrow side-projects-title">Projetos</span><button class="btn ghost sm" onClick=${() => setModal("novo-projeto")} aria-label="Novo projeto" title="Novo projeto"><${Icon} n="plus" s=${14} /></button></div>
       ${projects.map((p) => html`<${Nav} key=${p.id} v="projeto" extra=${{ id: p.id }} ico=${p.id === "inbox" ? html`<${Icon} n="inbox" />` : html`<${PDot} c=${p.cor} />`} label=${p.nome} n=${cnt((t) => t.projectId === p.id)} cur=${route.view === "projeto" && route.id === p.id} />`)}
       <button class="nav-btn" onClick=${() => setModal("novo-projeto")}><span class="ico"><${Icon} n="plus" /></span><span class="nl">Novo projeto</span></button>
-      <button class="side-profile" onClick=${() => setModal("ajustes")} title="Meu perfil">
-        ${st.me?.avatarUrl ? html`<img class="avatar" src=${st.me.avatarUrl} alt="" />` : html`<span class="avatar">${(st.cfg.nome || "?").slice(0, 1).toUpperCase()}</span>`}
-        <span style=${{ minWidth: 0, flex: 1 }}><div class="nm">${st.cfg.nome || "Meu perfil"}</div><div class="mt">Meta de hoje: ${R.metrics(tasks, [], st.cfg, today).doneToday}/${st.cfg.metaDiaria}</div></span></button>
     </aside>
     <main class="work">
+      ${sideHidden && html`<div class="topbar"><button class="icon-btn" onClick=${toggleSide} aria-label="Mostrar menu lateral" title="Mostrar menu (M)"><${Icon} n="panel" s=${17} /></button><${Bell} rem=${rem} open=${openTask} today=${today} /></div>`}
       ${st.mode === "local" && st.ready && html`<p class="note" style=${{ marginTop: 0 }}>Modo local: os dados ficam só neste navegador.</p>`}
       ${st.error && html`<p class="note" style=${{ marginTop: 0 }}>${st.error}</p>`}
       ${body}
@@ -1577,7 +1711,7 @@ function Settings({ onClose }) {
 }
 function Help({ onClose }) {
   return html`<${Modal} title="Como usar" onClose=${onClose} wide><div class="grid-2">
-    <div><b>Atalhos</b><ul style=${{ paddingLeft: 18 }}><li><kbd>Ctrl</kbd> + <kbd>F</kbd> buscar</li><li><kbd>N</kbd> nova tarefa</li><li><kbd>H</kbd> Hoje · <kbd>P</kbd> Próximos · <kbd>C</kbd> Calendário · <kbd>D</kbd> Dashboard</li><li><kbd>Esc</kbd> fecha janelas (e salva a tarefa aberta)</li></ul></div>
+    <div><b>Atalhos</b><ul style=${{ paddingLeft: 18 }}><li><kbd>Ctrl</kbd> + <kbd>F</kbd> buscar</li><li><kbd>M</kbd> ocultar ou mostrar o menu lateral</li><li><kbd>N</kbd> nova tarefa</li><li><kbd>H</kbd> Hoje · <kbd>P</kbd> Próximos · <kbd>C</kbd> Calendário · <kbd>D</kbd> Dashboard</li><li><kbd>Esc</kbd> fecha janelas (e salva a tarefa aberta)</li></ul></div>
     <div><b>Escreva naturalmente</b><ul style=${{ paddingLeft: 18 }}><li><b>hoje, amanhã, sexta, 12/10, em 3 dias</b></li><li><b>14h, 9h30, 16:45</b></li><li><b>#nome-do-projeto</b></li><li><b>p1</b> a <b>p4</b> (prioridade)</li><li><b>@tag</b> (cria a tag se não existir)</li><li><b>todo dia, dias úteis, toda semana, todo mês</b></li></ul></div>
   </div><//>`;
 }

@@ -30,4 +30,7 @@ r = q("Revisar lei seca amanhã @revisão @Urgente #estudos"); assert.deepEqual(
 const proj = { tags: [{ id: "g1", nome: "Revisão", cor: "#2156e0" }] };
 const rt = R.resolveTags(proj, ["revisao", "Urgente"]);
 assert.equal(rt.ids[0], "g1"); assert.equal(rt.tags.length, 2); assert.equal(rt.tags[1].cor, R.TAG_COLORS[1]); assert.equal(rt.changed, true);
+{ const now = new Date(2026, 8, 29, 13, 52); const T = (id, hora, extra = {}) => ({ id, data: "2026-09-29", hora, concluida: false, ...extra });
+  const r2 = R.dueReminders([T("a", "14:00"), T("b", "14:30"), T("c", "13:40"), T("d", "13:30"), T("e", "14:00", { concluida: true }), T("f", null), T("g", "14:00", { data: "2026-09-30" })], now);
+  assert.deepEqual(r2.map((x) => [x.task.id, x.minutos]), [["a", 8], ["c", -12]]); }
 console.log("todos os testes do núcleo passaram");
