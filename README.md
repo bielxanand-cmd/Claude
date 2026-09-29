@@ -39,6 +39,6 @@ python3 -m http.server 8000
 
 ---
 
-## SDR Plantão
+## SDR Plantão e Rumo
 
-Na pasta [`sdr/`](sdr/) há um app separado para SDR (fila de atendimento, SLA de 5 min, cadência e métricas). Veja o [README](sdr/README.md).
+Na pasta [`sdr/`](sdr/) há um app separado para SDR (fila de atendimento, SLA de 5 min, cadência e métricas). Veja o [README](sdr/README.md). A pasta [`rumo/`](rumo/) tem o gerenciador de projetos e tarefas que substituiu a versão artefato do SDR.

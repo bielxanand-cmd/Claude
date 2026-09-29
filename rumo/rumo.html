@@ -1,0 +1,1192 @@
+<title>Rumo Projetos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: barra lateral de navegação (projetos) + área de trabalho; no celular a barra vira um topo compacto. */
+:root {
+  --bg: #f4f3f1; --surface: #ffffff; --surface-2: #f7f6f4; --sunk: #ecebe8; --line: #dfddd8; --line-2: #eceae6;
+  --ink: #1b1d22; --ink-2: #4d5159; --ink-3: #858a93;
+  --accent: #d24e12; --accent-ink: #ffffff; --accent-soft: #fbe6da; --accent-2: #26324a;
+  --ok: #1d7a44; --ok-soft: #dcf2e4; --warn: #9a6200; --warn-soft: #fbefd2; --bad: #c0262d; --bad-soft: #fbe3e3;
+  --p1: #d1242f; --p2: #e0730b; --p3: #2f6fdb; --p4: #9aa0a8;
+  --bar: #26324a; --bar-hover: #d24e12; --grid: #e7e5e1;
+  --shadow: 0 1px 2px rgba(27, 29, 34, .06), 0 6px 18px rgba(27, 29, 34, .05);
+  --f-display: "Bricolage Grotesque", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --f-ui: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121316; --surface: #1a1c20; --surface-2: #1f2126; --sunk: #16171a; --line: #2e3138; --line-2: #25282e;
+  --ink: #eceef2; --ink-2: #b1b6bf; --ink-3: #7c828c;
+  --accent: #ff7a3d; --accent-ink: #1f0c02; --accent-soft: #3b2215; --accent-2: #c9d3ea;
+  --ok: #5fd08e; --ok-soft: #143222; --warn: #f2bd4f; --warn-soft: #382a0d; --bad: #ff7b80; --bad-soft: #3d1618;
+  --p1: #ff6b73; --p2: #ffa04d; --p3: #7aa7ff; --p4: #7c828c;
+  --bar: #c9d3ea; --bar-hover: #ff7a3d; --grid: #2a2d33;
+  --shadow: 0 1px 2px rgba(0,0,0,.45); color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #121316; --surface: #1a1c20; --surface-2: #1f2126; --sunk: #16171a; --line: #2e3138; --line-2: #25282e;
+  --ink: #eceef2; --ink-2: #b1b6bf; --ink-3: #7c828c;
+  --accent: #ff7a3d; --accent-ink: #1f0c02; --accent-soft: #3b2215; --accent-2: #c9d3ea;
+  --ok: #5fd08e; --ok-soft: #143222; --warn: #f2bd4f; --warn-soft: #382a0d; --bad: #ff7b80; --bad-soft: #3d1618;
+  --p1: #ff6b73; --p2: #ffa04d; --p3: #7aa7ff; --p4: #7c828c;
+  --bar: #c9d3ea; --bar-hover: #ff7a3d; --grid: #2a2d33;
+  --shadow: 0 1px 2px rgba(0,0,0,.45); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 14px; line-height: 1.45; }
+button, input, select, textarea { font: inherit; color: inherit; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h1 { font-family: var(--f-display); font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+h2 { font-family: var(--f-display); font-size: 18px; font-weight: 700; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--ink-3); } .small { font-size: 12px; }
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 100%; }
+aside.side { background: var(--sunk); border-right: 1px solid var(--line); padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.logo { font-family: var(--f-display); font-weight: 800; font-size: 22px; letter-spacing: -.03em; display: flex; align-items: center; gap: 8px; padding: 0 8px 12px; }
+.logo i { width: 12px; height: 12px; border-radius: 3px; background: var(--accent); display: inline-block; transform: rotate(45deg); }
+.nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 7px 10px; border-radius: 8px; cursor: pointer; text-align: left; color: var(--ink-2); font-weight: 600; min-width: 0; }
+.nav-btn:hover { background: var(--line-2); }
+.nav-btn[aria-current="page"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.nav-btn .ico { width: 18px; text-align: center; flex: none; }
+.nav-btn .lbl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-btn .cnt { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.side-sep { margin: 14px 10px 4px; display: flex; align-items: center; justify-content: space-between; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; display: inline-block; }
+main.work { padding: 24px 28px 64px; min-width: 0; }
+@media (max-width: 860px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  aside.side { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; flex-wrap: wrap; padding: 10px 16px; }
+  .logo { padding: 0 8px 0 0; font-size: 19px; }
+  .nav-btn { width: auto; }
+  .side-sep, .side-projects-title { display: none; }
+  main.work { padding: 16px 16px 64px; }
+}
+
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; box-shadow: var(--shadow); min-width: 0; }
+.card.flat { box-shadow: none; }
+.head { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: flex-end; margin-bottom: 18px; }
+.head .sub { color: var(--ink-3); margin-top: 2px; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 9px; padding: 7px 12px; font-weight: 600; cursor: pointer; white-space: nowrap; text-decoration: none; }
+.btn:hover { background: var(--surface-2); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.dark { background: var(--accent-2); border-color: var(--accent-2); color: var(--surface); }
+.btn.danger { color: var(--bad); }
+.btn.sm { padding: 3px 9px; font-size: 12px; border-radius: 7px; }
+.btn.ghost { border-color: transparent; background: none; color: var(--ink-3); padding: 3px 6px; }
+.btn.ghost:hover { color: var(--ink); background: var(--line-2); }
+.btn.link { border: 0; background: none; color: var(--accent); padding: 0; font-weight: 600; }
+kbd { font-family: var(--f-mono); font-size: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-3); border-radius: 4px; padding: 0 4px; line-height: 16px; }
+.btn.primary kbd { background: rgba(255,255,255,.22); color: inherit; border-color: transparent; }
+
+.input { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 9px; padding: 7px 10px; outline: none; min-width: 0; }
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+textarea.input { resize: vertical; }
+label.lbl, span.lbl { display: block; font-size: 12px; font-weight: 600; color: var(--ink-3); margin-bottom: 4px; }
+.form-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.span-all { grid-column: 1 / -1; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: var(--surface); flex-wrap: wrap; }
+.seg button { border: 0; background: none; padding: 6px 12px; cursor: pointer; font-weight: 600; color: var(--ink-2); font-size: 13px; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+/* Quick add */
+.quick { display: flex; flex-direction: column; gap: 6px; }
+.quick-box { display: flex; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 6px 6px 6px 12px; box-shadow: var(--shadow); }
+.quick-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.quick-box input { border: 0; outline: none; background: none; flex: 1; min-width: 0; padding: 6px 0; font-size: 15px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--sunk); color: var(--ink-2); white-space: nowrap; }
+.chip.late { background: var(--bad-soft); color: var(--bad); }
+.chip.today { background: var(--ok-soft); color: var(--ok); }
+
+/* Lista de tarefas */
+.tlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.titem { display: flex; gap: 10px; align-items: flex-start; padding: 10px 4px; border-bottom: 1px solid var(--line-2); min-width: 0; }
+.titem:last-child { border-bottom: 0; }
+.titem .body { flex: 1; min-width: 0; cursor: pointer; }
+.titem .title { font-weight: 600; overflow-wrap: anywhere; }
+.titem.done .title { text-decoration: line-through; color: var(--ink-3); }
+.titem .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 3px; font-size: 12px; color: var(--ink-3); align-items: center; }
+.check { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--p4); background: none; cursor: pointer; display: grid; place-items: center; margin-top: 1px; padding: 0; color: transparent; font-size: 11px; font-weight: 800; }
+.check.p1 { border-color: var(--p1); background: color-mix(in srgb, var(--p1) 10%, transparent); }
+.check.p2 { border-color: var(--p2); background: color-mix(in srgb, var(--p2) 10%, transparent); }
+.check.p3 { border-color: var(--p3); background: color-mix(in srgb, var(--p3) 10%, transparent); }
+.check:hover { color: var(--ink-3); }
+.check.on { background: var(--ok); border-color: var(--ok); color: #fff; }
+.sec-h { display: flex; align-items: center; gap: 8px; margin: 18px 0 4px; font-weight: 800; font-size: 13px; }
+.sec-h .n { color: var(--ink-3); font-weight: 600; }
+.empty { border: 1px dashed var(--line); border-radius: 12px; padding: 18px; text-align: center; color: var(--ink-3); }
+
+/* Kanban */
+.board { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 12px; align-items: flex-start; }
+.col { flex: 0 0 290px; background: var(--sunk); border: 1px solid var(--line-2); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 8px; max-height: calc(100vh - 220px); }
+.col.over { outline: 2px dashed var(--accent); outline-offset: -2px; }
+.col-h { display: flex; align-items: center; gap: 6px; padding: 2px 4px; }
+.col-h .name { font-weight: 800; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 40px; }
+.kcard { background: var(--surface); border: 1px solid var(--line); border-radius: 11px; padding: 10px; cursor: grab; box-shadow: var(--shadow); display: flex; gap: 8px; align-items: flex-start; }
+.kcard.dragging { opacity: .4; }
+.kcard.drop-before { box-shadow: 0 -3px 0 var(--accent); }
+.kcard .title { font-weight: 600; overflow-wrap: anywhere; }
+.kcard.done .title { text-decoration: line-through; color: var(--ink-3); }
+.add-col { flex: 0 0 240px; }
+
+/* Calendário */
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--line); gap: 1px; }
+.cal .dow { background: var(--surface-2); padding: 6px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
+.cal .day { background: var(--surface); min-height: 108px; padding: 6px; display: flex; flex-direction: column; gap: 3px; cursor: pointer; min-width: 0; }
+.cal .day.out { background: var(--surface-2); }
+.cal .day.out .dnum { color: var(--ink-3); }
+.cal .day.today .dnum { background: var(--accent); color: var(--accent-ink); }
+.cal .day.sel { box-shadow: inset 0 0 0 2px var(--accent-2); }
+.cal .day.over { box-shadow: inset 0 0 0 2px var(--accent); }
+.dnum { font-size: 12px; font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; }
+.evt { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 6px; background: var(--sunk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-left: 3px solid var(--ink-3); cursor: grab; }
+.evt.done { text-decoration: line-through; color: var(--ink-3); }
+@media (max-width: 700px) { .cal .day { min-height: 64px; } .evt { font-size: 0; padding: 0; height: 6px; border-left-width: 0; } .cal .dow { padding: 4px; font-size: 10px; } }
+.cal-layout { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
+@media (max-width: 1100px) { .cal-layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* Dashboard */
+.kpis { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.kpi .v { font-family: var(--f-display); font-size: 30px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; margin-top: 4px; }
+.kpi .v small { font-size: 16px; color: var(--ink-3); font-weight: 600; }
+.bar-track { height: 8px; border-radius: 99px; background: var(--line-2); overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 99px; background: var(--accent-2); }
+.bar-fill.ok { background: var(--ok); }
+.chart { position: relative; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--ink-3); font-size: 11px; font-family: var(--f-ui); }
+.chart .val { fill: var(--ink-2); font-weight: 700; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 8px; padding: 5px 8px; font-size: 12px; transform: translate(-50%, -110%); white-space: nowrap; }
+.grid-2 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); align-items: start; }
+
+/* Hoje */
+.today-top { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) 280px; align-items: start; }
+@media (max-width: 1000px) { .today-top { grid-template-columns: minmax(0, 1fr); } }
+.ring { position: relative; width: 108px; height: 108px; flex: none; }
+.ring svg { transform: rotate(-90deg); }
+.ring .c { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.ring .c b { font-family: var(--f-display); font-size: 26px; line-height: 1; }
+.streak { font-family: var(--f-display); font-size: 22px; font-weight: 800; }
+
+/* Claude */
+.ai { background: linear-gradient(0deg, var(--surface), var(--surface)); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.ai-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--accent); }
+.ai-badge i { width: 8px; height: 8px; border-radius: 2px; background: var(--accent); transform: rotate(45deg); display: inline-block; }
+.msgs { display: flex; flex-direction: column; gap: 10px; }
+.msg { max-width: 88%; padding: 10px 12px; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.ai { background: var(--sunk); align-self: flex-start; border-top-left-radius: 4px; }
+.msg.me { background: var(--accent-2); color: var(--surface); align-self: flex-end; border-top-right-radius: 4px; }
+.thinking { color: var(--ink-3); font-style: italic; }
+.plan-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.plan-list label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+.plan-list input { margin-top: 3px; accent-color: var(--accent); }
+
+/* Modal / toasts */
+.backdrop { position: fixed; inset: 0; background: rgba(15, 16, 20, .45); z-index: 50; display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px 16px; overflow-y: auto; }
+.modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 560px; padding: 20px; box-shadow: 0 24px 70px rgba(0,0,0,.3); }
+.modal.wide { max-width: 760px; }
+.modal-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.toasts { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 60; display: flex; flex-direction: column; gap: 8px; max-width: min(360px, calc(100vw - 32px)); }
+.toast { background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: 10px; box-shadow: var(--shadow); font-weight: 600; display: flex; gap: 10px; align-items: center; }
+.toast.bad { background: var(--bad); color: #fff; }
+.toast button { border: 0; background: none; color: inherit; text-decoration: underline; cursor: pointer; font-weight: 700; padding: 0; }
+.subtasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.subtasks li { display: flex; align-items: center; gap: 8px; }
+.subtasks input[type="checkbox"] { accent-color: var(--ok); width: 16px; height: 16px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+.swatch[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--surface) inset; }
+.emoji-btn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 17px; }
+.emoji-btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.tpl-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.tpl { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px; cursor: pointer; }
+.tpl:hover, .tpl[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.tpl b { display: block; margin-bottom: 2px; }
+.note { background: var(--warn-soft); border-radius: 10px; padding: 8px 12px; font-size: 13px; }
+</style>
+
+<div id="root"><main class="work"><p class="muted">Carregando o Rumo…</p></main></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
+
+<script id="core">
+/* ===== Núcleo sem DOM: datas, linguagem natural, recorrência, métricas, modelos e prompts do Claude ===== */
+const RUMO = (() => {
+  const pad = (n) => String(n).padStart(2, "0");
+  const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const parseYmd = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+  const addDays = (s, n) => { const d = parseYmd(s); d.setDate(d.getDate() + n); return ymd(d); };
+  const today = (now = new Date()) => ymd(now);
+  const dow = (s) => parseYmd(s).getDay();
+  const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+  const DIAS_LONGO = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+  const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const MESES_LONGO = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+  const diffDays = (a, b) => Math.round((parseYmd(a) - parseYmd(b)) / 86400000);
+  const fmtDay = (s) => { const d = parseYmd(s); return `${DIAS[d.getDay()]}, ${d.getDate()} ${MESES[d.getMonth()]}`; };
+  function relDay(s, t = today()) {
+    const n = diffDays(s, t);
+    if (n === 0) return "Hoje"; if (n === 1) return "Amanhã"; if (n === -1) return "Ontem";
+    if (n > 1 && n < 7) return DIAS_LONGO[dow(s)][0].toUpperCase() + DIAS_LONGO[dow(s)].slice(1);
+    return fmtDay(s);
+  }
+  const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  let seq = 0;
+  const uid = (p) => p + Date.now().toString(36) + (seq++).toString(36) + Math.random().toString(36).slice(2, 6);
+
+  const RECORRENCIA = { none: "Não repete", daily: "Todo dia", weekdays: "Dias úteis", weekly: "Toda semana", monthly: "Todo mês" };
+  function nextOccurrence(data, rec, t = today()) {
+    const base = data || t;
+    if (rec === "daily") return addDays(base, 1);
+    if (rec === "weekdays") { let d = addDays(base, 1); while (dow(d) === 0 || dow(d) === 6) d = addDays(d, 1); return d; }
+    if (rec === "weekly") return addDays(base, 7);
+    if (rec === "monthly") { const d = parseYmd(base); const day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + 1); const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); d.setDate(Math.min(day, last)); return ymd(d); }
+    return null;
+  }
+
+  // "Ligar pro João amanhã 14h #sdr p1 todo dia" → título + data/hora/projeto/prioridade/recorrência
+  const WD = [["domingo", 0], ["dom", 0], ["segunda-feira", 1], ["segunda", 1], ["seg", 1], ["terça-feira", 2], ["terca-feira", 2], ["terça", 2], ["terca", 2], ["ter", 2], ["quarta-feira", 3], ["quarta", 3], ["qua", 3], ["quinta-feira", 4], ["quinta", 4], ["qui", 4], ["sexta-feira", 5], ["sexta", 5], ["sex", 5], ["sábado", 6], ["sabado", 6], ["sáb", 6], ["sab", 6]];
+  function parseQuick(text, projects = [], t = today()) {
+    let s = " " + text + " ";
+    const out = { data: null, hora: null, projectId: null, prioridade: null, recorrencia: null };
+    const take = (re, fn) => { s = s.replace(re, (...m) => { const r = fn(...m); return r === false ? m[0] : " "; }); };
+    take(/\s#([\p{L}\p{N}_-]+)(?=\s)/iu, (_, name) => {
+      const n = norm(name).replace(/[-_]/g, "");
+      const p = projects.find((x) => norm(x.nome).replace(/[\s-_]/g, "").startsWith(n)) ?? projects.find((x) => norm(x.nome).includes(n));
+      if (!p) return false; out.projectId = p.id;
+    });
+    take(/\s(?:p|!)([1-4])(?=\s)/i, (_, n) => { out.prioridade = Number(n); });
+    take(/\s(todo dia|todos os dias|diariamente)(?=\s)/i, () => { out.recorrencia = "daily"; });
+    take(/\s(dias úteis|dias uteis|todo dia útil|todo dia util)(?=\s)/i, () => { out.recorrencia = "weekdays"; });
+    take(/\s(toda semana|todas as semanas|semanalmente)(?=\s)/i, () => { out.recorrencia = "weekly"; });
+    take(/\s(todo mês|todo mes|todos os meses|mensalmente)(?=\s)/i, () => { out.recorrencia = "monthly"; });
+    take(/\s(?:às |as )?(\d{1,2})(?:h(\d{2})?|:(\d{2}))(?=\s)/i, (_, h, m1, m2) => { const hh = Number(h), mm = Number(m1 || m2 || 0); if (hh > 23 || mm > 59) return false; out.hora = `${pad(hh)}:${pad(mm)}`; });
+    take(/\s(depois de amanhã|depois de amanha)(?=\s)/i, () => { out.data = addDays(t, 2); });
+    take(/\s(amanhã|amanha)(?=\s)/i, () => { out.data = addDays(t, 1); });
+    take(/\s(hoje)(?=\s)/i, () => { out.data = t; });
+    take(/\sem (\d{1,3}) dias?(?=\s)/i, (_, n) => { out.data = addDays(t, Number(n)); });
+    take(/\s(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?(?=\s)/, (_, d, m, y) => {
+      const td = parseYmd(t); let yy = y ? Number(y.length === 2 ? "20" + y : y) : td.getFullYear();
+      const dt = new Date(yy, Number(m) - 1, Number(d));
+      if (dt.getMonth() !== Number(m) - 1) return false;
+      if (!y && ymd(dt) < t) dt.setFullYear(yy + 1);
+      out.data = ymd(dt);
+    });
+    if (!out.data) for (const [w, n] of WD) {
+      // Só vira data com "na/no/próxima" antes ou no fim do texto ("Segunda reunião…" continua título).
+      const re = new RegExp(`\\s(?:(?:na|no|próxima|proxima|próximo|proximo)\\s${w}(?=\\s)|${w}(?=\\s*$))`, "i");
+      if (re.test(s)) { s = s.replace(re, " "); let d = addDays(t, 1); while (dow(d) !== n) d = addDays(d, 1); out.data = d; break; }
+    }
+    if (out.recorrencia && !out.data) out.data = t;
+    if (out.hora && !out.data) out.data = t;
+    out.titulo = s.replace(/\s+/g, " ").trim();
+    return out;
+  }
+
+  const PROJECT_COLORS = ["#d24e12", "#2f6fdb", "#1d7a44", "#8b3fd1", "#c2185b", "#0f8a8a", "#b8860b", "#5b6472"];
+  const DEFAULT_STAGES = () => [{ id: uid("s"), nome: "A fazer", final: false }, { id: uid("s"), nome: "Em andamento", final: false }, { id: uid("s"), nome: "Concluído", final: true }];
+  const INBOX = { id: "inbox", nome: "Caixa de entrada", cor: "#5b6472", icone: "📥", descricao: "Tudo que ainda não tem projeto.", stages: [{ id: "s-inbox-todo", nome: "A fazer", final: false }, { id: "s-inbox-doing", nome: "Em andamento", final: false }, { id: "s-inbox-done", nome: "Concluído", final: true }], plano: null, chat: [], ordem: -1, createdAt: 0 };
+  const firstOpenStage = (p) => p.stages.find((s) => !s.final) ?? p.stages[0];
+  const finalStage = (p) => p.stages.find((s) => s.final) ?? p.stages[p.stages.length - 1];
+
+  function newTask(fields, project, t = today()) {
+    return {
+      id: uid("t"), projectId: project.id, stageId: fields.stageId ?? firstOpenStage(project).id,
+      titulo: String(fields.titulo || "").trim(), notas: fields.notas ?? "", data: fields.data ?? null, hora: fields.hora ?? null,
+      duracao: fields.duracao ?? 30, prioridade: fields.prioridade ?? 4, recorrencia: fields.recorrencia ?? "none",
+      subtarefas: (fields.subtarefas || []).map((x) => (typeof x === "string" ? { id: uid("st"), t: x, ok: false } : x)),
+      concluida: false, concluidaEm: null, createdAt: Date.now(), ordem: Date.now(), gerouProxima: false,
+    };
+  }
+  // Concluir/desfazer: move para a etapa final; tarefas recorrentes geram a próxima ocorrência uma única vez.
+  function setDone(task, project, done, t = today()) {
+    const upd = { ...task, concluida: done, concluidaEm: done ? Date.now() : null };
+    const fs = finalStage(project), os = firstOpenStage(project);
+    if (done && fs) upd.stageId = fs.id;
+    if (!done && project.stages.find((s) => s.id === task.stageId)?.final) upd.stageId = os.id;
+    let next = null;
+    if (done && task.recorrencia && task.recorrencia !== "none" && !task.gerouProxima) {
+      upd.gerouProxima = true;
+      next = { ...task, id: uid("t"), stageId: os.id, data: nextOccurrence(task.data && task.data > t ? task.data : (task.data || t), task.recorrencia, t), concluida: false, concluidaEm: null, createdAt: Date.now(), ordem: Date.now(), gerouProxima: false, subtarefas: (task.subtarefas || []).map((x) => ({ ...x, ok: false })) };
+      if (next.data < t) { next.data = t; while (task.recorrencia === "weekdays" && (dow(next.data) === 0 || dow(next.data) === 6)) next.data = addDays(next.data, 1); }
+    }
+    return { task: upd, next };
+  }
+  function moveToStage(task, project, stageId, t = today()) {
+    const st = project.stages.find((s) => s.id === stageId);
+    if (!st) return { task, next: null };
+    if (st.final && !task.concluida) { const r = setDone(task, project, true, t); r.task.stageId = stageId; return r; }
+    if (!st.final && task.concluida) { const r = setDone(task, project, false, t); r.task.stageId = stageId; return r; }
+    return { task: { ...task, stageId }, next: null };
+  }
+
+  const doneDay = (task) => (task.concluidaEm ? ymd(new Date(task.concluidaEm)) : null);
+  function metrics(tasks, projects, settings, t = today()) {
+    const meta = Math.max(1, Number(settings.metaDiaria) || 5);
+    const byDay = new Map();
+    for (const k of tasks) if (k.concluida && k.concluidaEm) { const d = doneDay(k); byDay.set(d, (byDay.get(d) ?? 0) + 1); }
+    const doneToday = byDay.get(t) ?? 0;
+    const open = tasks.filter((k) => !k.concluida);
+    const overdue = open.filter((k) => k.data && k.data < t);
+    const dueToday = open.filter((k) => k.data === t);
+    const createdToday = tasks.filter((k) => ymd(new Date(k.createdAt)) === t).length;
+    let streak = 0;
+    for (let d = addDays(t, -1); (byDay.get(d) ?? 0) >= meta; d = addDays(d, -1)) streak++;
+    if (doneToday >= meta) streak++;
+    let best = 0, run = 0;
+    for (let i = 365; i >= 0; i--) { const d = addDays(t, -i); if ((byDay.get(d) ?? 0) >= meta) { run++; best = Math.max(best, run); } else run = 0; }
+    const serie = [];
+    for (let i = 13; i >= 0; i--) { const d = addDays(t, -i); serie.push({ dia: d, label: `${parseYmd(d).getDate()}/${parseYmd(d).getMonth() + 1}`, value: byDay.get(d) ?? 0 }); }
+    const last7 = serie.slice(-7).reduce((s, x) => s + x.value, 0);
+    const semana = serie.slice(-7).filter((x) => x.value >= meta).length;
+    const recent = tasks.filter((k) => k.concluida && k.data && k.concluidaEm && diffDays(t, doneDay(k)) <= 30);
+    const noPrazo = recent.filter((k) => doneDay(k) <= k.data).length;
+    const porProjeto = projects.map((p) => {
+      const ts = tasks.filter((k) => k.projectId === p.id);
+      return { p, abertas: ts.filter((k) => !k.concluida).length, atrasadas: ts.filter((k) => !k.concluida && k.data && k.data < t).length, feitas7: ts.filter((k) => k.concluida && k.concluidaEm && diffDays(t, doneDay(k)) < 7).length, total: ts.length };
+    }).filter((x) => x.total > 0);
+    const porPrioridade = [1, 2, 3, 4].map((n) => ({ label: `P${n}`, value: open.filter((k) => k.prioridade === n).length }));
+    return { meta, doneToday, abertas: open.length, overdue: overdue.length, dueToday: dueToday.length, createdToday, streak, best, serie, last7, semana, pctNoPrazo: recent.length ? noPrazo / recent.length : null, noPrazo, recentes: recent.length, porProjeto, porPrioridade };
+  }
+
+  // Modelos de projeto prontos (sem precisar do Claude).
+  function template(key, t = today()) {
+    const R = (titulo, recorrencia, hora, prioridade = 2) => ({ titulo, recorrencia, hora, prioridade });
+    const T = (titulo, emDias, prioridade = 3, subtarefas = []) => ({ titulo, emDias, prioridade, subtarefas });
+    const M = {
+      sdr: {
+        nome: "Prospecção SDR", icone: "📞", cor: "#d24e12",
+        descricao: "Meta de 10 reuniões por dia com ~60 leads diários, SLA de 5 minutos no primeiro contato e cadência de follow-up por ligação, WhatsApp e e-mail.",
+        etapas: ["A fazer", "Em andamento", "Aguardando retorno", "Concluído"],
+        rotina: [
+          R("Abertura: leads que chegaram fora do horário + follow-ups do dia", "weekdays", "08:00", 1),
+          R("Plantão: primeiro contato em até 5 min em cada lead novo", "weekdays", "08:30", 1),
+          R("Bloco de follow-ups da cadência (D1, D2, D4, D7)", "weekdays", "10:00", 2),
+          R("Segundo bloco de ligações (horário diferente da manhã)", "weekdays", "14:00", 2),
+          R("Confirmar por WhatsApp as reuniões de amanhã", "weekdays", "16:30", 1),
+          R("Fechamento: revisar pendências e contar reuniões do dia (meta 10)", "weekdays", "16:45", 2),
+          R("Revisar taxas da semana: contato, agendamento e no-show", "weekly", "16:00", 3),
+        ],
+        tarefas: [
+          T("Revisar o script: abertura, 3 perguntas de qualificação e fechamento com dois horários", 0, 2),
+          T("Atualizar templates de WhatsApp e e-mail da cadência", 1, 3, ["D0 WhatsApp pós-ligação", "D0 e-mail de apresentação", "D1 WhatsApp", "D4 e-mail", "D7 encerramento"]),
+          T("Mapear os horários em que os leads mais atendem", 3, 3),
+          T("Montar lista de objeções e respostas", 5, 3),
+        ],
+        dicas: ["Lead novo interrompe qualquer tarefa: os 5 primeiros minutos valem mais que qualquer follow-up.", "Sempre feche oferecendo dois horários, hoje ou amanhã.", "Confirme toda reunião por WhatsApp no fim do dia anterior."],
+      },
+      estudos: {
+        nome: "Estudos", icone: "📚", cor: "#2f6fdb", descricao: "Aprender um tema com constância.",
+        etapas: ["Para estudar", "Estudando", "Revisar", "Dominado"],
+        rotina: [R("Sessão de estudo de 50 minutos", "weekdays", "07:00", 2), R("Revisão da semana", "weekly", "10:00", 3)],
+        tarefas: [T("Definir o objetivo e a data da prova ou entrega", 0, 1), T("Separar o material e dividir em módulos", 1, 2)],
+        dicas: ["Sessões curtas e diárias vencem maratonas de fim de semana."],
+      },
+      pessoal: {
+        nome: "Pessoal", icone: "🏠", cor: "#1d7a44", descricao: "Casa, saúde e compromissos.",
+        etapas: ["A fazer", "Esta semana", "Feito"],
+        rotina: [R("Planejar a semana", "weekly", "19:00", 2), R("Exercício", "weekdays", "06:30", 2)],
+        tarefas: [T("Listar contas e vencimentos do mês", 0, 2)],
+        dicas: ["Revise a lista toda noite em 5 minutos: amanhã começa com clareza."],
+      },
+      branco: { nome: "", icone: "🎯", cor: PROJECT_COLORS[1], descricao: "", etapas: ["A fazer", "Em andamento", "Concluído"], rotina: [], tarefas: [], dicas: [] },
+    };
+    return JSON.parse(JSON.stringify(M[key] || M.branco));
+  }
+  // Converte um plano (modelo ou vindo do Claude) em projeto + tarefas.
+  function buildProject(info, plano, sel = {}, t = today()) {
+    const etapas = (plano.etapas?.length >= 2 ? plano.etapas : ["A fazer", "Em andamento", "Concluído"]).slice(0, 8);
+    const stages = etapas.map((nome, i) => ({ id: uid("s"), nome: String(nome).slice(0, 40), final: i === etapas.length - 1 }));
+    const project = { id: uid("p"), nome: info.nome, cor: info.cor, icone: info.icone, descricao: info.descricao || plano.resumo || "", stages, plano: { resumo: plano.resumo || "", dicas: plano.dicas || [], mensagem: plano.mensagem || "" }, chat: info.chat || [], ordem: Date.now(), createdAt: Date.now() };
+    const tasks = [];
+    (plano.rotina || []).forEach((r, i) => {
+      if (sel.rotina && !sel.rotina[i]) return;
+      const rec = RECORRENCIA[r.recorrencia] ? r.recorrencia : "daily";
+      let d = t; if (rec === "weekdays") while (dow(d) === 0 || dow(d) === 6) d = addDays(d, 1);
+      tasks.push(newTask({ titulo: r.titulo, recorrencia: rec, hora: /^\d{2}:\d{2}$/.test(r.hora || "") ? r.hora : null, data: d, prioridade: clampP(r.prioridade ?? 2) }, project, t));
+    });
+    (plano.tarefas || []).forEach((k, i) => {
+      if (sel.tarefas && !sel.tarefas[i]) return;
+      tasks.push(newTask({ titulo: k.titulo, data: Number.isFinite(Number(k.emDias)) ? addDays(t, Math.max(0, Math.round(Number(k.emDias)))) : null, prioridade: clampP(k.prioridade ?? 3), subtarefas: (k.subtarefas || []).slice(0, 10).map(String) }, project, t));
+    });
+    tasks.forEach((k, i) => (k.ordem = Date.now() + i));
+    return { project, tasks };
+  }
+  const clampP = (n) => Math.min(4, Math.max(1, Math.round(Number(n) || 4)));
+
+  // Prompts para o Claude
+  function interviewInstructions(nome, t = today()) {
+    return `Você é o assistente de organização do app "Rumo", um gerenciador de projetos e tarefas com quadro kanban, calendário e metas diárias. Seu trabalho: entender o projeto da pessoa e propor como ela deve se organizar para executar com disciplina. Fale em português do Brasil, de forma direta, prática e encorajadora.
+
+Fluxo: a pessoa descreve o projeto. Se faltar algo essencial (objetivo concreto, prazo ou tempo disponível por dia/semana), faça UMA pergunta curta por vez, no máximo 2 perguntas no total. Depois disso, entregue o plano.
+
+Responda SOMENTE com um JSON em um destes dois formatos:
+{"tipo":"pergunta","mensagem":"sua pergunta"}
+{"tipo":"plano","mensagem":"3 a 5 frases explicando como se organizar","plano":{"resumo":"uma frase com o objetivo","etapas":["A fazer","Em andamento","Concluído"],"rotina":[{"titulo":"hábito ou bloco fixo","recorrencia":"daily|weekdays|weekly|monthly","hora":"HH:MM","prioridade":2}],"tarefas":[{"titulo":"começa com verbo","emDias":0,"prioridade":1,"subtarefas":["passo curto"]}],"dicas":["dica prática"]}}
+
+Regras do plano: 3 a 6 etapas de kanban adequadas ao projeto (a última significa concluído); 2 a 6 itens de rotina que criem disciplina (blocos de horário fixos); 5 a 12 tarefas concretas com prazo realista em dias a partir de hoje (emDias) e prioridade de 1 (mais importante) a 4; no máximo 4 dicas.
+Hoje é ${fmtDay(t)} (${t}). Nome do projeto: "${nome}".`;
+  }
+  function normalizePlan(j) {
+    const p = j && typeof j === "object" ? j.plano ?? j : {};
+    const arr = (x) => (Array.isArray(x) ? x : []);
+    return {
+      resumo: String(p.resumo || "").slice(0, 300), mensagem: String(j?.mensagem || "").slice(0, 1200),
+      etapas: arr(p.etapas).map((x) => String(x).trim()).filter(Boolean).slice(0, 8),
+      rotina: arr(p.rotina).filter((r) => r && r.titulo).slice(0, 8).map((r) => ({ titulo: String(r.titulo).slice(0, 140), recorrencia: RECORRENCIA[r.recorrencia] ? r.recorrencia : "daily", hora: /^\d{1,2}:\d{2}$/.test(r.hora || "") ? r.hora.padStart(5, "0") : null, prioridade: clampP(r.prioridade ?? 2) })),
+      tarefas: arr(p.tarefas).filter((k) => k && k.titulo).slice(0, 15).map((k) => ({ titulo: String(k.titulo).slice(0, 160), emDias: Math.max(0, Math.round(Number(k.emDias) || 0)), prioridade: clampP(k.prioridade ?? 3), subtarefas: arr(k.subtarefas).map(String).slice(0, 8) })),
+      dicas: arr(p.dicas).map(String).slice(0, 5),
+    };
+  }
+  function dayPlanPrompt(list, settings, projects, t = today(), nowHM = "08:00") {
+    const pn = (id) => projects.find((p) => p.id === id)?.nome ?? "Caixa de entrada";
+    const linhas = list.slice(0, 60).map((k) => `- id=${k.id} | "${k.titulo}" | projeto: ${pn(k.projectId)} | prioridade P${k.prioridade} | ${k.data < t ? `ATRASADA desde ${k.data}` : "para hoje"}${k.hora ? ` | horário marcado ${k.hora}` : ""} | ~${k.duracao || 30} min${k.recorrencia !== "none" ? " | rotina" : ""}`).join("\n");
+    return `Você organiza o dia de uma pessoa no app de tarefas "Rumo". Monte um plano realista para hoje (${fmtDay(t)}), começando a partir de ${nowHM}, dentro do expediente de ${settings.inicio} às ${settings.fim}. Respeite horários já marcados, coloque as prioridades mais altas e as atrasadas mais cedo, agrupe tarefas parecidas e deixe pequenas pausas. Se não couber tudo, diga o que adiar.
+
+Tarefas:
+${linhas}
+
+Responda SOMENTE com JSON: {"resumo":"2 frases sobre o foco do dia","blocos":[{"id":"id da tarefa","inicio":"HH:MM","motivo":"até 10 palavras"}],"adiar":["id"],"dica":"uma dica de disciplina"}`;
+  }
+  function projectChatInstructions(project, tasks, t = today()) {
+    const st = (id) => project.stages.find((s) => s.id === id)?.nome ?? "";
+    const abertas = tasks.filter((k) => !k.concluida).slice(0, 50).map((k) => `- "${k.titulo}" (${st(k.stageId)}${k.data ? `, prazo ${k.data}` : ""}, P${k.prioridade}${k.recorrencia !== "none" ? ", rotina" : ""})`).join("\n") || "(nenhuma)";
+    const feitas = tasks.filter((k) => k.concluida).length;
+    return `Você é o assistente do app de tarefas "Rumo" e está ajudando no projeto "${project.nome}". Seja direto, prático e em português do Brasil.
+Descrição: ${project.descricao || "(sem descrição)"}
+${project.plano?.resumo ? `Objetivo: ${project.plano.resumo}\n` : ""}Etapas do quadro: ${project.stages.map((s) => s.nome).join(" → ")}
+Tarefas abertas:
+${abertas}
+Tarefas concluídas: ${feitas}. Hoje é ${fmtDay(t)} (${t}).
+
+Responda SOMENTE com JSON: {"mensagem":"sua resposta","tarefas":[{"titulo":"...","emDias":0,"prioridade":2}]}. Inclua "tarefas" apenas quando sugerir tarefas novas concretas (no máximo 8); caso contrário use [].`;
+  }
+
+  return { pad, ymd, parseYmd, addDays, today, dow, DIAS, DIAS_LONGO, MESES, MESES_LONGO, diffDays, fmtDay, relDay, norm, uid, RECORRENCIA, nextOccurrence, parseQuick, PROJECT_COLORS, DEFAULT_STAGES, INBOX, firstOpenStage, finalStage, newTask, setDone, moveToStage, doneDay, metrics, template, buildProject, interviewInstructions, normalizePlan, dayPlanPrompt, projectChatInstructions, clampP };
+})();
+if (typeof window !== "undefined") window.RUMO = RUMO;
+</script>
+
+<script id="app">
+(() => {
+const R = window.RUMO;
+if (!window.React || !window.htm) { document.getElementById("root").innerHTML = '<main class="work"><p>Não foi possível carregar a interface. Recarregue a página.</p></main>'; return; }
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+const html = htm.bind(React.createElement);
+
+/* ===== Armazenamento: banco do artefato (db) com fallback no navegador ===== */
+const LS = "rumo-v1";
+const DEFAULT_SETTINGS = { nome: "", metaDiaria: 5, inicio: "08:00", fim: "18:00" };
+const store = {
+  mode: "carregando", ready: false, db: null, projects: new Map(), tasks: new Map(), settings: null,
+  pending: new Map(), chains: new Map(), subs: new Set(), ver: 0,
+  emit() { this.ver++; this.subs.forEach((f) => f(this.ver)); },
+  merged(kind) { const m = new Map(this[kind]); for (const [k, v] of this.pending) if (k.startsWith(kind + "/")) { const id = k.slice(kind.length + 1); v === null ? m.delete(id) : m.set(id, v); } return m; },
+  projectList() { const m = this.merged("projects"); if (!m.has("inbox")) m.set("inbox", R.INBOX); return [...m.values()].filter((p) => !p.arquivado).sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)); },
+  project(id) { return this.merged("projects").get(id) ?? (id === "inbox" ? R.INBOX : null); },
+  taskList() { return [...this.merged("tasks").values()]; },
+  get cfg() { return { ...DEFAULT_SETTINGS, ...(this.settings || {}) }; },
+  async init() {
+    let db = null;
+    try { db = window.claude?.use ? await window.claude.use("db") : null; } catch { db = null; }
+    if (db) {
+      this.db = db; this.mode = "db";
+      let n = 0; const first = () => { if (++n === 3) this.ready = true; this.emit(); };
+      const err = (e) => { this.error = e?.message || "Falha ao ler os dados."; this.emit(); };
+      let a = 0, b = 0, c = 0;
+      db.collection("projects").onSnapshot((s) => { const m = new Map(); s.docs.forEach((d) => d.exists && m.set(d.id, d.data())); this.projects = m; a++ ? this.emit() : first(); }, err);
+      db.collection("tasks").onSnapshot((s) => { const m = new Map(); s.docs.forEach((d) => d.exists && m.set(d.id, d.data())); this.tasks = m; b++ ? this.emit() : first(); }, err);
+      db.doc("settings/main").onSnapshot((d) => { this.settings = d.exists ? d.data() : null; c++ ? this.emit() : first(); }, err);
+    } else {
+      this.mode = "local";
+      try { const j = JSON.parse(localStorage.getItem(LS) || "null"); if (j) { (j.projects || []).forEach((p) => this.projects.set(p.id, p)); (j.tasks || []).forEach((t) => this.tasks.set(t.id, t)); this.settings = j.settings || null; } } catch {}
+      this.ready = true; this.emit();
+    }
+  },
+  persist() { if (this.mode === "local") try { localStorage.setItem(LS, JSON.stringify({ projects: [...this.projects.values()], tasks: [...this.tasks.values()], settings: this.settings })); } catch {} },
+  write(path, data) {
+    const prev = this.chains.get(path) || Promise.resolve();
+    const run = async () => {
+      const ref = this.db.doc(path);
+      for (let i = 0; i < 3; i++) {
+        try { data === null ? await ref.delete() : await ref.set(data); return; }
+        catch (e) { if ((e?.code === "unavailable" || e?.code === "resource_exhausted") && i < 2) { await new Promise((r) => setTimeout(r, 500 + Math.random() * 800 * (i + 1))); continue; } throw e; }
+      }
+    };
+    const p = prev.then(run, run); this.chains.set(path, p.catch(() => {})); return p;
+  },
+  async put(kind, id, data) {
+    const plain = data === null ? null : JSON.parse(JSON.stringify(data));
+    if (this.mode === "local") { plain === null ? this[kind].delete(id) : this[kind].set(id, plain); this.persist(); this.emit(); return; }
+    const key = kind + "/" + id; this.pending.set(key, plain); this.emit();
+    try { await this.write(key, plain); }
+    catch (e) { toast(e?.code === "quota_exceeded" ? "O banco está cheio. Apague tarefas concluídas antigas." : "Não foi possível salvar: " + (e?.message || e), "bad"); }
+    finally { if (this.pending.get(key) === plain) this.pending.delete(key); this.emit(); }
+  },
+  saveTask(t) { if (t.projectId === "inbox" && !this.merged("projects").has("inbox")) this.put("projects", "inbox", R.INBOX); return this.put("tasks", t.id, t); },
+  deleteTask(id) { return this.put("tasks", id, null); },
+  saveProject(p) { return this.put("projects", p.id, p); },
+  async deleteProject(id) { for (const t of this.taskList().filter((x) => x.projectId === id)) await this.put("tasks", t.id, null); await this.put("projects", id, null); },
+  async saveSettings(s) { this.settings = { ...this.cfg, ...s }; if (this.mode === "local") { this.persist(); this.emit(); return; } this.emit(); try { await this.write("settings/main", this.settings); } catch (e) { toast("Não foi possível salvar: " + (e?.message || e), "bad"); } },
+};
+function useStore() { const [, set] = useState(0); useEffect(() => { const f = (v) => set(v); store.subs.add(f); return () => store.subs.delete(f); }, []); return store; }
+function useToday() { const [t, set] = useState(R.today()); useEffect(() => { const id = setInterval(() => set(R.today()), 30000); return () => clearInterval(id); }, []); return t; }
+
+/* Claude (capability sample) */
+let samplePromise = null;
+const getSample = () => (samplePromise ??= (window.claude?.use ? window.claude.use("sample").catch(() => null) : Promise.resolve(null)));
+const AI_ERR = { not_granted: "Você não permitiu o uso do Claude nesta página.", sampling_disabled: "O Claude não está disponível para esta conta.", rate_limited: "Muitas perguntas seguidas. Tente de novo em instantes.", invalid_json: "O Claude respondeu fora do formato. Tente de novo.", refused: "O Claude não quis responder a isso. Reformule o pedido.", session_expired: "Sua sessão expirou. Entre de novo no claude.ai.", upstream_error: "Falha de conexão com o Claude. Tente de novo." };
+const aiError = (e) => AI_ERR[e?.code] || "Não foi possível falar com o Claude agora.";
+function useAI() { const [ok, set] = useState(null); useEffect(() => { getSample().then((s) => set(!!s)); }, []); return ok; }
+
+/* Toasts */
+const toastSubs = new Set();
+function toast(msg, kind = "", action = null) { const t = { id: Math.random(), msg, kind, action }; toastSubs.forEach((f) => f(t)); }
+function Toasts() {
+  const [list, setList] = useState([]);
+  useEffect(() => { const f = (t) => { setList((l) => [...l, t]); setTimeout(() => setList((l) => l.filter((x) => x.id !== t.id)), t.action ? 6000 : 3200); }; toastSubs.add(f); return () => toastSubs.delete(f); }, []);
+  return html`<div class="toasts" role="status" aria-live="polite">${list.map((t) => html`<div key=${t.id} class=${"toast " + t.kind}><span>${t.msg}</span>${t.action && html`<button onClick=${() => { t.action.fn(); setList((l) => l.filter((x) => x.id !== t.id)); }}>${t.action.label}</button>`}</div>`)}</div>`;
+}
+const typing = (e) => { const t = e.target; return !!t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName)); };
+const modalOpen = () => !!document.querySelector("[data-modal]");
+const pctTxt = (v) => (v == null ? "—" : `${Math.round(v * 100)}%`);
+
+/* Ações de tarefa (com desfazer) */
+function toggleDone(task) {
+  const p = store.project(task.projectId) ?? R.INBOX;
+  const { task: upd, next } = R.setDone(task, p, !task.concluida);
+  store.saveTask(upd); if (next) store.saveTask(next);
+  if (upd.concluida) {
+    const c = R.metrics(store.taskList(), [], store.cfg);
+    toast(c.doneToday >= c.meta ? `✔ Concluída. Meta do dia batida (${c.doneToday}/${c.meta})!` : `✔ Concluída (${c.doneToday}/${c.meta} hoje)`, "", { label: "Desfazer", fn: () => { store.saveTask(task); if (next) store.deleteTask(next.id); } });
+  }
+}
+function googleLink(t) {
+  if (!t.data) return null;
+  const stamp = (d) => `${R.ymd(d).replace(/-/g, "")}T${R.pad(d.getHours())}${R.pad(d.getMinutes())}00`;
+  let dates;
+  if (t.hora) { const [h, m] = t.hora.split(":").map(Number); const s = R.parseYmd(t.data); s.setHours(h, m, 0, 0); const e = new Date(s.getTime() + (t.duracao || 30) * 60000); dates = `${stamp(s)}/${stamp(e)}`; }
+  else dates = `${t.data.replace(/-/g, "")}/${R.addDays(t.data, 1).replace(/-/g, "")}`;
+  const p = store.project(t.projectId);
+  const details = [t.notas, p ? `Projeto: ${p.nome}` : "", "Criado no Rumo"].filter(Boolean).join("\n");
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(t.titulo)}&dates=${dates}&details=${encodeURIComponent(details)}`;
+}
+
+/* ===== Peças ===== */
+function Modal({ title, onClose, wide, children }) {
+  useEffect(() => { const k = (e) => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } }; window.addEventListener("keydown", k, true); return () => window.removeEventListener("keydown", k, true); }, [onClose]);
+  return html`<div class="backdrop" data-modal onMouseDown=${onClose}><div class=${"modal" + (wide ? " wide" : "")} role="dialog" aria-modal="true" aria-label=${title} onMouseDown=${(e) => e.stopPropagation()}>
+    <div class="modal-h"><h2>${title}</h2><button class="btn ghost" onClick=${onClose} aria-label="Fechar">✕</button></div>${children}</div></div>`;
+}
+function Confirm({ label, confirmLabel, onConfirm, className = "btn danger sm" }) {
+  const [arm, setArm] = useState(false);
+  useEffect(() => { if (!arm) return; const t = setTimeout(() => setArm(false), 4000); return () => clearTimeout(t); }, [arm]);
+  return html`<button class=${className} onClick=${() => (arm ? (setArm(false), onConfirm()) : setArm(true))}>${arm ? confirmLabel : label}</button>`;
+}
+const PRIO_LABEL = { 1: "P1 urgente", 2: "P2 alta", 3: "P3 média", 4: "P4 baixa" };
+function DueChip({ t, today }) {
+  if (!t.data) return null;
+  const cls = !t.concluida && t.data < today ? "chip late" : t.data === today ? "chip today" : "chip";
+  return html`<span class=${cls}>📅 ${R.relDay(t.data, today)}${t.hora ? " " + t.hora : ""}</span>`;
+}
+function TaskMeta({ t, today, showProject = true }) {
+  const p = showProject ? store.project(t.projectId) : null;
+  const sub = t.subtarefas?.length ? `☑ ${t.subtarefas.filter((s) => s.ok).length}/${t.subtarefas.length}` : null;
+  return html`<div class="meta"><${DueChip} t=${t} today=${today} />
+    ${t.recorrencia !== "none" && html`<span title=${R.RECORRENCIA[t.recorrencia]}>🔁 ${R.RECORRENCIA[t.recorrencia]}</span>`}
+    ${sub && html`<span>${sub}</span>`}
+    ${t.notas && html`<span title="Tem anotações">📝</span>`}
+    ${p && html`<span class="row" style=${{ gap: 5 }}><span class="dot" style=${{ background: p.cor }}></span>${p.nome}</span>`}</div>`;
+}
+function TaskRow({ t, today, open, showProject }) {
+  return html`<li class=${"titem" + (t.concluida ? " done" : "")}>
+    <button class=${"check p" + t.prioridade + (t.concluida ? " on" : "")} onClick=${() => toggleDone(t)} aria-label=${t.concluida ? "Reabrir tarefa" : "Concluir tarefa"} title=${PRIO_LABEL[t.prioridade]}>✓</button>
+    <div class="body" onClick=${() => open(t.id)}><div class="title">${t.titulo}</div><${TaskMeta} t=${t} today=${today} showProject=${showProject} /></div></li>`;
+}
+function QuickAdd({ defaults = {}, placeholder = "Nova tarefa… ex.: Ligar para Ana amanhã 14h #sdr p1", autoFocus, onAdded }) {
+  const st = useStore();
+  const [v, setV] = useState("");
+  const ref = useRef(null);
+  const projects = st.projectList();
+  const parsed = useMemo(() => R.parseQuick(v, projects), [v, st.ver]);
+  const pid = parsed.projectId ?? defaults.projectId ?? "inbox";
+  const p = store.project(pid) ?? R.INBOX;
+  function add(e) {
+    e.preventDefault();
+    if (!parsed.titulo) return;
+    const t = R.newTask({ ...defaults, ...Object.fromEntries(Object.entries(parsed).filter(([, x]) => x != null)), stageId: parsed.projectId && parsed.projectId !== defaults.projectId ? undefined : defaults.stageId }, p);
+    store.saveTask(t); setV(""); toast("Tarefa criada."); onAdded?.(t);
+  }
+  const hint = [parsed.data && `📅 ${R.relDay(parsed.data)}${parsed.hora ? " " + parsed.hora : ""}`, parsed.recorrencia && `🔁 ${R.RECORRENCIA[parsed.recorrencia]}`, parsed.prioridade && `P${parsed.prioridade}`, parsed.projectId && `# ${p.nome}`].filter(Boolean);
+  return html`<form class="quick" onSubmit=${add}>
+    <div class="quick-box"><span style=${{ color: "var(--accent)", fontWeight: 800, fontSize: 18 }}>+</span>
+      <input ref=${ref} id=${"quick-" + (defaults.projectId || "g") + (defaults.stageId || "") + (defaults.data || "")} value=${v} onInput=${(e) => setV(e.target.value)} placeholder=${placeholder} autoFocus=${autoFocus} aria-label="Nova tarefa" autocomplete="off" />
+      <button class="btn primary sm" disabled=${!parsed.titulo}>Adicionar</button></div>
+    ${hint.length > 0 && html`<div class="chips">${hint.map((h) => html`<span key=${h} class="chip">${h}</span>`)}</div>`}
+  </form>`;
+}
+function Bars({ data, goal, goalLabel = "meta", fmtTip }) {
+  const [hover, setHover] = useState(null);
+  const W = 620, H = 220, pl = 28, pr = 10, pt = 20, pb = 26;
+  const maxV = Math.max(1, goal || 0, ...data.map((d) => d.value));
+  const step = maxV <= 5 ? 1 : maxV <= 12 ? 2 : Math.ceil(maxV / 5);
+  const top = Math.ceil(maxV / step) * step;
+  const y = (v) => pt + (H - pt - pb) * (1 - v / top);
+  const bw = (W - pl - pr) / data.length, barW = Math.min(30, bw * 0.62);
+  const ticks = []; for (let v = 0; v <= top; v += step) ticks.push(v);
+  return html`<div class="chart"><svg viewBox=${`0 0 ${W} ${H}`} role="img" aria-label="Gráfico de barras">
+    ${ticks.map((v) => html`<g key=${v}><line x1=${pl} x2=${W - pr} y1=${y(v)} y2=${y(v)} stroke="var(--grid)" /><text x=${pl - 6} y=${y(v) + 4} text-anchor="end">${v}</text></g>`)}
+    ${data.map((d, i) => { const x = pl + i * bw + (bw - barW) / 2, y0 = y(0), yv = y(d.value), h = y0 - yv, r = Math.min(4, h);
+      const path = h > 0 ? `M${x},${y0} V${yv + r} Q${x},${yv} ${x + r},${yv} H${x + barW - r} Q${x + barW},${yv} ${x + barW},${yv + r} V${y0} Z` : "";
+      return html`<g key=${i} onMouseEnter=${() => setHover(i)} onMouseLeave=${() => setHover(null)}><rect x=${pl + i * bw} y=${pt} width=${bw} height=${H - pt - pb} fill="transparent" />
+        ${path && html`<path d=${path} fill=${hover === i ? "var(--bar-hover)" : "var(--bar)"} />`}
+        ${d.value > 0 && html`<text class="val" x=${x + barW / 2} y=${yv - 5} text-anchor="middle">${d.value}</text>`}
+        <text x=${x + barW / 2} y=${H - 8} text-anchor="middle">${d.label}</text></g>`; })}
+    ${goal ? html`<g><line x1=${pl} x2=${W - pr} y1=${y(goal)} y2=${y(goal)} stroke="var(--accent)" stroke-dasharray="4 4" /><text x=${W - pr} y=${y(goal) - 5} text-anchor="end">${goalLabel}</text></g>` : null}
+  </svg>${hover != null && html`<div class="tip" style=${{ left: `${((pl + hover * bw + bw / 2) / W) * 100}%`, top: `${(y(data[hover].value) / H) * 100}%` }}>${fmtTip ? fmtTip(data[hover]) : data[hover].value}</div>`}</div>`;
+}
+function Ring({ value, max }) {
+  const pct = Math.min(1, value / Math.max(1, max)), r = 46, c = 2 * Math.PI * r;
+  return html`<div class="ring"><svg width="108" height="108" viewBox="0 0 108 108"><circle cx="54" cy="54" r=${r} fill="none" stroke="var(--line-2)" stroke-width="10" />
+    ${pct > 0 && html`<circle cx="54" cy="54" r=${r} fill="none" stroke=${pct >= 1 ? "var(--ok)" : "var(--accent)"} stroke-width="10" stroke-linecap="round" stroke-dasharray=${`${c * pct} ${c}`} />`}</svg>
+    <div class="c"><div><b>${value}</b><div class="small muted">de ${max}</div></div></div></div>`;
+}
+
+/* ===== App ===== */
+function App() {
+  const st = useStore();
+  const [route, setRoute] = useState({ view: "hoje" });
+  const [modal, setModal] = useState(null);
+  const [taskId, setTaskId] = useState(null);
+  const today = useToday();
+  const go = useCallback((view, extra = {}) => { setRoute({ view, ...extra }); window.scrollTo(0, 0); }, []);
+  useEffect(() => {
+    const k = (e) => {
+      if (typing(e) || e.metaKey || e.ctrlKey || e.altKey || modalOpen()) return;
+      if (e.key === "n" || e.key === "q") { e.preventDefault(); const f = () => document.querySelector(".quick-box input")?.focus(); if (document.querySelector(".quick-box input")) f(); else { go("hoje"); setTimeout(f, 50); } }
+      else if (e.key === "?") setModal("help");
+      else if (e.key === "h") go("hoje"); else if (e.key === "c") go("calendario"); else if (e.key === "d") go("dashboard"); else if (e.key === "p") go("proximos");
+    };
+    window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
+  }, [go]);
+  const tasks = st.taskList();
+  const projects = st.projectList();
+  const cnt = (f) => tasks.filter((t) => !t.concluida && f(t)).length;
+  const nToday = cnt((t) => t.data && t.data <= today);
+  const openTask = (id) => setTaskId(id);
+
+  let body;
+  if (!st.ready) body = html`<p class="muted">Carregando seus projetos…</p>`;
+  else if (route.view === "projeto") body = html`<${ProjectView} key=${route.id} id=${route.id} tab=${route.tab} go=${go} open=${openTask} today=${today} openModal=${setModal} />`;
+  else if (route.view === "calendario") body = html`<${CalendarView} open=${openTask} today=${today} />`;
+  else if (route.view === "dashboard") body = html`<${DashboardView} today=${today} openModal=${setModal} />`;
+  else if (route.view === "proximos") body = html`<${UpcomingView} open=${openTask} today=${today} />`;
+  else body = html`<${TodayView} open=${openTask} today=${today} go=${go} openModal=${setModal} />`;
+
+  const Nav = ({ v, ico, label, n, extra, cur }) => html`<button class="nav-btn" aria-current=${cur ? "page" : undefined} onClick=${() => go(v, extra)}><span class="ico">${ico}</span><span class="lbl">${label}</span>${n ? html`<span class="cnt">${n}</span>` : null}</button>`;
+  return html`<div class="shell">
+    <aside class="side">
+      <div class="logo"><i></i>Rumo</div>
+      <${Nav} v="hoje" ico="☀️" label="Hoje" n=${nToday} cur=${route.view === "hoje"} />
+      <${Nav} v="proximos" ico="🗓️" label="Próximos 7 dias" cur=${route.view === "proximos"} />
+      <${Nav} v="calendario" ico="📆" label="Calendário" cur=${route.view === "calendario"} />
+      <${Nav} v="dashboard" ico="📊" label="Dashboard" cur=${route.view === "dashboard"} />
+      <div class="side-sep"><span class="eyebrow side-projects-title">Projetos</span><button class="btn ghost sm" onClick=${() => setModal("novo-projeto")} aria-label="Novo projeto" title="Novo projeto">＋</button></div>
+      ${projects.map((p) => html`<${Nav} key=${p.id} v="projeto" extra=${{ id: p.id }} ico=${p.icone || "•"} label=${p.nome} n=${cnt((t) => t.projectId === p.id)} cur=${route.view === "projeto" && route.id === p.id} />`)}
+      <button class="nav-btn" onClick=${() => setModal("novo-projeto")}><span class="ico" style=${{ color: "var(--accent)" }}>＋</span><span class="lbl" style=${{ color: "var(--accent)" }}>Novo projeto</span></button>
+    </aside>
+    <main class="work">
+      ${st.mode === "local" && st.ready && html`<p class="note" style=${{ marginTop: 0 }}>Modo local: os dados ficam só neste navegador.</p>`}
+      ${st.error && html`<p class="note" style=${{ marginTop: 0 }}>${st.error}</p>`}
+      ${body}
+    </main>
+    ${taskId && html`<${TaskModal} id=${taskId} onClose=${() => setTaskId(null)} today=${today} />`}
+    ${modal === "novo-projeto" && html`<${NewProject} onClose=${() => setModal(null)} go=${go} />`}
+    ${modal === "ajustes" && html`<${Settings} onClose=${() => setModal(null)} />`}
+    ${modal === "help" && html`<${Help} onClose=${() => setModal(null)} />`}
+    ${modal?.editProject && html`<${EditProject} id=${modal.editProject} onClose=${() => setModal(null)} go=${go} />`}
+    <${Toasts} />
+  </div>`;
+}
+
+/* ===== Hoje ===== */
+function TodayView({ open, today, go, openModal }) {
+  const st = useStore();
+  const cfg = st.cfg;
+  const tasks = st.taskList();
+  const m = R.metrics(tasks, st.projectList(), cfg, today);
+  const order = (a, b) => (a.hora || "99") .localeCompare(b.hora || "99") || a.prioridade - b.prioridade || a.ordem - b.ordem;
+  const atrasadas = tasks.filter((t) => !t.concluida && t.data && t.data < today).sort((a, b) => a.data.localeCompare(b.data) || a.prioridade - b.prioridade);
+  const hoje = tasks.filter((t) => !t.concluida && t.data === today).sort(order);
+  const feitas = tasks.filter((t) => t.concluida && R.doneDay(t) === today).sort((a, b) => b.concluidaEm - a.concluidaEm);
+  const [showDone, setShowDone] = useState(false);
+  const h = new Date().getHours();
+  const saud = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+  const empty = st.taskList().length === 0 && st.projectList().length <= 1;
+  return html`<div class="stack">
+    <div class="head"><div><h1>${saud}${cfg.nome ? ", " + cfg.nome : ""}</h1><div class="sub">${R.DIAS_LONGO[new Date().getDay()]}, ${new Date().getDate()} de ${R.MESES_LONGO[new Date().getMonth()]}</div></div>
+      <button class="btn sm" style=${{ marginLeft: "auto" }} onClick=${() => openModal("ajustes")}>⚙ Meta e horário</button></div>
+    <div class="today-top">
+      <div class="stack">
+        <${QuickAdd} defaults=${{ data: today }} placeholder="O que precisa ser feito hoje? ex.: Enviar proposta 15h #sdr p1" />
+        ${empty && html`<div class="card"><h2>Comece por um projeto</h2><p style=${{ margin: "6px 0 12px" }}>Crie um projeto e o Claude te pergunta sobre ele para montar etapas, rotina e primeiras tarefas.</p><button class="btn primary" onClick=${() => openModal("novo-projeto")}>＋ Criar projeto com o Claude</button></div>`}
+        <${DayPlan} list=${[...atrasadas, ...hoje]} cfg=${cfg} today=${today} />
+        ${atrasadas.length > 0 && html`<section><div class="sec-h" style=${{ color: "var(--bad)" }}>Atrasadas <span class="n">${atrasadas.length}</span>
+          <button class="btn ghost sm" style=${{ marginLeft: "auto" }} onClick=${() => { atrasadas.forEach((t) => store.saveTask({ ...t, data: today })); toast(`${atrasadas.length} tarefas trazidas para hoje.`); }}>Trazer tudo para hoje</button></div>
+          <ul class="tlist">${atrasadas.map((t) => html`<${TaskRow} key=${t.id} t=${t} today=${today} open=${open} />`)}</ul></section>`}
+        <section><div class="sec-h">Hoje <span class="n">${hoje.length}</span></div>
+          ${hoje.length === 0 ? html`<div class="empty">${atrasadas.length ? "Nada novo para hoje. Resolva as atrasadas acima." : "Nada planejado para hoje. Adicione uma tarefa acima ou puxe algo dos próximos dias."}</div>` : html`<ul class="tlist">${hoje.map((t) => html`<${TaskRow} key=${t.id} t=${t} today=${today} open=${open} />`)}</ul>`}</section>
+        ${feitas.length > 0 && html`<section><button class="sec-h btn link" style=${{ color: "var(--ink-3)" }} onClick=${() => setShowDone(!showDone)}>${showDone ? "▾" : "▸"} Concluídas hoje <span class="n">${feitas.length}</span></button>
+          ${showDone && html`<ul class="tlist">${feitas.map((t) => html`<${TaskRow} key=${t.id} t=${t} today=${today} open=${open} />`)}</ul>`}</section>`}
+      </div>
+      <div class="stack">
+        <div class="card"><div class="eyebrow">Meta do dia</div>
+          <div class="row" style=${{ gap: 16, marginTop: 8, flexWrap: "nowrap" }}><${Ring} value=${m.doneToday} max=${m.meta} />
+            <div><div class="streak">🔥 ${m.streak} dia${m.streak === 1 ? "" : "s"}</div><div class="small muted">em sequência batendo a meta</div><div class="small muted" style=${{ marginTop: 6 }}>Recorde: ${m.best} · Semana: ${m.semana}/7</div></div></div>
+          <p class="small" style=${{ margin: "12px 0 0" }}>${m.doneToday >= m.meta ? "Meta batida! Cada tarefa a mais é bônus." : `Faltam ${m.meta - m.doneToday} para a meta de hoje.`}</p></div>
+        <div class="card small"><b>Atalhos</b><div class="muted" style=${{ marginTop: 4 }}><kbd>N</kbd> nova tarefa · <kbd>H</kbd> hoje · <kbd>P</kbd> próximos · <kbd>C</kbd> calendário · <kbd>D</kbd> dashboard · <kbd>?</kbd> ajuda</div>
+          <div class="muted" style=${{ marginTop: 6 }}>Na caixa de tarefa: <b>amanhã</b>, <b>sexta</b>, <b>12/10</b>, <b>14h</b>, <b>#projeto</b>, <b>p1</b>, <b>todo dia</b>.</div></div>
+      </div>
+    </div>
+  </div>`;
+}
+function DayPlan({ list, cfg, today }) {
+  const ai = useAI();
+  const [state, setState] = useState(null); // {loading, plan, error}
+  const ctl = useRef(null);
+  if (ai === false || list.length === 0) return null;
+  async function run() {
+    const sample = await getSample(); if (!sample) return setState({ error: "O Claude não está disponível aqui." });
+    ctl.current = new AbortController(); setState({ loading: true });
+    const n = new Date(); const nowHM = `${R.pad(n.getHours())}:${R.pad(Math.ceil(n.getMinutes() / 15) * 15 % 60)}`;
+    try {
+      const j = await sample.json(R.dayPlanPrompt(list, cfg, store.projectList(), today, nowHM < cfg.inicio ? cfg.inicio : nowHM), { signal: ctl.current.signal, cache: false });
+      const blocos = (Array.isArray(j?.blocos) ? j.blocos : []).filter((b) => list.some((t) => t.id === b.id) && /^\d{1,2}:\d{2}$/.test(b.inicio || ""));
+      setState({ plan: { resumo: String(j?.resumo || ""), dica: String(j?.dica || ""), blocos, adiar: Array.isArray(j?.adiar) ? j.adiar : [] } });
+    } catch (e) { if (e?.code !== "cancelled") setState({ error: aiError(e) }); else setState(null); }
+  }
+  function apply() {
+    for (const b of state.plan.blocos) { const t = list.find((x) => x.id === b.id); if (t) store.saveTask({ ...t, data: today, hora: b.inicio.padStart(5, "0") }); }
+    toast("Horários aplicados às tarefas de hoje."); setState(null);
+  }
+  const name = (id) => list.find((t) => t.id === id)?.titulo ?? "?";
+  return html`<div class="ai">
+    <div class="row"><span class="ai-badge"><i></i>Claude</span><span class="small muted">Monte uma ordem realista para as ${list.length} tarefas de hoje.</span>
+      ${!state?.loading && !state?.plan && html`<button class="btn dark sm" style=${{ marginLeft: "auto" }} onClick=${run}>Planejar meu dia</button>`}
+      ${state?.loading && html`<button class="btn sm" style=${{ marginLeft: "auto" }} onClick=${() => ctl.current?.abort()}>Parar</button>`}</div>
+    ${state?.loading && html`<p class="thinking" style=${{ margin: "10px 0 0" }}>Pensando no seu dia…</p>`}
+    ${state?.error && html`<p class="small" style=${{ color: "var(--bad)", margin: "10px 0 0" }}>${state.error}</p>`}
+    ${state?.plan && html`<div style=${{ marginTop: 10 }}><p style=${{ margin: "0 0 8px" }}>${state.plan.resumo}</p>
+      <ul class="plan-list">${state.plan.blocos.map((b) => html`<li key=${b.id} class="row" style=${{ flexWrap: "nowrap", alignItems: "flex-start" }}><b class="mono" style=${{ width: 48, flex: "none" }}>${b.inicio}</b><span>${name(b.id)} <span class="small muted">· ${b.motivo || ""}</span></span></li>`)}</ul>
+      ${state.plan.adiar.length > 0 && html`<p class="small muted">Adiar: ${state.plan.adiar.map(name).join(", ")}</p>`}
+      ${state.plan.dica && html`<p class="small" style=${{ margin: "8px 0" }}>💡 ${state.plan.dica}</p>`}
+      <div class="row"><button class="btn primary sm" onClick=${apply}>Aplicar horários</button><button class="btn sm" onClick=${() => setState(null)}>Descartar</button></div></div>`}
+  </div>`;
+}
+
+/* ===== Próximos 7 dias ===== */
+function UpcomingView({ open, today }) {
+  const st = useStore();
+  const tasks = st.taskList().filter((t) => !t.concluida);
+  const days = Array.from({ length: 7 }, (_, i) => R.addDays(today, i));
+  const semData = tasks.filter((t) => !t.data).length;
+  return html`<div class="stack"><div class="head"><div><h1>Próximos 7 dias</h1><div class="sub">${semData} tarefa(s) sem data não aparecem aqui.</div></div></div>
+    ${days.map((d) => { const list = tasks.filter((t) => (t.data === d) || (d === today && t.data && t.data < today)).sort((a, b) => (a.hora || "99").localeCompare(b.hora || "99") || a.prioridade - b.prioridade);
+      return html`<section key=${d} class="card flat"><div class="sec-h" style=${{ marginTop: 0 }}>${R.relDay(d, today)} <span class="n">${R.fmtDay(d)} · ${list.length}</span></div>
+        ${list.length > 0 && html`<ul class="tlist">${list.map((t) => html`<${TaskRow} key=${t.id} t=${t} today=${today} open=${open} />`)}</ul>`}
+        <div style=${{ marginTop: 8 }}><${QuickAdd} defaults=${{ data: d }} placeholder=${`Adicionar para ${R.relDay(d, today).toLowerCase()}…`} /></div></section>`; })}
+  </div>`;
+}
+
+/* ===== Calendário ===== */
+function CalendarView({ open, today, projectId }) {
+  const st = useStore();
+  const [month, setMonth] = useState(() => today.slice(0, 7));
+  const [sel, setSel] = useState(today);
+  const [over, setOver] = useState(null);
+  const [showDone, setShowDone] = useState(true);
+  const tasks = st.taskList().filter((t) => t.data && (!projectId || t.projectId === projectId) && (showDone || !t.concluida));
+  const [y, mo] = month.split("-").map(Number);
+  const first = new Date(y, mo - 1, 1);
+  const start = R.addDays(R.ymd(first), -((first.getDay() + 6) % 7));
+  const cells = Array.from({ length: 42 }, (_, i) => R.addDays(start, i));
+  const weeks = cells[35].slice(0, 7) === month ? 6 : 5;
+  const byDay = (d) => tasks.filter((t) => t.data === d).sort((a, b) => (a.hora || "99").localeCompare(b.hora || "99") || a.prioridade - b.prioridade);
+  const shift = (n) => { const d = new Date(y, mo - 1 + n, 1); setMonth(`${d.getFullYear()}-${R.pad(d.getMonth() + 1)}`); };
+  const drop = (d, e) => { e.preventDefault(); setOver(null); const id = e.dataTransfer.getData("text/plain"); const t = store.taskList().find((x) => x.id === id); if (t && t.data !== d) { store.saveTask({ ...t, data: d }); toast(`Movida para ${R.relDay(d, today).toLowerCase()}.`); } };
+  const color = (t) => store.project(t.projectId)?.cor ?? "#5b6472";
+  const selList = byDay(sel);
+  return html`<div class="stack">
+    ${!projectId && html`<div class="head"><div><h1>Calendário</h1><div class="sub">Arraste uma tarefa para outro dia para reagendar.</div></div></div>`}
+    <div class="row"><button class="btn sm" onClick=${() => shift(-1)} aria-label="Mês anterior">‹</button><h2 style=${{ minWidth: 170, textAlign: "center" }}>${R.MESES_LONGO[mo - 1]} ${y}</h2><button class="btn sm" onClick=${() => shift(1)} aria-label="Próximo mês">›</button>
+      <button class="btn sm" onClick=${() => { setMonth(today.slice(0, 7)); setSel(today); }}>Hoje</button>
+      <label class="small row" style=${{ marginLeft: "auto", gap: 6 }}><input type="checkbox" id="cal-done" checked=${showDone} onChange=${(e) => setShowDone(e.target.checked)} /> Mostrar concluídas</label></div>
+    <div class="cal-layout">
+      <div class="cal" role="grid">
+        ${["seg", "ter", "qua", "qui", "sex", "sáb", "dom"].map((d) => html`<div key=${d} class="dow">${d}</div>`)}
+        ${cells.slice(0, weeks * 7).map((d) => { const list = byDay(d);
+          return html`<div key=${d} class=${"day" + (d.slice(0, 7) !== month ? " out" : "") + (d === today ? " today" : "") + (d === sel ? " sel" : "") + (over === d ? " over" : "")}
+            onClick=${() => setSel(d)} onDragOver=${(e) => { e.preventDefault(); setOver(d); }} onDragLeave=${() => setOver((o) => (o === d ? null : o))} onDrop=${(e) => drop(d, e)}>
+            <span class="dnum">${R.parseYmd(d).getDate()}</span>
+            ${list.slice(0, 3).map((t) => html`<div key=${t.id} class=${"evt" + (t.concluida ? " done" : "")} style=${{ borderLeftColor: color(t) }} draggable="true" onDragStart=${(e) => e.dataTransfer.setData("text/plain", t.id)} onClick=${(e) => { e.stopPropagation(); open(t.id); }} title=${t.titulo}>${t.hora ? t.hora + " " : ""}${t.titulo}</div>`)}
+            ${list.length > 3 && html`<span class="small muted">+${list.length - 3}</span>`}</div>`; })}
+      </div>
+      <div class="card"><div class="eyebrow">${R.relDay(sel, today)}</div><h2 style=${{ margin: "2px 0 10px" }}>${R.fmtDay(sel)}</h2>
+        ${selList.length === 0 ? html`<div class="empty small">Nenhuma tarefa neste dia.</div>` : html`<ul class="tlist">${selList.map((t) => html`<${TaskRow} key=${t.id} t=${t} today=${today} open=${open} showProject=${!projectId} />`)}</ul>`}
+        <div style=${{ marginTop: 10 }}><${QuickAdd} key=${sel} defaults=${{ data: sel, projectId }} placeholder="Adicionar neste dia…" /></div>
+        <p class="small muted" style=${{ margin: "12px 0 0" }}>Cada tarefa com data tem o botão <b>Adicionar ao Google Agenda</b> no detalhe.</p></div>
+    </div></div>`;
+}
+
+/* ===== Projeto ===== */
+function ProjectView({ id, tab: tab0, go, open, today, openModal }) {
+  const st = useStore();
+  const p = st.project(id);
+  const [tab, setTab] = useState(tab0 || "quadro");
+  if (!p) return html`<div class="card"><p>Projeto não encontrado.</p><button class="btn" onClick=${() => go("hoje")}>Voltar</button></div>`;
+  const tasks = st.taskList().filter((t) => t.projectId === id);
+  const done = tasks.filter((t) => t.concluida).length;
+  const TABS = [["quadro", "Quadro"], ["lista", "Lista"], ["calendario", "Calendário"], ["claude", "Claude"]];
+  return html`<div class="stack">
+    <div class="head"><div style=${{ minWidth: 0 }}><h1><span style=${{ marginRight: 8 }}>${p.icone}</span>${p.nome}</h1>${p.descricao && html`<div class="sub" style=${{ maxWidth: 720 }}>${p.descricao}</div>`}</div>
+      <div class="row" style=${{ marginLeft: "auto" }}>
+        <div style=${{ width: 160 }}><div class="small muted">${done}/${tasks.length} concluídas</div><div class="bar-track"><div class="bar-fill" style=${{ width: (tasks.length ? (done / tasks.length) * 100 : 0) + "%", background: p.cor }}></div></div></div>
+        <button class="btn sm" onClick=${() => openModal({ editProject: id })}>Editar projeto</button></div></div>
+    <div class="seg" role="tablist">${TABS.map(([k, l]) => html`<button key=${k} role="tab" aria-pressed=${tab === k} onClick=${() => setTab(k)}>${k === "claude" ? "✦ " : ""}${l}</button>`)}</div>
+    ${tab === "quadro" && html`<${Board} p=${p} tasks=${tasks} open=${open} today=${today} />`}
+    ${tab === "lista" && html`<${ProjectList} p=${p} tasks=${tasks} open=${open} today=${today} />`}
+    ${tab === "calendario" && html`<${CalendarView} projectId=${id} open=${open} today=${today} />`}
+    ${tab === "claude" && html`<${ProjectAI} p=${p} tasks=${tasks} today=${today} />`}
+  </div>`;
+}
+function Board({ p, tasks, open, today }) {
+  const [drag, setDrag] = useState(null);
+  const [over, setOver] = useState(null);
+  const [before, setBefore] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [adding, setAdding] = useState(null);
+  const col = (s) => tasks.filter((t) => t.stageId === s.id || (!p.stages.some((x) => x.id === t.stageId) && s === p.stages[0])).sort((a, b) => a.ordem - b.ordem);
+  function drop(stageId, beforeId) {
+    setOver(null); setBefore(null);
+    const t = store.taskList().find((x) => x.id === drag); setDrag(null); if (!t) return;
+    const list = col(p.stages.find((s) => s.id === stageId)).filter((x) => x.id !== t.id);
+    let ordem;
+    const i = beforeId ? list.findIndex((x) => x.id === beforeId) : -1;
+    if (i === -1) ordem = (list.at(-1)?.ordem ?? Date.now()) + 1000;
+    else ordem = i === 0 ? list[0].ordem - 1000 : (list[i - 1].ordem + list[i].ordem) / 2;
+    const { task, next } = R.moveToStage(t, p, stageId);
+    store.saveTask({ ...task, ordem }); if (next) store.saveTask(next);
+    if (task.concluida && !t.concluida) toast("✔ Concluída.", "", { label: "Desfazer", fn: () => { store.saveTask(t); if (next) store.deleteTask(next.id); } });
+  }
+  const saveStages = (stages) => store.saveProject({ ...p, stages });
+  function stageAction(i, act) {
+    const s = [...p.stages];
+    if (act === "left" && i > 0) [s[i - 1], s[i]] = [s[i], s[i - 1]];
+    if (act === "right" && i < s.length - 1) [s[i + 1], s[i]] = [s[i], s[i + 1]];
+    if (act === "final") s.forEach((x, j) => (x.final = j === i ? !x.final : x.final));
+    if (act === "delete") {
+      if (s.length <= 1) return toast("O quadro precisa de pelo menos uma etapa.", "bad");
+      const [gone] = s.splice(i, 1); const dest = s.find((x) => !x.final) ?? s[0];
+      tasks.filter((t) => t.stageId === gone.id).forEach((t) => store.saveTask({ ...t, stageId: dest.id }));
+    }
+    saveStages(s);
+  }
+  return html`<div class="board">
+    ${p.stages.map((s, i) => { const list = col(s);
+      return html`<div key=${s.id} class=${"col" + (over === s.id ? " over" : "")} onDragOver=${(e) => { e.preventDefault(); setOver(s.id); }} onDragLeave=${(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOver((o) => (o === s.id ? null : o)); }} onDrop=${(e) => { e.preventDefault(); drop(s.id, before); }}>
+        <div class="col-h">
+          ${editing === s.id ? html`<input class="input" autoFocus defaultValue=${s.nome} id=${"stage-" + s.id} onBlur=${(e) => { const v = e.target.value.trim(); if (v) saveStages(p.stages.map((x) => (x.id === s.id ? { ...x, nome: v } : x))); setEditing(null); }} onKeyDown=${(e) => e.key === "Enter" && e.target.blur()} />`
+            : html`<span class="name" onDoubleClick=${() => setEditing(s.id)} title="Clique duas vezes para renomear">${s.final ? "✅ " : ""}${s.nome}</span><span class="small muted">${list.length}</span>`}
+          <${StageMenu} s=${s} i=${i} n=${p.stages.length} onAct=${(a) => (a === "rename" ? setEditing(s.id) : stageAction(i, a))} />
+        </div>
+        <div class="col-list">${list.map((t) => html`<div key=${t.id} class=${"kcard" + (t.concluida ? " done" : "") + (drag === t.id ? " dragging" : "") + (before === t.id && over === s.id ? " drop-before" : "")} draggable="true"
+            onDragStart=${(e) => { e.dataTransfer.setData("text/plain", t.id); e.dataTransfer.effectAllowed = "move"; setDrag(t.id); }} onDragEnd=${() => { setDrag(null); setOver(null); setBefore(null); }}
+            onDragOver=${(e) => { e.preventDefault(); setOver(s.id); setBefore(t.id); }} onClick=${() => open(t.id)}>
+          <button class=${"check p" + t.prioridade + (t.concluida ? " on" : "")} onClick=${(e) => { e.stopPropagation(); toggleDone(t); }} aria-label="Concluir">✓</button>
+          <div style=${{ minWidth: 0, flex: 1 }}><div class="title">${t.titulo}</div><${TaskMeta} t=${t} today=${today} showProject=${false} /></div></div>`)}
+          <div style=${{ minHeight: 8 }} onDragOver=${(e) => { e.preventDefault(); setOver(s.id); setBefore(null); }}></div></div>
+        ${adding === s.id ? html`<${QuickAdd} defaults=${{ projectId: p.id, stageId: s.id }} autoFocus placeholder="Título, data, p1…" />
+          <button class="btn ghost sm" onClick=${() => setAdding(null)}>Fechar</button>` : html`<button class="btn ghost sm" style=${{ justifyContent: "flex-start" }} onClick=${() => setAdding(s.id)}>＋ Adicionar tarefa</button>`}
+      </div>`; })}
+    <div class="add-col"><button class="btn" style=${{ width: "100%" }} onClick=${() => { const s = { id: R.uid("s"), nome: "Nova etapa", final: false }; const fi = p.stages.findIndex((x) => x.final); const list = [...p.stages]; list.splice(fi === -1 ? list.length : fi, 0, s); saveStages(list); setEditing(s.id); }}>＋ Nova etapa</button>
+      <p class="small muted">Clique duas vezes no nome para renomear. A etapa ✅ conclui as tarefas que chegam nela.</p></div>
+  </div>`;
+}
+function StageMenu({ s, i, n, onAct }) {
+  const [openM, setOpen] = useState(false);
+  const act = (a) => { setOpen(false); onAct(a); };
+  return html`<span style=${{ position: "relative" }}><button class="btn ghost sm" onClick=${() => setOpen(!openM)} aria-label="Opções da etapa">⋯</button>
+    ${openM && html`<div class="card" style=${{ position: "absolute", right: 0, top: 28, zIndex: 10, padding: 6, width: 200, display: "flex", flexDirection: "column", gap: 2 }} onMouseLeave=${() => setOpen(false)}>
+      <button class="nav-btn" onClick=${() => act("rename")}>✎ Renomear</button>
+      ${i > 0 && html`<button class="nav-btn" onClick=${() => act("left")}>← Mover para a esquerda</button>`}
+      ${i < n - 1 && html`<button class="nav-btn" onClick=${() => act("right")}>→ Mover para a direita</button>`}
+      <button class="nav-btn" onClick=${() => act("final")}>${s.final ? "Desmarcar como etapa final" : "✅ Marcar como etapa final"}</button>
+      <${Confirm} className="nav-btn" label="🗑 Excluir etapa" confirmLabel="Confirmar exclusão" onConfirm=${() => act("delete")} /></div>`}</span>`;
+}
+function ProjectList({ p, tasks, open, today }) {
+  const [showDone, setShowDone] = useState(false);
+  const sorted = (l) => l.sort((a, b) => (a.data || "9999").localeCompare(b.data || "9999") || a.prioridade - b.prioridade);
+  return html`<div class="stack"><${QuickAdd} defaults=${{ projectId: p.id }} placeholder=${`Nova tarefa em ${p.nome}…`} />
+    ${p.stages.filter((s) => !s.final).map((s) => { const l = sorted(tasks.filter((t) => t.stageId === s.id && !t.concluida)); return html`<section key=${s.id}><div class="sec-h">${s.nome} <span class="n">${l.length}</span></div>
+      ${l.length ? html`<ul class="tlist">${l.map((t) => html`<${TaskRow} key=${t.id} t=${t} today=${today} open=${open} showProject=${false} />`)}</ul>` : html`<div class="empty small">Vazio</div>`}</section>`; })}
+    <section><button class="sec-h btn link" style=${{ color: "var(--ink-3)" }} onClick=${() => setShowDone(!showDone)}>${showDone ? "▾" : "▸"} Concluídas <span class="n">${tasks.filter((t) => t.concluida).length}</span></button>
+      ${showDone && html`<ul class="tlist">${tasks.filter((t) => t.concluida).sort((a, b) => b.concluidaEm - a.concluidaEm).slice(0, 100).map((t) => html`<${TaskRow} key=${t.id} t=${t} today=${today} open=${open} showProject=${false} />`)}</ul>`}</section></div>`;
+}
+function ProjectAI({ p, tasks, today }) {
+  const ai = useAI();
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  const [sug, setSug] = useState(null);
+  const ctl = useRef(null);
+  const chat = p.chat || [];
+  async function send(e) {
+    e?.preventDefault(); const text = msg.trim(); if (!text || busy) return;
+    const sample = await getSample(); if (!sample) return setErr("O Claude não está disponível aqui.");
+    const turns = [...chat, { role: "user", content: text }].slice(-12);
+    const withMine = { ...p, chat: [...chat, { role: "user", content: text }].slice(-30) };
+    store.saveProject(withMine); setMsg(""); setBusy(true); setErr(null); setSug(null);
+    ctl.current = new AbortController();
+    try {
+      const firstUser = turns.findIndex((t) => t.role === "user");
+      const input = [{ role: "user", content: R.projectChatInstructions(p, tasks, today) }, ...turns.slice(firstUser)];
+      const j = await sample.json(input, { signal: ctl.current.signal, cache: false });
+      const reply = String(j?.mensagem || "").trim() || "Certo.";
+      store.saveProject({ ...withMine, chat: [...withMine.chat, { role: "assistant", content: reply }].slice(-30) });
+      const plan = R.normalizePlan({ plano: { tarefas: j?.tarefas } });
+      if (plan.tarefas.length) setSug({ list: plan.tarefas, sel: plan.tarefas.map(() => true) });
+    } catch (e2) { if (e2?.code !== "cancelled") setErr(aiError(e2)); }
+    finally { setBusy(false); }
+  }
+  function addSug() {
+    const { tasks: novas } = R.buildProject({ nome: p.nome, cor: p.cor, icone: p.icone }, { etapas: p.stages.map((s) => s.nome), tarefas: sug.list }, { tarefas: sug.sel });
+    novas.forEach((t) => store.saveTask({ ...t, projectId: p.id, stageId: R.firstOpenStage(p).id }));
+    toast(`${novas.length} tarefas adicionadas ao projeto.`); setSug(null);
+  }
+  return html`<div class="grid-2">
+    <div class="card stack" style=${{ gap: 10 }}><span class="ai-badge"><i></i>Plano do projeto</span>
+      ${p.plano?.resumo ? html`<p style=${{ margin: 0, fontWeight: 600 }}>${p.plano.resumo}</p>` : html`<p class="muted" style=${{ margin: 0 }}>Este projeto ainda não tem um plano. Converse com o Claude ao lado para montar um.</p>`}
+      ${p.plano?.mensagem && html`<p style=${{ margin: 0, whiteSpace: "pre-wrap" }}>${p.plano.mensagem}</p>`}
+      ${p.plano?.dicas?.length > 0 && html`<div><div class="eyebrow" style=${{ marginBottom: 4 }}>Dicas</div><ul style=${{ margin: 0, paddingLeft: 18 }}>${p.plano.dicas.map((d, i) => html`<li key=${i}>${d}</li>`)}</ul></div>`}
+    </div>
+    <div class="card stack" style=${{ gap: 10 }}><span class="ai-badge"><i></i>Converse com o Claude sobre este projeto</span>
+      ${ai === false ? html`<p class="muted">O Claude não está disponível nesta visualização.</p>` : html`
+      <div class="msgs">${chat.length === 0 && html`<div class="msg ai">Posso sugerir próximas tarefas, reorganizar prioridades ou ajustar as etapas. O que você precisa?</div>`}
+        ${chat.map((m, i) => html`<div key=${i} class=${"msg " + (m.role === "user" ? "me" : "ai")}>${m.content}</div>`)}
+        ${busy && html`<div class="msg ai thinking">Pensando…</div>`}</div>
+      ${sug && html`<div class="card flat"><div class="eyebrow" style=${{ marginBottom: 6 }}>Tarefas sugeridas</div><ul class="plan-list">${sug.list.map((t, i) => html`<li key=${i}><label><input type="checkbox" checked=${sug.sel[i]} onChange=${() => setSug({ ...sug, sel: sug.sel.map((x, j) => (j === i ? !x : x)) })} />${t.titulo} <span class="small muted">· P${t.prioridade} · ${t.emDias === 0 ? "hoje" : `em ${t.emDias} dias`}</span></label></li>`)}</ul>
+        <div class="row" style=${{ marginTop: 8 }}><button class="btn primary sm" onClick=${addSug}>Adicionar selecionadas</button><button class="btn sm" onClick=${() => setSug(null)}>Descartar</button></div></div>`}
+      ${err && html`<p class="small" style=${{ color: "var(--bad)", margin: 0 }}>${err}</p>`}
+      <form class="row" style=${{ flexWrap: "nowrap" }} onSubmit=${send}><input class="input" id="proj-chat" value=${msg} onInput=${(e) => setMsg(e.target.value)} placeholder="Ex.: o que devo priorizar esta semana?" />
+        ${busy ? html`<button type="button" class="btn" onClick=${() => ctl.current?.abort()}>Parar</button>` : html`<button class="btn dark" disabled=${!msg.trim()}>Enviar</button>`}</form>
+      ${chat.length > 0 && html`<${Confirm} className="btn ghost sm" label="Limpar conversa" confirmLabel="Confirmar" onConfirm=${() => store.saveProject({ ...p, chat: [] })} />`}`}
+    </div></div>`;
+}
+
+/* ===== Novo projeto (com entrevista do Claude) ===== */
+const EMOJIS = ["🎯", "📞", "📚", "🏠", "💼", "🚀", "💪", "💰", "✍️", "🎨", "🧪", "🌱"];
+function NewProject({ onClose, go }) {
+  const ai = useAI();
+  const [step, setStep] = useState("info");
+  const [tpl, setTpl] = useState("branco");
+  const [info, setInfo] = useState({ nome: "", icone: "🎯", cor: R.PROJECT_COLORS[1] });
+  const [chat, setChat] = useState([]);
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  const [plan, setPlan] = useState(null);
+  const [sel, setSel] = useState(null);
+  const ctl = useRef(null);
+  const pickTpl = (k) => { setTpl(k); if (k !== "branco") { const t = R.template(k); setInfo({ nome: t.nome, icone: t.icone, cor: t.cor }); } };
+  function usePlan(pl) { setPlan(pl); setSel({ rotina: pl.rotina.map(() => true), tarefas: pl.tarefas.map(() => true) }); setStep("plano"); }
+  function next() {
+    if (!info.nome.trim()) return setErr("Dê um nome ao projeto.");
+    setErr(null);
+    if (tpl !== "branco") return usePlan({ ...R.template(tpl), mensagem: "" });
+    if (ai) { setChat([{ role: "assistant", content: `Vamos organizar "${info.nome.trim()}". Me conta: qual é o objetivo, até quando você quer chegar lá, quanto tempo por dia ou semana você consegue dedicar e o que costuma te atrapalhar?` }]); setStep("chat"); }
+    else create(R.template("branco"));
+  }
+  async function send(e) {
+    e.preventDefault(); const text = msg.trim(); if (!text || busy) return;
+    const sample = await getSample(); if (!sample) return setErr("O Claude não está disponível aqui.");
+    const turns = [...chat, { role: "user", content: text }];
+    setChat(turns); setMsg(""); setBusy(true); setErr(null);
+    ctl.current = new AbortController();
+    const perguntas = turns.filter((t) => t.role === "assistant").length - 1;
+    const hist = turns.slice(1);
+    hist[hist.length - 1] = { role: "user", content: text + (perguntas >= 2 ? "\n\n(Observação do app: já foram feitas 2 perguntas. Entregue o plano agora.)" : "") };
+    try {
+      const j = await sample.json([{ role: "user", content: R.interviewInstructions(info.nome.trim()) + `\n\nPrimeira pergunta feita pelo app: ${chat[0].content}` }, ...hist], { signal: ctl.current.signal, cache: false });
+      if (j?.tipo === "plano" || j?.plano) { const pl = R.normalizePlan(j); setChat([...turns, { role: "assistant", content: pl.mensagem || "Aqui está o plano." }]); usePlan(pl); }
+      else setChat([...turns, { role: "assistant", content: String(j?.mensagem || "Pode me contar um pouco mais?") }]);
+    } catch (e2) { if (e2?.code !== "cancelled") setErr(aiError(e2)); }
+    finally { setBusy(false); }
+  }
+  function create(pl, selection) {
+    const conversa = chat.filter((m) => m.content).slice(-20);
+    const { project, tasks } = R.buildProject({ ...info, nome: info.nome.trim(), descricao: pl.descricao || pl.resumo || "", chat: conversa }, pl, selection);
+    store.saveProject(project); tasks.forEach((t) => store.saveTask(t));
+    toast(`Projeto criado com ${tasks.length} tarefas.`); onClose(); go("projeto", { id: project.id });
+  }
+  const Check = ({ group, i, children }) => html`<li><label><input type="checkbox" checked=${sel[group][i]} onChange=${() => setSel({ ...sel, [group]: sel[group].map((x, j) => (j === i ? !x : x)) })} /><span>${children}</span></label></li>`;
+  return html`<${Modal} title=${step === "info" ? "Novo projeto" : step === "chat" ? `✦ Organizando "${info.nome}"` : "Plano sugerido"} onClose=${onClose} wide>
+    ${step === "info" && html`<div class="stack" style=${{ gap: 14 }}>
+      <div><span class="lbl">Começar de</span><div class="tpl-grid">
+        ${[["branco", "✦ Conversar com o Claude", "Descreva o projeto e receba etapas, rotina e tarefas."], ["sdr", "📞 Prospecção SDR", "SLA de 5 min, cadência e meta de 10 reuniões/dia."], ["estudos", "📚 Estudos", "Sessões diárias e revisões."], ["pessoal", "🏠 Pessoal", "Casa, saúde e semana planejada."]].map(([k, t, d]) => html`<button key=${k} class="tpl" aria-pressed=${tpl === k} onClick=${() => pickTpl(k)}><b>${t}</b><span class="small muted">${d}</span></button>`)}</div></div>
+      <div><label class="lbl" for="np-nome">Nome do projeto</label><input id="np-nome" class="input" value=${info.nome} onInput=${(e) => setInfo({ ...info, nome: e.target.value })} placeholder="Ex.: Lançar meu curso, Mudança de casa…" autoFocus /></div>
+      <div class="row" style=${{ alignItems: "flex-start", gap: 24 }}>
+        <div><span class="lbl">Ícone</span><div class="row" style=${{ gap: 4, maxWidth: 260 }}>${EMOJIS.map((e) => html`<button key=${e} class="emoji-btn" aria-pressed=${info.icone === e} onClick=${() => setInfo({ ...info, icone: e })}>${e}</button>`)}</div></div>
+        <div><span class="lbl">Cor</span><div class="swatches">${R.PROJECT_COLORS.map((c) => html`<button key=${c} class="swatch" style=${{ background: c }} aria-label=${"Cor " + c} aria-pressed=${info.cor === c} onClick=${() => setInfo({ ...info, cor: c })}></button>`)}</div></div></div>
+      ${err && html`<p class="small" style=${{ color: "var(--bad)", margin: 0 }}>${err}</p>`}
+      ${tpl === "branco" && ai === false && html`<p class="note">O Claude não está disponível nesta visualização. O projeto será criado com as etapas padrão.</p>`}
+      <div class="row" style=${{ justifyContent: "flex-end" }}>
+        ${tpl === "branco" && ai && html`<button class="btn" onClick=${() => { if (!info.nome.trim()) return setErr("Dê um nome ao projeto."); create(R.template("branco")); }}>Criar em branco</button>`}
+        <button class="btn primary" onClick=${next}>${tpl === "branco" ? (ai ? "Continuar com o Claude →" : "Criar projeto") : "Ver plano do modelo →"}</button></div></div>`}
+    ${step === "chat" && html`<div class="stack" style=${{ gap: 12 }}>
+      <div class="msgs" style=${{ maxHeight: "45vh", overflowY: "auto" }}>${chat.map((m, i) => html`<div key=${i} class=${"msg " + (m.role === "user" ? "me" : "ai")}>${m.content}</div>`)}
+        ${busy && html`<div class="msg ai thinking">Pensando no seu projeto… (pode levar até um minuto)</div>`}</div>
+      ${err && html`<p class="small" style=${{ color: "var(--bad)", margin: 0 }}>${err}</p>`}
+      <form class="stack" style=${{ gap: 8 }} onSubmit=${send}><textarea id="np-msg" class="input" rows="3" value=${msg} onInput=${(e) => setMsg(e.target.value)} onKeyDown=${(e) => { if (e.key === "Enter" && !e.shiftKey) send(e); }} placeholder="Descreva com suas palavras… (Enter envia, Shift+Enter quebra linha)" autoFocus></textarea>
+        <div class="row" style=${{ justifyContent: "space-between" }}><button type="button" class="btn ghost sm" onClick=${() => create(R.template("branco"))}>Pular e criar em branco</button>
+          ${busy ? html`<button type="button" class="btn" onClick=${() => ctl.current?.abort()}>Parar</button>` : html`<button class="btn primary" disabled=${!msg.trim()}>Enviar</button>`}</div></form></div>`}
+    ${step === "plano" && plan && html`<div class="stack" style=${{ gap: 14 }}>
+      ${plan.mensagem && html`<div class="msg ai" style=${{ maxWidth: "100%" }}>${plan.mensagem}</div>`}
+      ${plan.resumo && html`<p style=${{ margin: 0 }}><b>Objetivo:</b> ${plan.resumo || plan.descricao}</p>`}
+      <div><span class="lbl">Etapas do quadro</span><div class="chips">${(plan.etapas || []).map((e, i) => html`<span key=${i} class="chip">${i === plan.etapas.length - 1 ? "✅ " : ""}${e}</span>`)}</div></div>
+      ${plan.rotina?.length > 0 && html`<div><span class="lbl">Rotina (tarefas recorrentes)</span><ul class="plan-list">${plan.rotina.map((r, i) => html`<${Check} key=${i} group="rotina" i=${i}>${r.titulo} <span class="small muted">· ${R.RECORRENCIA[r.recorrencia]}${r.hora ? " às " + r.hora : ""}</span><//>`)}</ul></div>`}
+      ${plan.tarefas?.length > 0 && html`<div><span class="lbl">Primeiras tarefas</span><ul class="plan-list">${plan.tarefas.map((t, i) => html`<${Check} key=${i} group="tarefas" i=${i}>${t.titulo} <span class="small muted">· P${t.prioridade} · ${t.emDias === 0 ? "hoje" : `em ${t.emDias} dia${t.emDias > 1 ? "s" : ""}`}${t.subtarefas?.length ? ` · ${t.subtarefas.length} passos` : ""}</span><//>`)}</ul></div>`}
+      ${plan.dicas?.length > 0 && html`<div><span class="lbl">Dicas</span><ul style=${{ margin: 0, paddingLeft: 18 }}>${plan.dicas.map((d, i) => html`<li key=${i}>${d}</li>`)}</ul></div>`}
+      <div class="row" style=${{ justifyContent: "space-between" }}><button class="btn" onClick=${() => setStep(tpl === "branco" && ai ? "chat" : "info")}>← Voltar</button>
+        <button class="btn primary" onClick=${() => create(plan, sel)}>Criar projeto</button></div></div>`}
+  <//>`;
+}
+function EditProject({ id, onClose, go }) {
+  const p = store.project(id);
+  const [f, setF] = useState({ nome: p?.nome || "", descricao: p?.descricao || "", icone: p?.icone || "🎯", cor: p?.cor || R.PROJECT_COLORS[0] });
+  if (!p) return null;
+  return html`<${Modal} title="Editar projeto" onClose=${onClose}>
+    <div class="stack" style=${{ gap: 12 }}>
+      <div><label class="lbl" for="ep-nome">Nome</label><input id="ep-nome" class="input" value=${f.nome} onInput=${(e) => setF({ ...f, nome: e.target.value })} /></div>
+      <div><label class="lbl" for="ep-desc">Descrição</label><textarea id="ep-desc" class="input" rows="3" value=${f.descricao} onInput=${(e) => setF({ ...f, descricao: e.target.value })}></textarea></div>
+      <div><span class="lbl">Ícone</span><div class="row" style=${{ gap: 4 }}>${EMOJIS.map((e) => html`<button key=${e} class="emoji-btn" aria-pressed=${f.icone === e} onClick=${() => setF({ ...f, icone: e })}>${e}</button>`)}</div></div>
+      <div><span class="lbl">Cor</span><div class="swatches">${R.PROJECT_COLORS.map((c) => html`<button key=${c} class="swatch" style=${{ background: c }} aria-label=${"Cor " + c} aria-pressed=${f.cor === c} onClick=${() => setF({ ...f, cor: c })}></button>`)}</div></div>
+      <p class="small muted" style=${{ margin: 0 }}>As etapas do quadro são editadas direto no Quadro (⋯ em cada coluna).</p>
+      <div class="row" style=${{ justifyContent: "space-between" }}>
+        ${id !== "inbox" ? html`<${Confirm} label="Excluir projeto e tarefas" confirmLabel="Confirmar exclusão" onConfirm=${async () => { onClose(); go("hoje"); await store.deleteProject(id); toast("Projeto excluído."); }} />` : html`<span></span>`}
+        <button class="btn primary" onClick=${() => { if (!f.nome.trim()) return; store.saveProject({ ...p, ...f, nome: f.nome.trim() }); onClose(); }}>Salvar</button></div></div><//>`;
+}
+
+/* ===== Detalhe da tarefa ===== */
+function TaskModal({ id, onClose, today }) {
+  const st = useStore();
+  const t = st.taskList().find((x) => x.id === id);
+  const [f, setF] = useState(t);
+  const [sub, setSub] = useState("");
+  useEffect(() => { if (!t) onClose(); }, [!!t]);
+  if (!t || !f) return null;
+  const projects = st.projectList();
+  const p = store.project(f.projectId) ?? R.INBOX;
+  const upd = (patch) => setF({ ...f, ...patch });
+  function save(close = true) {
+    if (!f.titulo.trim()) return toast("A tarefa precisa de um título.", "bad");
+    let out = { ...f, titulo: f.titulo.trim() };
+    const st2 = p.stages.find((s) => s.id === out.stageId) ? out.stageId : R.firstOpenStage(p).id;
+    const r = R.moveToStage({ ...out, stageId: t.projectId === out.projectId ? t.stageId : st2, concluida: t.concluida }, p, st2);
+    store.saveTask(r.task); if (r.next) store.saveTask(r.next);
+    if (close) onClose();
+  }
+  const g = googleLink(f);
+  return html`<${Modal} title="Tarefa" onClose=${() => save(true)} wide>
+    <div class="stack" style=${{ gap: 12 }}>
+      <div class="row" style=${{ flexWrap: "nowrap", alignItems: "flex-start" }}>
+        <button class=${"check p" + f.prioridade + (t.concluida ? " on" : "")} style=${{ marginTop: 8 }} onClick=${() => { toggleDone(t); onClose(); }} aria-label="Concluir">✓</button>
+        <input id="tk-titulo" class="input" style=${{ fontSize: 17, fontWeight: 700 }} value=${f.titulo} onInput=${(e) => upd({ titulo: e.target.value })} /></div>
+      <div class="form-grid">
+        <div><label class="lbl" for="tk-proj">Projeto</label><select id="tk-proj" class="input" value=${f.projectId} onChange=${(e) => { const np = store.project(e.target.value) ?? R.INBOX; upd({ projectId: np.id, stageId: R.firstOpenStage(np).id }); }}>${projects.map((x) => html`<option key=${x.id} value=${x.id}>${x.icone} ${x.nome}</option>`)}</select></div>
+        <div><label class="lbl" for="tk-stage">Etapa</label><select id="tk-stage" class="input" value=${f.stageId} onChange=${(e) => upd({ stageId: e.target.value })}>${p.stages.map((s) => html`<option key=${s.id} value=${s.id}>${s.nome}</option>`)}</select></div>
+        <div><label class="lbl" for="tk-prio">Prioridade</label><select id="tk-prio" class="input" value=${f.prioridade} onChange=${(e) => upd({ prioridade: Number(e.target.value) })}>${[1, 2, 3, 4].map((n) => html`<option key=${n} value=${n}>${PRIO_LABEL[n]}</option>`)}</select></div>
+        <div><label class="lbl" for="tk-data">Data</label><input id="tk-data" type="date" class="input" value=${f.data || ""} onInput=${(e) => upd({ data: e.target.value || null })} /></div>
+        <div><label class="lbl" for="tk-hora">Horário</label><input id="tk-hora" type="time" class="input" value=${f.hora || ""} onInput=${(e) => upd({ hora: e.target.value || null })} /></div>
+        <div><label class="lbl" for="tk-dur">Duração (min)</label><input id="tk-dur" type="number" min="5" step="5" class="input" value=${f.duracao} onInput=${(e) => upd({ duracao: Number(e.target.value) || 30 })} /></div>
+        <div><label class="lbl" for="tk-rec">Repetir</label><select id="tk-rec" class="input" value=${f.recorrencia} onChange=${(e) => upd({ recorrencia: e.target.value })}>${Object.entries(R.RECORRENCIA).map(([k, v]) => html`<option key=${k} value=${k}>${v}</option>`)}</select></div>
+      </div>
+      <div><label class="lbl" for="tk-notas">Anotações</label><textarea id="tk-notas" class="input" rows="3" value=${f.notas} onInput=${(e) => upd({ notas: e.target.value })} placeholder="Detalhes, links, contexto…"></textarea></div>
+      <div><span class="lbl">Subtarefas ${f.subtarefas.length ? `(${f.subtarefas.filter((s) => s.ok).length}/${f.subtarefas.length})` : ""}</span>
+        <ul class="subtasks">${f.subtarefas.map((s) => html`<li key=${s.id}><input type="checkbox" id=${"sub-" + s.id} checked=${s.ok} onChange=${() => upd({ subtarefas: f.subtarefas.map((x) => (x.id === s.id ? { ...x, ok: !x.ok } : x)) })} />
+          <label for=${"sub-" + s.id} style=${{ flex: 1, textDecoration: s.ok ? "line-through" : "none", color: s.ok ? "var(--ink-3)" : "inherit" }}>${s.t}</label>
+          <button class="btn ghost sm" onClick=${() => upd({ subtarefas: f.subtarefas.filter((x) => x.id !== s.id) })} aria-label="Remover subtarefa">✕</button></li>`)}</ul>
+        <form class="row" style=${{ flexWrap: "nowrap", marginTop: 6 }} onSubmit=${(e) => { e.preventDefault(); if (sub.trim()) { upd({ subtarefas: [...f.subtarefas, { id: R.uid("st"), t: sub.trim(), ok: false }] }); setSub(""); } }}>
+          <input id="tk-sub" class="input" value=${sub} onInput=${(e) => setSub(e.target.value)} placeholder="Adicionar subtarefa" /><button class="btn sm">＋</button></form></div>
+      <div class="row" style=${{ justifyContent: "space-between" }}>
+        <div class="row">${g ? html`<a class="btn sm" href=${g} target="_blank" rel="noreferrer">📆 Adicionar ao Google Agenda</a>` : html`<span class="small muted">Defina uma data para enviar ao Google Agenda.</span>`}
+          <${Confirm} label="Excluir" confirmLabel="Confirmar exclusão" onConfirm=${() => { store.deleteTask(t.id); onClose(); toast("Tarefa excluída.", "", { label: "Desfazer", fn: () => store.saveTask(t) }); }} /></div>
+        <button class="btn primary" onClick=${() => save(true)}>Salvar</button></div>
+      <p class="small muted" style=${{ margin: 0 }}>Criada em ${new Date(t.createdAt).toLocaleDateString("pt-BR")}${t.concluidaEm ? ` · concluída em ${new Date(t.concluidaEm).toLocaleString("pt-BR")}` : ""}</p>
+    </div><//>`;
+}
+
+/* ===== Dashboard ===== */
+function DashboardView({ today, openModal }) {
+  const st = useStore();
+  const tasks = st.taskList(), projects = st.projectList();
+  const m = R.metrics(tasks, projects, st.cfg, today);
+  const Kpi = ({ label, v, sub, tone }) => html`<div class="card kpi"><div class="eyebrow">${label}</div><div class="v" style=${tone ? { color: `var(--${tone})` } : null}>${v}</div>${sub && html`<div class="small muted">${sub}</div>`}</div>`;
+  return html`<div class="stack">
+    <div class="head"><div><h1>Dashboard</h1><div class="sub">Sua disciplina em números.</div></div><button class="btn sm" style=${{ marginLeft: "auto" }} onClick=${() => openModal("ajustes")}>⚙ Meta diária: ${m.meta}</button></div>
+    <div class="kpis">
+      <${Kpi} label="Concluídas hoje" v=${html`${m.doneToday}<small> / ${m.meta}</small>`} sub=${m.doneToday >= m.meta ? "Meta batida ✔" : `Faltam ${m.meta - m.doneToday}`} tone=${m.doneToday >= m.meta ? "ok" : null} />
+      <${Kpi} label="Para hoje (abertas)" v=${m.dueToday} sub=${`${m.createdToday} criadas hoje`} />
+      <${Kpi} label="Atrasadas" v=${m.overdue} tone=${m.overdue ? "bad" : null} sub=${m.overdue ? "Resolva ou reagende" : "Nada atrasado"} />
+      <${Kpi} label="Sequência" v=${`🔥 ${m.streak}`} sub=${`Recorde: ${m.best} dias`} />
+      <${Kpi} label="Últimos 7 dias" v=${m.last7} sub=${`Meta batida em ${m.semana} de 7 dias`} />
+      <${Kpi} label="Entregues no prazo" v=${pctTxt(m.pctNoPrazo)} sub=${`${m.noPrazo} de ${m.recentes} com data (30 dias)`} />
+      <${Kpi} label="Tarefas abertas" v=${m.abertas} sub=${`em ${projects.length} projetos`} />
+    </div>
+    <div class="grid-2">
+      <div class="card"><h2 style=${{ fontSize: 16 }}>Concluídas por dia</h2><p class="small muted" style=${{ margin: "2px 0 8px" }}>Últimos 14 dias. Linha tracejada: sua meta diária.</p>
+        <${Bars} data=${m.serie} goal=${m.meta} fmtTip=${(d) => `${R.fmtDay(d.dia)}: ${d.value} concluída(s)`} /></div>
+      <div class="card"><h2 style=${{ fontSize: 16 }}>Por projeto</h2><p class="small muted" style=${{ margin: "2px 0 10px" }}>Abertas, atrasadas e concluídas nos últimos 7 dias.</p>
+        ${m.porProjeto.length === 0 ? html`<div class="empty small">Sem tarefas ainda.</div>` : html`<div class="stack" style=${{ gap: 12 }}>${m.porProjeto.map((x) => html`<div key=${x.p.id}>
+          <div class="row" style=${{ justifyContent: "space-between" }}><span class="row" style=${{ gap: 6 }}><span class="dot" style=${{ background: x.p.cor }}></span><b>${x.p.nome}</b></span>
+            <span class="small muted">${x.abertas} abertas${x.atrasadas ? html` · <span style=${{ color: "var(--bad)" }}>${x.atrasadas} atrasadas</span>` : ""} · ${x.feitas7} feitas (7d)</span></div>
+          <div class="bar-track" style=${{ marginTop: 4 }}><div class="bar-fill" style=${{ width: `${(x.total - x.abertas) / Math.max(1, x.total) * 100}%`, background: x.p.cor }}></div></div></div>`)}</div>`}</div>
+      <div class="card"><h2 style=${{ fontSize: 16 }}>Abertas por prioridade</h2><p class="small muted" style=${{ margin: "2px 0 8px" }}>Muitas P1 ao mesmo tempo é sinal de que nada é prioridade.</p>
+        <${Bars} data=${m.porPrioridade} fmtTip=${(d) => `${d.label}: ${d.value} aberta(s)`} /></div>
+    </div></div>`;
+}
+function Settings({ onClose }) {
+  const [f, setF] = useState(store.cfg);
+  return html`<${Modal} title="Meta e horário" onClose=${onClose}>
+    <div class="form-grid">
+      <div class="span-all"><label class="lbl" for="cf-nome">Como devo te chamar?</label><input id="cf-nome" class="input" value=${f.nome} onInput=${(e) => setF({ ...f, nome: e.target.value })} /></div>
+      <div><label class="lbl" for="cf-meta">Meta de tarefas concluídas por dia</label><input id="cf-meta" type="number" min="1" class="input" value=${f.metaDiaria} onInput=${(e) => setF({ ...f, metaDiaria: Math.max(1, Number(e.target.value) || 1) })} /></div>
+      <div><label class="lbl" for="cf-ini">Início do dia de trabalho</label><input id="cf-ini" type="time" class="input" value=${f.inicio} onInput=${(e) => setF({ ...f, inicio: e.target.value })} /></div>
+      <div><label class="lbl" for="cf-fim">Fim do dia de trabalho</label><input id="cf-fim" type="time" class="input" value=${f.fim} onInput=${(e) => setF({ ...f, fim: e.target.value })} /></div>
+      <p class="small muted span-all" style=${{ margin: 0 }}>A sequência 🔥 conta os dias seguidos em que você bate a meta. O horário é usado pelo Claude ao planejar seu dia.</p>
+      <div class="span-all row" style=${{ justifyContent: "flex-end" }}><button class="btn primary" onClick=${() => { store.saveSettings(f); onClose(); toast("Salvo."); }}>Salvar</button></div>
+    </div><//>`;
+}
+function Help({ onClose }) {
+  return html`<${Modal} title="Como usar" onClose=${onClose} wide><div class="grid-2">
+    <div><b>Atalhos</b><ul style=${{ paddingLeft: 18 }}><li><kbd>N</kbd> nova tarefa</li><li><kbd>H</kbd> Hoje · <kbd>P</kbd> Próximos · <kbd>C</kbd> Calendário · <kbd>D</kbd> Dashboard</li><li><kbd>Esc</kbd> fecha janelas (e salva a tarefa aberta)</li></ul></div>
+    <div><b>Escreva naturalmente</b><ul style=${{ paddingLeft: 18 }}><li><b>hoje, amanhã, sexta, 12/10, em 3 dias</b></li><li><b>14h, 9h30, 16:45</b></li><li><b>#nome-do-projeto</b></li><li><b>p1</b> a <b>p4</b> (prioridade)</li><li><b>todo dia, dias úteis, toda semana, todo mês</b></li></ul></div>
+  </div><//>`;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(html`<${App} />`);
+store.init();
+})();
+</script>
