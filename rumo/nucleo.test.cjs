@@ -26,4 +26,8 @@ const m = R.metrics([done, next], [project], { metaDiaria: 1 }, R.today());
 console.log("metrics ok: doneToday", m.doneToday, "streak", m.streak);
 const plan = R.normalizePlan({ tipo: "plano", mensagem: "x", plano: { etapas: ["a", "b"], rotina: [{ titulo: "r", recorrencia: "zzz", hora: "7:00" }], tarefas: [{ titulo: "t", emDias: "2", prioridade: 9 }] } });
 assert.deepEqual([plan.rotina[0].recorrencia, plan.rotina[0].hora, plan.tarefas[0].prioridade, plan.tarefas[0].emDias], ["daily", "07:00", 4, 2]);
+r = q("Revisar lei seca amanhã @revisão @Urgente #estudos"); assert.deepEqual([r.titulo, r.tags, r.projectId], ["Revisar lei seca", ["revisão", "Urgente"], "p2"]);
+const proj = { tags: [{ id: "g1", nome: "Revisão", cor: "#2156e0" }] };
+const rt = R.resolveTags(proj, ["revisao", "Urgente"]);
+assert.equal(rt.ids[0], "g1"); assert.equal(rt.tags.length, 2); assert.equal(rt.tags[1].cor, R.TAG_COLORS[1]); assert.equal(rt.changed, true);
 console.log("todos os testes do núcleo passaram");
