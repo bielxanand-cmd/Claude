@@ -278,6 +278,35 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .tag-row .swatches .swatch { width: 18px; height: 18px; border-radius: 5px; }
 .tag-row > :last-child { justify-self: end; }
 @media (max-width: 600px) { .tag-row { grid-template-columns: minmax(0, 1fr) auto; } .tag-row .swatches { grid-column: 1 / -1; grid-row: 2; } }
+.signup { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); background: var(--surface); }
+.signup-brand { background: var(--side); color: #fff; padding: 48px 56px; display: flex; flex-direction: column; gap: 28px; position: relative; overflow: hidden; }
+.signup-brand::after { content: ""; position: absolute; right: -120px; bottom: -120px; width: 360px; height: 360px; border-radius: 50%; border: 60px solid rgba(255,255,255,.06); }
+.signup-brand h1 { font-size: 34px; line-height: 1.15; letter-spacing: -.03em; font-weight: 600; max-width: 420px; }
+.signup-brand p { color: rgba(255,255,255,.75); max-width: 420px; margin: 0; font-size: 15px; }
+.signup-brand ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.signup-brand li { display: flex; gap: 10px; align-items: flex-start; color: rgba(255,255,255,.88); }
+.signup-brand li .ic { color: #fff; margin-top: 2px; }
+.signup-brand .logo { padding: 0; color: #fff; }
+.signup-form { padding: 48px 56px; display: flex; flex-direction: column; justify-content: center; max-width: 560px; width: 100%; margin: 0 auto; gap: 20px; }
+.signup-form h2 { font-size: 24px; font-weight: 600; letter-spacing: -.02em; }
+.who { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.who img, .avatar { width: 36px; height: 36px; border-radius: 50%; flex: none; object-fit: cover; }
+.choice { display: flex; flex-wrap: wrap; gap: 8px; }
+.choice button { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 13px; text-align: left; }
+.choice button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.stepper button { border: 0; background: var(--surface); width: 34px; height: 34px; cursor: pointer; font-size: 16px; }
+.stepper button:hover { background: var(--hover); }
+.stepper span { min-width: 44px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.check-line { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; }
+.check-line input { margin-top: 3px; accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
+@media (max-width: 860px) { .signup { grid-template-columns: minmax(0, 1fr); } .signup-brand { padding: 28px 20px; gap: 16px; } .signup-brand h1 { font-size: 24px; } .signup-brand ul { display: none; } .signup-form { padding: 24px 20px 48px; } }
+.side-profile { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; background: var(--side-hover); color: var(--side-ink); border: 0; cursor: pointer; text-align: left; width: 100%; }
+.side-profile:hover { background: var(--side-sel); }
+.side-profile .avatar { width: 32px; height: 32px; background: rgba(255,255,255,.2); display: grid; place-items: center; font-weight: 600; }
+.side-profile .nm { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side-profile .mt { font-size: 11.5px; color: var(--side-ink-2); }
+@media (max-width: 860px) { .side-profile { width: auto; margin: 0; flex: none; padding: 4px 8px; } .side-profile .mt { display: none; } }
 .menu { position: absolute; right: 0; top: 30px; z-index: 10; padding: 4px; width: 210px; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
 </style>
 
@@ -581,21 +610,44 @@ const store = {
   taskList() { return [...this.merged("tasks").values()]; },
   get cfg() { return { ...DEFAULT_SETTINGS, ...(this.settings || {}) }; },
   async init() {
-    let db = null;
+    let db = null, user = null;
     try { db = window.claude?.use ? await window.claude.use("db") : null; } catch { db = null; }
-    if (db) {
-      this.db = db; this.mode = "db";
-      let n = 0; const first = () => { if (++n === 3) this.ready = true; this.emit(); };
+    try { user = window.claude?.use ? await window.claude.use("user") : null; } catch { user = null; }
+    if (user) { try { this.me = await user.me(); } catch { this.me = null; } }
+    const uid = this.me?.id ?? null;
+    if (db && uid) {
+      this.db = db; this.mode = "db"; this.base = `data/users/${uid}/profile`;
+      let n = 0; const first = () => { if (++n === 3) { this.ready = true; } this.emit(); };
       const err = (e) => { this.error = e?.message || "Falha ao ler os dados."; this.emit(); };
       let a = 0, b = 0, c = 0;
-      db.collection("projects").onSnapshot((s) => { const m = new Map(); s.docs.forEach((d) => d.exists && m.set(d.id, d.data())); this.projects = m; a++ ? this.emit() : first(); }, err);
-      db.collection("tasks").onSnapshot((s) => { const m = new Map(); s.docs.forEach((d) => d.exists && m.set(d.id, d.data())); this.tasks = m; b++ ? this.emit() : first(); }, err);
-      db.doc("settings/main").onSnapshot((d) => { this.settings = d.exists ? d.data() : null; c++ ? this.emit() : first(); }, err);
+      const root = db.doc(this.base);
+      root.collection("projects").onSnapshot((s) => { const m = new Map(); s.docs.forEach((d) => d.exists && m.set(d.id, d.data())); this.projects = m; a++ ? this.emit() : first(); }, err);
+      root.collection("tasks").onSnapshot((s) => { const m = new Map(); s.docs.forEach((d) => d.exists && m.set(d.id, d.data())); this.tasks = m; b++ ? this.emit() : first(); }, err);
+      root.onSnapshot((d) => { this.settings = d.exists ? d.data() : null; c++ ? this.emit() : first(); }, err);
+      // Dados criados antes das contas (área compartilhada): só o dono enxerga e pode trazer para a conta dele.
+      if (this.me?.isOwner) {
+        try {
+          const [ps, ts] = await Promise.all([db.collection("projects").get(), db.collection("tasks").get()]);
+          this.legacy = { projects: ps.docs.filter((d) => d.exists).map((d) => d.data()), tasks: ts.docs.filter((d) => d.exists).map((d) => d.data()) };
+          this.emit();
+        } catch { this.legacy = null; }
+      }
     } else {
       this.mode = "local";
+      if (db && !uid) this.error = "Não foi possível identificar sua conta do claude.ai. Seus dados ficarão só neste navegador.";
       try { const j = JSON.parse(localStorage.getItem(LS) || "null"); if (j) { (j.projects || []).forEach((p) => this.projects.set(p.id, p)); (j.tasks || []).forEach((t) => this.tasks.set(t.id, t)); this.settings = j.settings || null; } } catch {}
       this.ready = true; this.emit();
     }
+  },
+  // Copia os projetos/tarefas antigos (compartilhados) para a conta e apaga a cópia compartilhada.
+  async migrateLegacy(onProgress) {
+    const L = this.legacy; if (!L || this.mode !== "db") return 0;
+    const all = [...L.projects.map((x) => ["projects", x]), ...L.tasks.map((x) => ["tasks", x])];
+    let i = 0;
+    for (const [kind, doc] of all) { await this.write(`${this.base}/${kind}/${doc.id}`, doc); onProgress?.(++i, all.length); }
+    for (const [kind, doc] of all) await this.write(`${kind}/${doc.id}`, null).catch(() => {});
+    this.legacy = null; this.emit();
+    return all.length;
   },
   persist() { if (this.mode === "local") try { localStorage.setItem(LS, JSON.stringify({ projects: [...this.projects.values()], tasks: [...this.tasks.values()], settings: this.settings })); } catch {} },
   write(path, data) {
@@ -613,7 +665,7 @@ const store = {
     const plain = data === null ? null : JSON.parse(JSON.stringify(data));
     if (this.mode === "local") { plain === null ? this[kind].delete(id) : this[kind].set(id, plain); this.persist(); this.emit(); return; }
     const key = kind + "/" + id; this.pending.set(key, plain); this.emit();
-    try { await this.write(key, plain); }
+    try { await this.write(`${this.base}/${key}`, plain); }
     catch (e) { toast(e?.code === "quota_exceeded" ? "O banco está cheio. Apague tarefas concluídas antigas." : "Não foi possível salvar: " + (e?.message || e), "bad"); }
     finally { if (this.pending.get(key) === plain) this.pending.delete(key); this.emit(); }
   },
@@ -621,9 +673,9 @@ const store = {
   deleteTask(id) { return this.put("tasks", id, null); },
   saveProject(p) { return this.put("projects", p.id, p); },
   async deleteProject(id) { for (const t of this.taskList().filter((x) => x.projectId === id)) await this.put("tasks", t.id, null); await this.put("projects", id, null); },
-  async saveSettings(s) { this.settings = { ...this.cfg, ...s }; if (this.mode === "local") { this.persist(); this.emit(); return; } this.emit(); try { await this.write("settings/main", this.settings); } catch (e) { toast("Não foi possível salvar: " + (e?.message || e), "bad"); } },
+  async saveSettings(s) { this.settings = { ...this.cfg, ...s }; if (this.mode === "local") { this.persist(); this.emit(); return; } this.emit(); try { await this.write(this.base, this.settings); } catch (e) { toast("Não foi possível salvar: " + (e?.message || e), "bad"); } },
 };
-function useStore() { const [, set] = useState(0); useEffect(() => { const f = (v) => set(v); store.subs.add(f); return () => store.subs.delete(f); }, []); return store; }
+function useStore() { const [, set] = useState(0); useEffect(() => { const f = (v) => set(v); store.subs.add(f); set(store.ver); return () => store.subs.delete(f); }, []); return store; }
 function useToday() { const [t, set] = useState(R.today()); useEffect(() => { const id = setInterval(() => set(R.today()), 30000); return () => clearInterval(id); }, []); return t; }
 
 /* Claude (capability sample) */
@@ -848,6 +900,7 @@ function App() {
   const nToday = cnt((t) => t.data && t.data <= today);
   const openTask = (id) => setTaskId(id);
 
+  if (st.ready && !st.cfg.cadastrado) return html`<${Signup} /><${Toasts} />`;
   let body;
   if (!st.ready) body = html`<p class="muted">Carregando seus projetos…</p>`;
   else if (route.view === "projeto") body = html`<${ProjectView} key=${route.id} id=${route.id} tab=${route.tab} go=${go} open=${openTask} today=${today} openModal=${setModal} />`;
@@ -868,7 +921,9 @@ function App() {
       <div class="side-sep"><span class="eyebrow side-projects-title">Projetos</span><button class="btn ghost sm" onClick=${() => setModal("novo-projeto")} aria-label="Novo projeto" title="Novo projeto"><${Icon} n="plus" s=${14} /></button></div>
       ${projects.map((p) => html`<${Nav} key=${p.id} v="projeto" extra=${{ id: p.id }} ico=${p.id === "inbox" ? html`<${Icon} n="inbox" />` : html`<${PDot} c=${p.cor} />`} label=${p.nome} n=${cnt((t) => t.projectId === p.id)} cur=${route.view === "projeto" && route.id === p.id} />`)}
       <button class="nav-btn" onClick=${() => setModal("novo-projeto")}><span class="ico"><${Icon} n="plus" /></span><span class="nl">Novo projeto</span></button>
-      <div class="side-cta"><b>Meta de hoje: ${R.metrics(tasks, [], st.cfg, today).doneToday}/${st.cfg.metaDiaria}</b>Pressione <kbd>N</kbd> para criar uma tarefa de qualquer tela.</div>
+      <button class="side-profile" onClick=${() => setModal("ajustes")} title="Meu perfil">
+        ${st.me?.avatarUrl ? html`<img class="avatar" src=${st.me.avatarUrl} alt="" />` : html`<span class="avatar">${(st.cfg.nome || "?").slice(0, 1).toUpperCase()}</span>`}
+        <span style=${{ minWidth: 0, flex: 1 }}><div class="nm">${st.cfg.nome || "Meu perfil"}</div><div class="mt">Meta de hoje: ${R.metrics(tasks, [], st.cfg, today).doneToday}/${st.cfg.metaDiaria}</div></span></button>
     </aside>
     <main class="work">
       ${st.mode === "local" && st.ready && html`<p class="note" style=${{ marginTop: 0 }}>Modo local: os dados ficam só neste navegador.</p>`}
@@ -883,6 +938,59 @@ function App() {
     ${modal?.newTask && html`<${NewTaskModal} projectId=${modal.newTask} defaultTags=${modal.tags} onClose=${() => setModal(null)} today=${today} />`}
     ${modal === "busca" && html`<${SearchModal} onClose=${() => setModal(null)} open=${openTask} go=${go} today=${today} />`}
     <${Toasts} />
+  </div>`;
+}
+
+/* ===== Cadastro (primeiro acesso) ===== */
+const USOS = [["trabalho", "Trabalho"], ["sdr", "Vendas / SDR"], ["estudos", "Estudos e concursos"], ["pessoal", "Vida pessoal"]];
+function Signup() {
+  const st = useStore();
+  const [f, setF] = useState(() => ({ nome: st.cfg.nome || st.me?.name || "", usos: [], metaDiaria: 5, inicio: "08:00", fim: "18:00", modelos: true, migrar: true }));
+  const [busy, setBusy] = useState(null);
+  const [err, setErr] = useState(null);
+  const upd = (x) => setF({ ...f, ...x });
+  const L = st.legacy && (st.legacy.projects.length || st.legacy.tasks.length) ? st.legacy : null;
+  const modelos = f.usos.filter((u) => ["sdr", "estudos", "pessoal"].includes(u));
+  async function submit(e) {
+    e.preventDefault();
+    if (!f.nome.trim()) return setErr("Informe como devemos te chamar.");
+    if (f.inicio >= f.fim) return setErr("O fim do dia precisa ser depois do início.");
+    setErr(null); setBusy("Criando sua conta…");
+    try {
+      if (L && f.migrar) { setBusy("Trazendo seus projetos…"); await store.migrateLegacy((i, n) => setBusy(`Trazendo seus projetos… ${i}/${n}`)); }
+      if (f.modelos && modelos.length && !(L && f.migrar)) {
+        for (const k of modelos) { const tpl = R.template(k); const { project, tasks } = R.buildProject({ nome: tpl.nome, cor: tpl.cor, icone: tpl.icone, descricao: tpl.descricao }, tpl); await store.saveProject(project); for (const t of tasks) await store.saveTask(t); }
+      }
+      await store.saveSettings({ nome: f.nome.trim(), usos: f.usos, metaDiaria: f.metaDiaria, inicio: f.inicio, fim: f.fim, cadastrado: true, cadastradoEm: Date.now() });
+      toast(`Bem-vindo(a) ao Rumo, ${f.nome.trim().split(/\s+/)[0]}!`);
+    } catch (e2) { setErr("Não foi possível concluir o cadastro. Tente de novo."); setBusy(null); }
+  }
+  const B = (t) => html`<li><${Icon} n="check" s=${16} w=${2.5} /><span>${t}</span></li>`;
+  return html`<div class="signup">
+    <div class="signup-brand">
+      <div class="logo"><i>R</i>Rumo</div>
+      <div class="stack" style=${{ gap: 14 }}><h1>Organize seus projetos e crie disciplina todos os dias.</h1>
+        <p>Crie sua conta para salvar seus projetos e tarefas. Cada pessoa tem o próprio espaço, e ninguém mais vê o que é seu.</p></div>
+      <ul>${B("Quadro kanban com etapas do seu jeito, lista e calendário")}${B("Meta diária e sequência de dias para manter o ritmo")}${B("O Claude monta o plano de cada projeto e organiza seu dia")}${B("Tags, prioridades, tarefas recorrentes e busca")}</ul>
+    </div>
+    <form class="signup-form" onSubmit=${submit}>
+      <div><div class="eyebrow">Criar conta</div><h2>Vamos configurar o seu Rumo</h2></div>
+      ${st.mode === "db" ? html`<div class="who">${st.me?.avatarUrl && html`<img src=${st.me.avatarUrl} alt="" />`}<div><div style=${{ fontWeight: 600 }}>${st.me?.name || "Sua conta do claude.ai"}</div><div class="small muted">Você entra com o login do claude.ai. Não é preciso criar senha.</div></div></div>`
+        : html`<p class="note" style=${{ margin: 0 }}>Não foi possível identificar sua conta. O cadastro e os dados ficarão só neste navegador.</p>`}
+      <div><label class="lbl" for="su-nome">Como devemos te chamar?</label><input id="su-nome" class="input" style=${{ height: 40 }} value=${f.nome} onInput=${(e) => upd({ nome: e.target.value })} autoFocus placeholder="Seu nome" /></div>
+      <div><span class="lbl">Para que você vai usar o Rumo? (pode marcar mais de um)</span>
+        <div class="choice">${USOS.map(([k, l]) => html`<button type="button" key=${k} aria-pressed=${f.usos.includes(k)} onClick=${() => upd({ usos: f.usos.includes(k) ? f.usos.filter((x) => x !== k) : [...f.usos, k] })}>${l}</button>`)}</div></div>
+      <div class="form-grid" style=${{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}>
+        <div><span class="lbl">Meta de tarefas por dia</span><div class="stepper"><button type="button" aria-label="Diminuir" onClick=${() => upd({ metaDiaria: Math.max(1, f.metaDiaria - 1) })}>−</button><span>${f.metaDiaria}</span><button type="button" aria-label="Aumentar" onClick=${() => upd({ metaDiaria: Math.min(50, f.metaDiaria + 1) })}>+</button></div></div>
+        <div><label class="lbl" for="su-ini">Seu dia começa</label><input id="su-ini" type="time" class="input" value=${f.inicio} onInput=${(e) => upd({ inicio: e.target.value })} /></div>
+        <div><label class="lbl" for="su-fim">e termina</label><input id="su-fim" type="time" class="input" value=${f.fim} onInput=${(e) => upd({ fim: e.target.value })} /></div>
+      </div>
+      ${L ? html`<label class="check-line"><input type="checkbox" id="su-migrar" checked=${f.migrar} onChange=${(e) => upd({ migrar: e.target.checked })} /><span>Trazer para a minha conta ${((np, nt) => html`<b>${np} projeto${np === 1 ? "" : "s"}</b> e <b>${nt} tarefa${nt === 1 ? "" : "s"}</b>`)(L.projects.filter((x) => x.id !== "inbox").length, L.tasks.length)} que já criei. Tudo passa a ser privado.</span></label>`
+        : modelos.length > 0 && html`<label class="check-line"><input type="checkbox" id="su-modelos" checked=${f.modelos} onChange=${(e) => upd({ modelos: e.target.checked })} /><span>Começar com projetos modelo: ${modelos.map((k) => R.template(k).nome).join(", ")}.</span></label>`}
+      ${err && html`<p class="small" style=${{ color: "var(--bad)", margin: 0 }}>${err}</p>`}
+      <button class="btn primary cta" disabled=${!!busy}>${busy || "Criar minha conta e entrar"}</button>
+      <p class="small muted" style=${{ margin: 0 }}>Você pode mudar nome, meta e horário depois em “Meu perfil”, no menu lateral.</p>
+    </form>
   </div>`;
 }
 
@@ -1446,8 +1554,9 @@ function DashboardView({ today, openModal }) {
 }
 function Settings({ onClose }) {
   const [f, setF] = useState(store.cfg);
-  return html`<${Modal} title="Meta e horário" onClose=${onClose}>
+  return html`<${Modal} title="Meu perfil" onClose=${onClose}>
     <div class="form-grid">
+      <div class="span-all who">${store.me?.avatarUrl && html`<img src=${store.me.avatarUrl} alt="" />`}<div><div style=${{ fontWeight: 600 }}>${f.nome || "Sem nome"}</div><div class="small muted">${store.mode === "db" ? "Conta vinculada ao seu login do claude.ai. Seus projetos são privados." : "Dados salvos só neste navegador."}</div></div></div>
       <div class="span-all"><label class="lbl" for="cf-nome">Como devo te chamar?</label><input id="cf-nome" class="input" value=${f.nome} onInput=${(e) => setF({ ...f, nome: e.target.value })} /></div>
       <div><label class="lbl" for="cf-meta">Meta de tarefas concluídas por dia</label><input id="cf-meta" type="number" min="1" class="input" value=${f.metaDiaria} onInput=${(e) => setF({ ...f, metaDiaria: Math.max(1, Number(e.target.value) || 1) })} /></div>
       <div><label class="lbl" for="cf-ini">Início do dia de trabalho</label><input id="cf-ini" type="time" class="input" value=${f.inicio} onInput=${(e) => setF({ ...f, inicio: e.target.value })} /></div>
