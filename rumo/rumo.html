@@ -1,219 +1,229 @@
 <title>Rumo Projetos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: barra lateral de navegação (projetos) + área de trabalho; no celular a barra vira um topo compacto. */
+/* Layout: barra lateral estreita e neutra + área de trabalho branca; hierarquia só com peso, tamanho e cinzas. */
 :root {
-  --bg: #f4f3f1; --surface: #ffffff; --surface-2: #f7f6f4; --sunk: #ecebe8; --line: #dfddd8; --line-2: #eceae6;
-  --ink: #1b1d22; --ink-2: #4d5159; --ink-3: #858a93;
-  --accent: #d24e12; --accent-ink: #ffffff; --accent-soft: #fbe6da; --accent-2: #26324a;
-  --ok: #1d7a44; --ok-soft: #dcf2e4; --warn: #9a6200; --warn-soft: #fbefd2; --bad: #c0262d; --bad-soft: #fbe3e3;
-  --p1: #d1242f; --p2: #e0730b; --p3: #2f6fdb; --p4: #9aa0a8;
-  --bar: #26324a; --bar-hover: #d24e12; --grid: #e7e5e1;
-  --shadow: 0 1px 2px rgba(27, 29, 34, .06), 0 6px 18px rgba(27, 29, 34, .05);
-  --f-display: "Bricolage Grotesque", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --f-ui: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --bg: #ffffff; --side: #fafafa; --surface: #ffffff; --hover: #f4f4f5; --sel: #eeeeef;
+  --line: #e4e4e7; --line-2: #f0f0f1;
+  --ink: #18181b; --ink-2: #52525b; --ink-3: #8e8e96;
+  --primary: #18181b; --primary-ink: #ffffff;
+  --accent: #2563eb; --accent-soft: #eef3fe;
+  --ok: #16a34a; --bad: #dc2626; --warn: #d97706;
+  --p1: #dc2626; --p2: #ea8a0c; --p3: #2563eb; --p4: #c4c4ca;
+  --bar: #27272a; --bar-hover: #2563eb; --grid: #f0f0f1;
+  --f-ui: "Roboto", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --f-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #121316; --surface: #1a1c20; --surface-2: #1f2126; --sunk: #16171a; --line: #2e3138; --line-2: #25282e;
-  --ink: #eceef2; --ink-2: #b1b6bf; --ink-3: #7c828c;
-  --accent: #ff7a3d; --accent-ink: #1f0c02; --accent-soft: #3b2215; --accent-2: #c9d3ea;
-  --ok: #5fd08e; --ok-soft: #143222; --warn: #f2bd4f; --warn-soft: #382a0d; --bad: #ff7b80; --bad-soft: #3d1618;
-  --p1: #ff6b73; --p2: #ffa04d; --p3: #7aa7ff; --p4: #7c828c;
-  --bar: #c9d3ea; --bar-hover: #ff7a3d; --grid: #2a2d33;
-  --shadow: 0 1px 2px rgba(0,0,0,.45); color-scheme: dark;
+  --bg: #111113; --side: #141416; --surface: #111113; --hover: #1c1c1f; --sel: #232327;
+  --line: #2a2a2e; --line-2: #1f1f22;
+  --ink: #ededef; --ink-2: #a8a8b0; --ink-3: #6f6f78;
+  --primary: #ededef; --primary-ink: #111113;
+  --accent: #5b8cff; --accent-soft: #17203a;
+  --ok: #4ade80; --bad: #f87171; --warn: #fbbf24;
+  --p1: #f87171; --p2: #fbbf24; --p3: #5b8cff; --p4: #4a4a52;
+  --bar: #d4d4d8; --bar-hover: #5b8cff; --grid: #1f1f22; color-scheme: dark;
 } }
 :root[data-theme="dark"] {
-  --bg: #121316; --surface: #1a1c20; --surface-2: #1f2126; --sunk: #16171a; --line: #2e3138; --line-2: #25282e;
-  --ink: #eceef2; --ink-2: #b1b6bf; --ink-3: #7c828c;
-  --accent: #ff7a3d; --accent-ink: #1f0c02; --accent-soft: #3b2215; --accent-2: #c9d3ea;
-  --ok: #5fd08e; --ok-soft: #143222; --warn: #f2bd4f; --warn-soft: #382a0d; --bad: #ff7b80; --bad-soft: #3d1618;
-  --p1: #ff6b73; --p2: #ffa04d; --p3: #7aa7ff; --p4: #7c828c;
-  --bar: #c9d3ea; --bar-hover: #ff7a3d; --grid: #2a2d33;
-  --shadow: 0 1px 2px rgba(0,0,0,.45); color-scheme: dark;
+  --bg: #111113; --side: #141416; --surface: #111113; --hover: #1c1c1f; --sel: #232327;
+  --line: #2a2a2e; --line-2: #1f1f22;
+  --ink: #ededef; --ink-2: #a8a8b0; --ink-3: #6f6f78;
+  --primary: #ededef; --primary-ink: #111113;
+  --accent: #5b8cff; --accent-soft: #17203a;
+  --ok: #4ade80; --bad: #f87171; --warn: #fbbf24;
+  --p1: #f87171; --p2: #fbbf24; --p3: #5b8cff; --p4: #4a4a52;
+  --bar: #d4d4d8; --bar-hover: #5b8cff; --grid: #1f1f22; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
-body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 14px; line-height: 1.45; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 button, input, select, textarea { font: inherit; color: inherit; }
-h1, h2, h3 { margin: 0; text-wrap: balance; }
-h1 { font-family: var(--f-display); font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
-h2 { font-family: var(--f-display); font-size: 18px; font-weight: 700; }
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 500; }
+h1 { font-size: 22px; letter-spacing: -.01em; }
+h2 { font-size: 15px; }
 .mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
 .muted { color: var(--ink-3); } .small { font-size: 12px; }
-.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.eyebrow { font-size: 12px; font-weight: 500; color: var(--ink-3); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ic { flex: none; display: block; }
 
-.shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 100%; }
-aside.side { background: var(--sunk); border-right: 1px solid var(--line); padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-.logo { font-family: var(--f-display); font-weight: 800; font-size: 22px; letter-spacing: -.03em; display: flex; align-items: center; gap: 8px; padding: 0 8px 12px; }
-.logo i { width: 12px; height: 12px; border-radius: 3px; background: var(--accent); display: inline-block; transform: rotate(45deg); }
-.nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 7px 10px; border-radius: 8px; cursor: pointer; text-align: left; color: var(--ink-2); font-weight: 600; min-width: 0; }
-.nav-btn:hover { background: var(--line-2); }
-.nav-btn[aria-current="page"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
-.nav-btn .ico { width: 18px; text-align: center; flex: none; }
+.shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100%; }
+aside.side { background: var(--side); border-right: 1px solid var(--line); padding: 18px 10px; display: flex; flex-direction: column; gap: 1px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.logo { font-weight: 700; font-size: 17px; letter-spacing: -.02em; display: flex; align-items: center; gap: 8px; padding: 0 10px 18px; }
+.logo i { width: 8px; height: 8px; border-radius: 2px; background: var(--accent); display: inline-block; }
+.nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; text-align: left; color: var(--ink-2); font-size: 13.5px; min-width: 0; height: 32px; }
+.nav-btn:hover { background: var(--hover); color: var(--ink); }
+.nav-btn[aria-current="page"] { background: var(--sel); color: var(--ink); font-weight: 500; }
+.nav-btn .ico { width: 16px; display: grid; place-items: center; flex: none; color: var(--ink-3); }
+.nav-btn[aria-current="page"] .ico { color: var(--ink); }
 .nav-btn .lbl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nav-btn .cnt { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.side-sep { margin: 14px 10px 4px; display: flex; align-items: center; justify-content: space-between; }
-.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; display: inline-block; }
-main.work { padding: 24px 28px 64px; min-width: 0; }
+.nav-btn .cnt { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.side-sep { margin: 20px 10px 4px; display: flex; align-items: center; justify-content: space-between; }
+.dot { width: 8px; height: 8px; border-radius: 2px; flex: none; display: inline-block; }
+main.work { padding: 32px 40px 72px; min-width: 0; max-width: 1400px; }
 @media (max-width: 860px) {
   .shell { grid-template-columns: minmax(0, 1fr); }
-  aside.side { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; flex-wrap: wrap; padding: 10px 16px; }
-  .logo { padding: 0 8px 0 0; font-size: 19px; }
+  aside.side { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; flex-wrap: nowrap; overflow-x: auto; padding: 8px 12px; gap: 2px; scrollbar-width: none; }
+  .nav-btn { flex: none; }
+  .logo { padding: 0 10px 0 4px; height: 32px; }
   .nav-btn { width: auto; }
   .side-sep, .side-projects-title { display: none; }
-  main.work { padding: 16px 16px 64px; }
+  main.work { padding: 20px 16px 64px; }
 }
 
 .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; box-shadow: var(--shadow); min-width: 0; }
-.card.flat { box-shadow: none; }
-.head { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: flex-end; margin-bottom: 18px; }
-.head .sub { color: var(--ink-3); margin-top: 2px; }
+.stack { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.card.flat { border-color: var(--line-2); }
+.head { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: flex-end; margin-bottom: 4px; }
+.head .sub { color: var(--ink-3); margin-top: 4px; font-size: 13px; }
 
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 9px; padding: 7px 12px; font-weight: 600; cursor: pointer; white-space: nowrap; text-decoration: none; }
-.btn:hover { background: var(--surface-2); }
-.btn:disabled { opacity: .5; cursor: default; }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.btn.primary:hover { filter: brightness(1.06); }
-.btn.dark { background: var(--accent-2); border-color: var(--accent-2); color: var(--surface); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 0 12px; height: 32px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; text-decoration: none; }
+.btn:hover { background: var(--hover); }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn.primary, .btn.dark { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+.btn.primary:hover, .btn.dark:hover { opacity: .88; background: var(--primary); }
 .btn.danger { color: var(--bad); }
-.btn.sm { padding: 3px 9px; font-size: 12px; border-radius: 7px; }
-.btn.ghost { border-color: transparent; background: none; color: var(--ink-3); padding: 3px 6px; }
-.btn.ghost:hover { color: var(--ink); background: var(--line-2); }
-.btn.link { border: 0; background: none; color: var(--accent); padding: 0; font-weight: 600; }
-kbd { font-family: var(--f-mono); font-size: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-3); border-radius: 4px; padding: 0 4px; line-height: 16px; }
-.btn.primary kbd { background: rgba(255,255,255,.22); color: inherit; border-color: transparent; }
+.btn.sm { height: 28px; padding: 0 10px; font-size: 12.5px; }
+.btn.ghost { border-color: transparent; background: none; color: var(--ink-3); padding: 0 6px; }
+.btn.ghost:hover { color: var(--ink); background: var(--hover); }
+.btn.link { border: 0; background: none; color: var(--accent); padding: 0; height: auto; font-weight: 500; }
+kbd { font-family: var(--f-mono); font-size: 10.5px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-3); border-radius: 4px; padding: 0 4px; line-height: 16px; }
 
-.input { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 9px; padding: 7px 10px; outline: none; min-width: 0; }
+.input { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 0 10px; height: 34px; outline: none; min-width: 0; }
+textarea.input { padding: 8px 10px; height: auto; resize: vertical; }
 .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-textarea.input { resize: vertical; }
-label.lbl, span.lbl { display: block; font-size: 12px; font-weight: 600; color: var(--ink-3); margin-bottom: 4px; }
-.form-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+label.lbl, span.lbl { display: block; font-size: 12px; font-weight: 500; color: var(--ink-2); margin-bottom: 6px; }
+.form-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .span-all { grid-column: 1 / -1; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: var(--surface); flex-wrap: wrap; }
-.seg button { border: 0; background: none; padding: 6px 12px; cursor: pointer; font-weight: 600; color: var(--ink-2); font-size: 13px; }
-.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+/* Abas sublinhadas */
+.seg { display: flex; gap: 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.seg button { border: 0; background: none; padding: 8px 0; margin-bottom: -1px; cursor: pointer; font-size: 13.5px; color: var(--ink-3); border-bottom: 2px solid transparent; display: inline-flex; align-items: center; gap: 6px; }
+.seg button:hover { color: var(--ink); }
+.seg button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 500; }
+.seg.pill { gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; display: inline-flex; }
+.seg.pill button { padding: 0 10px; height: 28px; margin: 0; border: 0; font-size: 12px; }
+.seg.pill button[aria-pressed="true"] { background: var(--sel); }
 
 /* Quick add */
 .quick { display: flex; flex-direction: column; gap: 6px; }
-.quick-box { display: flex; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 6px 6px 6px 12px; box-shadow: var(--shadow); }
-.quick-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.quick-box input { border: 0; outline: none; background: none; flex: 1; min-width: 0; padding: 6px 0; font-size: 15px; }
+.quick-box { display: flex; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: 8px; padding: 0 6px 0 12px; height: 42px; background: var(--surface); color: var(--ink-3); }
+.quick-box:focus-within { border-color: var(--ink-3); color: var(--ink); }
+.quick-box input { border: 0; outline: none; background: none; flex: 1; min-width: 0; font-size: 14px; color: var(--ink); }
+.quick-box input::placeholder { color: var(--ink-3); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--sunk); color: var(--ink-2); white-space: nowrap; }
-.chip.late { background: var(--bad-soft); color: var(--bad); }
-.chip.today { background: var(--ok-soft); color: var(--ok); }
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 1px 8px; border-radius: 4px; border: 1px solid var(--line); color: var(--ink-2); white-space: nowrap; }
 
 /* Lista de tarefas */
 .tlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.titem { display: flex; gap: 10px; align-items: flex-start; padding: 10px 4px; border-bottom: 1px solid var(--line-2); min-width: 0; }
-.titem:last-child { border-bottom: 0; }
+.titem { display: flex; gap: 12px; align-items: flex-start; padding: 10px 2px; border-bottom: 1px solid var(--line-2); min-width: 0; }
 .titem .body { flex: 1; min-width: 0; cursor: pointer; }
-.titem .title { font-weight: 600; overflow-wrap: anywhere; }
-.titem.done .title { text-decoration: line-through; color: var(--ink-3); }
-.titem .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 3px; font-size: 12px; color: var(--ink-3); align-items: center; }
-.check { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--p4); background: none; cursor: pointer; display: grid; place-items: center; margin-top: 1px; padding: 0; color: transparent; font-size: 11px; font-weight: 800; }
-.check.p1 { border-color: var(--p1); background: color-mix(in srgb, var(--p1) 10%, transparent); }
-.check.p2 { border-color: var(--p2); background: color-mix(in srgb, var(--p2) 10%, transparent); }
-.check.p3 { border-color: var(--p3); background: color-mix(in srgb, var(--p3) 10%, transparent); }
+.titem .title { overflow-wrap: anywhere; }
+.titem.done .title, .kcard.done .title { text-decoration: line-through; color: var(--ink-3); }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 2px; font-size: 12px; color: var(--ink-3); align-items: center; }
+.meta > span { display: inline-flex; align-items: center; gap: 4px; }
+.due.late { color: var(--bad); } .due.today { color: var(--ink-2); }
+.check { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--p4); background: none; cursor: pointer; display: grid; place-items: center; margin-top: 2px; padding: 0; color: transparent; }
+.check.p1 { border-color: var(--p1); } .check.p2 { border-color: var(--p2); } .check.p3 { border-color: var(--p3); }
 .check:hover { color: var(--ink-3); }
-.check.on { background: var(--ok); border-color: var(--ok); color: #fff; }
-.sec-h { display: flex; align-items: center; gap: 8px; margin: 18px 0 4px; font-weight: 800; font-size: 13px; }
-.sec-h .n { color: var(--ink-3); font-weight: 600; }
-.empty { border: 1px dashed var(--line); border-radius: 12px; padding: 18px; text-align: center; color: var(--ink-3); }
+.check.on { background: var(--ink-3); border-color: var(--ink-3); color: var(--bg); }
+.sec-h { display: flex; align-items: center; gap: 8px; margin: 8px 0 2px; font-weight: 500; font-size: 13px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.sec-h .n { color: var(--ink-3); font-weight: 400; }
+.sec-h.btn { border-bottom: 0; height: auto; }
+.empty { padding: 20px 0; color: var(--ink-3); font-size: 13px; }
 
 /* Kanban */
-.board { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 12px; align-items: flex-start; }
-.col { flex: 0 0 290px; background: var(--sunk); border: 1px solid var(--line-2); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 8px; max-height: calc(100vh - 220px); }
-.col.over { outline: 2px dashed var(--accent); outline-offset: -2px; }
-.col-h { display: flex; align-items: center; gap: 6px; padding: 2px 4px; }
-.col-h .name { font-weight: 800; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.col-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 40px; }
-.kcard { background: var(--surface); border: 1px solid var(--line); border-radius: 11px; padding: 10px; cursor: grab; box-shadow: var(--shadow); display: flex; gap: 8px; align-items: flex-start; }
-.kcard.dragging { opacity: .4; }
-.kcard.drop-before { box-shadow: 0 -3px 0 var(--accent); }
-.kcard .title { font-weight: 600; overflow-wrap: anywhere; }
-.kcard.done .title { text-decoration: line-through; color: var(--ink-3); }
-.add-col { flex: 0 0 240px; }
+.board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; align-items: flex-start; }
+.col { flex: 0 0 280px; border-radius: 8px; padding: 4px; display: flex; flex-direction: column; gap: 6px; }
+.col.over { background: var(--hover); }
+.col-h { display: flex; align-items: center; gap: 6px; padding: 4px 6px 8px; }
+.col-h .name { font-weight: 500; font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.col-list { display: flex; flex-direction: column; gap: 6px; min-height: 40px; }
+.kcard { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; cursor: grab; display: flex; gap: 10px; align-items: flex-start; }
+.kcard:hover { border-color: var(--ink-3); }
+.kcard.dragging { opacity: .35; }
+.kcard.drop-before { box-shadow: 0 -2px 0 var(--accent); }
+.kcard .title { overflow-wrap: anywhere; font-size: 13.5px; }
+.add-col { flex: 0 0 220px; padding-top: 4px; }
 
 /* Calendário */
-.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--line); gap: 1px; }
-.cal .dow { background: var(--surface-2); padding: 6px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
-.cal .day { background: var(--surface); min-height: 108px; padding: 6px; display: flex; flex-direction: column; gap: 3px; cursor: pointer; min-width: 0; }
-.cal .day.out { background: var(--surface-2); }
-.cal .day.out .dnum { color: var(--ink-3); }
-.cal .day.today .dnum { background: var(--accent); color: var(--accent-ink); }
-.cal .day.sel { box-shadow: inset 0 0 0 2px var(--accent-2); }
-.cal .day.over { box-shadow: inset 0 0 0 2px var(--accent); }
-.dnum { font-size: 12px; font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; }
-.evt { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 6px; background: var(--sunk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-left: 3px solid var(--ink-3); cursor: grab; }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.cal .dow, .cal .day { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.cal .dow { padding: 6px 8px; font-size: 11.5px; color: var(--ink-3); }
+.cal .day { min-height: 112px; padding: 6px; display: flex; flex-direction: column; gap: 3px; cursor: pointer; min-width: 0; }
+.cal .day:hover { background: var(--hover); }
+.cal .day.out .dnum { color: var(--ink-3); opacity: .6; }
+.cal .day.today .dnum { background: var(--accent); color: #fff; }
+.cal .day.sel { background: var(--hover); }
+.cal .day.over { background: var(--accent-soft); }
+.dnum { font-size: 12px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; }
+.evt { font-size: 11.5px; padding: 1px 6px; border-radius: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-left: 2px solid var(--ink-3); cursor: grab; color: var(--ink-2); background: var(--hover); }
 .evt.done { text-decoration: line-through; color: var(--ink-3); }
-@media (max-width: 700px) { .cal .day { min-height: 64px; } .evt { font-size: 0; padding: 0; height: 6px; border-left-width: 0; } .cal .dow { padding: 4px; font-size: 10px; } }
-.cal-layout { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
+@media (max-width: 700px) { .cal .day { min-height: 60px; } .evt { font-size: 0; padding: 0; height: 4px; } .cal .dow { padding: 4px; font-size: 10px; } }
+.cal-layout { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
 @media (max-width: 1100px) { .cal-layout { grid-template-columns: minmax(0, 1fr); } }
 
 /* Dashboard */
-.kpis { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
-.kpi .v { font-family: var(--f-display); font-size: 30px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; margin-top: 4px; }
-.kpi .v small { font-size: 16px; color: var(--ink-3); font-weight: 600; }
-.bar-track { height: 8px; border-radius: 99px; background: var(--line-2); overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 99px; background: var(--accent-2); }
-.bar-fill.ok { background: var(--ok); }
+.kpis { display: grid; gap: 0; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.kpi { border: 0; border-radius: 0; box-shadow: inset -1px -1px 0 var(--line); padding: 16px 18px; }
+.kpi .v { font-size: 26px; font-weight: 400; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 6px; }
+.kpi .v small { font-size: 14px; color: var(--ink-3); }
+.bar-track { height: 4px; border-radius: 99px; background: var(--line-2); overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 99px; background: var(--ink); }
 .chart { position: relative; }
 .chart svg { width: 100%; height: auto; display: block; }
 .chart text { fill: var(--ink-3); font-size: 11px; font-family: var(--f-ui); }
-.chart .val { fill: var(--ink-2); font-weight: 700; }
-.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 8px; padding: 5px 8px; font-size: 12px; transform: translate(-50%, -110%); white-space: nowrap; }
+.chart .val { fill: var(--ink-2); }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); border-radius: 6px; padding: 4px 8px; font-size: 12px; transform: translate(-50%, -115%); white-space: nowrap; }
 .grid-2 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); align-items: start; }
 
 /* Hoje */
-.today-top { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) 280px; align-items: start; }
+.today-top { display: grid; gap: 32px; grid-template-columns: minmax(0, 1fr) 260px; align-items: start; }
 @media (max-width: 1000px) { .today-top { grid-template-columns: minmax(0, 1fr); } }
-.ring { position: relative; width: 108px; height: 108px; flex: none; }
+.ring { position: relative; width: 88px; height: 88px; flex: none; }
 .ring svg { transform: rotate(-90deg); }
 .ring .c { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
-.ring .c b { font-family: var(--f-display); font-size: 26px; line-height: 1; }
-.streak { font-family: var(--f-display); font-size: 22px; font-weight: 800; }
+.ring .c b { font-size: 22px; font-weight: 500; line-height: 1; }
+.streak { font-size: 20px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
 
 /* Claude */
-.ai { background: linear-gradient(0deg, var(--surface), var(--surface)); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
-.ai-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--accent); }
-.ai-badge i { width: 8px; height: 8px; border-radius: 2px; background: var(--accent); transform: rotate(45deg); display: inline-block; }
+.ai { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.ai-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--ink); }
+.ai-badge .ic { color: var(--accent); }
 .msgs { display: flex; flex-direction: column; gap: 10px; }
-.msg { max-width: 88%; padding: 10px 12px; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
-.msg.ai { background: var(--sunk); align-self: flex-start; border-top-left-radius: 4px; }
-.msg.me { background: var(--accent-2); color: var(--surface); align-self: flex-end; border-top-right-radius: 4px; }
-.thinking { color: var(--ink-3); font-style: italic; }
+.msg { max-width: 88%; padding: 9px 12px; border-radius: 10px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13.5px; }
+.msg.ai { background: var(--hover); align-self: flex-start; }
+.msg.me { background: var(--primary); color: var(--primary-ink); align-self: flex-end; }
+.thinking { color: var(--ink-3); }
 .plan-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
 .plan-list label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
-.plan-list input { margin-top: 3px; accent-color: var(--accent); }
+.plan-list input { margin-top: 3px; accent-color: var(--ink); }
 
 /* Modal / toasts */
-.backdrop { position: fixed; inset: 0; background: rgba(15, 16, 20, .45); z-index: 50; display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px 16px; overflow-y: auto; }
-.modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 560px; padding: 20px; box-shadow: 0 24px 70px rgba(0,0,0,.3); }
-.modal.wide { max-width: 760px; }
-.modal-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-.toasts { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 60; display: flex; flex-direction: column; gap: 8px; max-width: min(360px, calc(100vw - 32px)); }
-.toast { background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: 10px; box-shadow: var(--shadow); font-weight: 600; display: flex; gap: 10px; align-items: center; }
+.backdrop { position: fixed; inset: 0; background: rgba(9, 9, 11, .4); z-index: 50; display: flex; align-items: flex-start; justify-content: center; padding: 8vh 16px 16px; overflow-y: auto; }
+.modal { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; width: 100%; max-width: 560px; padding: 20px 22px; box-shadow: 0 16px 48px rgba(0,0,0,.18); }
+.modal.wide { max-width: 740px; }
+.modal-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.modal-h h2 { font-size: 16px; }
+.toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 60; display: flex; flex-direction: column; gap: 6px; align-items: center; max-width: calc(100vw - 32px); }
+.toast { background: var(--ink); color: var(--bg); padding: 9px 14px; border-radius: 8px; font-size: 13px; display: flex; gap: 12px; align-items: center; }
 .toast.bad { background: var(--bad); color: #fff; }
-.toast button { border: 0; background: none; color: inherit; text-decoration: underline; cursor: pointer; font-weight: 700; padding: 0; }
+.toast button { border: 0; background: none; color: inherit; opacity: .75; cursor: pointer; font-weight: 500; padding: 0; }
+.toast button:hover { opacity: 1; }
 .subtasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .subtasks li { display: flex; align-items: center; gap: 8px; }
-.subtasks input[type="checkbox"] { accent-color: var(--ok); width: 16px; height: 16px; }
-.swatches { display: flex; flex-wrap: wrap; gap: 6px; }
-.swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
-.swatch[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--surface) inset; }
-.emoji-btn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 17px; }
-.emoji-btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
-.tpl-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-.tpl { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px; cursor: pointer; }
-.tpl:hover, .tpl[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
-.tpl b { display: block; margin-bottom: 2px; }
-.note { background: var(--warn-soft); border-radius: 10px; padding: 8px 12px; font-size: 13px; }
+.subtasks input[type="checkbox"] { accent-color: var(--ink); width: 15px; height: 15px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch { width: 22px; height: 22px; border-radius: 6px; border: 0; cursor: pointer; outline-offset: 2px; }
+.swatch[aria-pressed="true"] { outline: 2px solid var(--ink); }
+.tpl-grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.tpl { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 12px; cursor: pointer; }
+.tpl:hover { background: var(--hover); }
+.tpl[aria-pressed="true"] { border-color: var(--ink); }
+.tpl b { display: block; margin-bottom: 2px; font-weight: 500; }
+.note { background: var(--hover); border-radius: 8px; padding: 8px 12px; font-size: 13px; color: var(--ink-2); }
+.menu { position: absolute; right: 0; top: 30px; z-index: 10; padding: 4px; width: 210px; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
 </style>
 
 <div id="root"><main class="work"><p class="muted">Carregando o Rumo…</p></main></div>
@@ -571,7 +581,7 @@ function toggleDone(task) {
   store.saveTask(upd); if (next) store.saveTask(next);
   if (upd.concluida) {
     const c = R.metrics(store.taskList(), [], store.cfg);
-    toast(c.doneToday >= c.meta ? `✔ Concluída. Meta do dia batida (${c.doneToday}/${c.meta})!` : `✔ Concluída (${c.doneToday}/${c.meta} hoje)`, "", { label: "Desfazer", fn: () => { store.saveTask(task); if (next) store.deleteTask(next.id); } });
+    toast(c.doneToday >= c.meta ? `Concluída. Meta do dia batida (${c.doneToday}/${c.meta})` : `Concluída · ${c.doneToday}/${c.meta} hoje`, "", { label: "Desfazer", fn: () => { store.saveTask(task); if (next) store.deleteTask(next.id); } });
   }
 }
 function googleLink(t) {
@@ -586,10 +596,37 @@ function googleLink(t) {
 }
 
 /* ===== Peças ===== */
+/* Ícones de traço (estilo Lucide) */
+const ICONS = {
+  sun: "M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8 M12 2v2 M12 20v2 M4.93 4.93l1.41 1.41 M17.66 17.66l1.41 1.41 M2 12h2 M20 12h2 M6.34 17.66l-1.41 1.41 M19.07 4.93l-1.41 1.41",
+  week: "M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z M16 2v4 M8 2v4 M3 10h18 M8 14h.01 M12 14h.01 M16 14h.01 M8 18h.01 M12 18h.01",
+  cal: "M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z M16 2v4 M8 2v4 M3 10h18",
+  chart: "M3 3v18h18 M8 16v-5 M13 16V8 M18 16v-3",
+  inbox: "M22 12h-6l-2 3h-4l-2-3H2 M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z",
+  plus: "M12 5v14 M5 12h14",
+  repeat: "m17 2 4 4-4 4 M3 11v-1a4 4 0 0 1 4-4h14 m7 22-4-4 4-4 M21 13v1a4 4 0 0 1-4 4H3",
+  check: "M20 6 9 17l-5-5",
+  subtasks: "M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11",
+  note: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8",
+  flame: "M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z",
+  sliders: "M4 21v-7 M4 10V3 M12 21v-9 M12 8V3 M20 21v-5 M20 12V3 M1 14h6 M9 8h6 M17 16h6",
+  spark: "M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2z",
+  more: "M5 12h.01 M12 12h.01 M19 12h.01",
+  x: "M18 6 6 18 M6 6l12 12",
+  right: "m9 18 6-6-6-6", down: "m6 9 6 6 6-6", left: "m15 18-6-6 6-6",
+  pencil: "M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z",
+  trash: "M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6 M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
+  arrowL: "m12 19-7-7 7-7 M19 12H5", arrowR: "M5 12h14 m-7-7 7 7-7 7",
+  ext: "M15 3h6v6 M10 14 21 3 M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6",
+  flag: "M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z M4 22v-7",
+};
+const Icon = ({ n, s = 16, w = 1.75 }) => html`<svg class="ic" width=${s} height=${s} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=${n === "more" ? 3 : w} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d=${ICONS[n]} /></svg>`;
+const PDot = ({ c }) => html`<span class="dot" style=${{ background: c }}></span>`;
+
 function Modal({ title, onClose, wide, children }) {
   useEffect(() => { const k = (e) => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } }; window.addEventListener("keydown", k, true); return () => window.removeEventListener("keydown", k, true); }, [onClose]);
   return html`<div class="backdrop" data-modal onMouseDown=${onClose}><div class=${"modal" + (wide ? " wide" : "")} role="dialog" aria-modal="true" aria-label=${title} onMouseDown=${(e) => e.stopPropagation()}>
-    <div class="modal-h"><h2>${title}</h2><button class="btn ghost" onClick=${onClose} aria-label="Fechar">✕</button></div>${children}</div></div>`;
+    <div class="modal-h"><h2>${title}</h2><button class="btn ghost" onClick=${onClose} aria-label="Fechar"><${Icon} n="x" /></button></div>${children}</div></div>`;
 }
 function Confirm({ label, confirmLabel, onConfirm, className = "btn danger sm" }) {
   const [arm, setArm] = useState(false);
@@ -599,21 +636,21 @@ function Confirm({ label, confirmLabel, onConfirm, className = "btn danger sm" }
 const PRIO_LABEL = { 1: "P1 urgente", 2: "P2 alta", 3: "P3 média", 4: "P4 baixa" };
 function DueChip({ t, today }) {
   if (!t.data) return null;
-  const cls = !t.concluida && t.data < today ? "chip late" : t.data === today ? "chip today" : "chip";
-  return html`<span class=${cls}>📅 ${R.relDay(t.data, today)}${t.hora ? " " + t.hora : ""}</span>`;
+  const cls = !t.concluida && t.data < today ? "due late" : t.data === today ? "due today" : "due";
+  return html`<span class=${cls}><${Icon} n="cal" s=${12} />${R.relDay(t.data, today)}${t.hora ? " " + t.hora : ""}</span>`;
 }
 function TaskMeta({ t, today, showProject = true }) {
   const p = showProject ? store.project(t.projectId) : null;
-  const sub = t.subtarefas?.length ? `☑ ${t.subtarefas.filter((s) => s.ok).length}/${t.subtarefas.length}` : null;
+  const sub = t.subtarefas?.length ? `${t.subtarefas.filter((s) => s.ok).length}/${t.subtarefas.length}` : null;
   return html`<div class="meta"><${DueChip} t=${t} today=${today} />
-    ${t.recorrencia !== "none" && html`<span title=${R.RECORRENCIA[t.recorrencia]}>🔁 ${R.RECORRENCIA[t.recorrencia]}</span>`}
-    ${sub && html`<span>${sub}</span>`}
-    ${t.notas && html`<span title="Tem anotações">📝</span>`}
-    ${p && html`<span class="row" style=${{ gap: 5 }}><span class="dot" style=${{ background: p.cor }}></span>${p.nome}</span>`}</div>`;
+    ${t.recorrencia !== "none" && html`<span title=${R.RECORRENCIA[t.recorrencia]}><${Icon} n="repeat" s=${12} />${R.RECORRENCIA[t.recorrencia]}</span>`}
+    ${sub && html`<span><${Icon} n="subtasks" s=${12} />${sub}</span>`}
+    ${t.notas && html`<span title="Tem anotações"><${Icon} n="note" s=${12} /></span>`}
+    ${p && html`<span><${PDot} c=${p.cor} />${p.nome}</span>`}</div>`;
 }
 function TaskRow({ t, today, open, showProject }) {
   return html`<li class=${"titem" + (t.concluida ? " done" : "")}>
-    <button class=${"check p" + t.prioridade + (t.concluida ? " on" : "")} onClick=${() => toggleDone(t)} aria-label=${t.concluida ? "Reabrir tarefa" : "Concluir tarefa"} title=${PRIO_LABEL[t.prioridade]}>✓</button>
+    <button class=${"check p" + t.prioridade + (t.concluida ? " on" : "")} onClick=${() => toggleDone(t)} aria-label=${t.concluida ? "Reabrir tarefa" : "Concluir tarefa"} title=${PRIO_LABEL[t.prioridade]}><${Icon} n="check" s=${11} w=${3} /></button>
     <div class="body" onClick=${() => open(t.id)}><div class="title">${t.titulo}</div><${TaskMeta} t=${t} today=${today} showProject=${showProject} /></div></li>`;
 }
 function QuickAdd({ defaults = {}, placeholder = "Nova tarefa… ex.: Ligar para Ana amanhã 14h #sdr p1", autoFocus, onAdded }) {
@@ -630,11 +667,11 @@ function QuickAdd({ defaults = {}, placeholder = "Nova tarefa… ex.: Ligar para
     const t = R.newTask({ ...defaults, ...Object.fromEntries(Object.entries(parsed).filter(([, x]) => x != null)), stageId: parsed.projectId && parsed.projectId !== defaults.projectId ? undefined : defaults.stageId }, p);
     store.saveTask(t); setV(""); toast("Tarefa criada."); onAdded?.(t);
   }
-  const hint = [parsed.data && `📅 ${R.relDay(parsed.data)}${parsed.hora ? " " + parsed.hora : ""}`, parsed.recorrencia && `🔁 ${R.RECORRENCIA[parsed.recorrencia]}`, parsed.prioridade && `P${parsed.prioridade}`, parsed.projectId && `# ${p.nome}`].filter(Boolean);
+  const hint = [parsed.data && `${R.relDay(parsed.data)}${parsed.hora ? " " + parsed.hora : ""}`, parsed.recorrencia && R.RECORRENCIA[parsed.recorrencia], parsed.prioridade && `P${parsed.prioridade}`, parsed.projectId && `#${p.nome}`].filter(Boolean);
   return html`<form class="quick" onSubmit=${add}>
-    <div class="quick-box"><span style=${{ color: "var(--accent)", fontWeight: 800, fontSize: 18 }}>+</span>
+    <div class="quick-box"><${Icon} n="plus" />
       <input ref=${ref} id=${"quick-" + (defaults.projectId || "g") + (defaults.stageId || "") + (defaults.data || "")} value=${v} onInput=${(e) => setV(e.target.value)} placeholder=${placeholder} autoFocus=${autoFocus} aria-label="Nova tarefa" autocomplete="off" />
-      <button class="btn primary sm" disabled=${!parsed.titulo}>Adicionar</button></div>
+      ${parsed.titulo && html`<button class="btn primary sm">Adicionar</button>`}</div>
     ${hint.length > 0 && html`<div class="chips">${hint.map((h) => html`<span key=${h} class="chip">${h}</span>`)}</div>`}
   </form>`;
 }
@@ -660,8 +697,8 @@ function Bars({ data, goal, goalLabel = "meta", fmtTip }) {
 }
 function Ring({ value, max }) {
   const pct = Math.min(1, value / Math.max(1, max)), r = 46, c = 2 * Math.PI * r;
-  return html`<div class="ring"><svg width="108" height="108" viewBox="0 0 108 108"><circle cx="54" cy="54" r=${r} fill="none" stroke="var(--line-2)" stroke-width="10" />
-    ${pct > 0 && html`<circle cx="54" cy="54" r=${r} fill="none" stroke=${pct >= 1 ? "var(--ok)" : "var(--accent)"} stroke-width="10" stroke-linecap="round" stroke-dasharray=${`${c * pct} ${c}`} />`}</svg>
+  return html`<div class="ring"><svg width="88" height="88" viewBox="0 0 108 108"><circle cx="54" cy="54" r=${r} fill="none" stroke="var(--line)" stroke-width="5" />
+    ${pct > 0 && html`<circle cx="54" cy="54" r=${r} fill="none" stroke=${pct >= 1 ? "var(--ok)" : "var(--accent)"} stroke-width="5" stroke-linecap="round" stroke-dasharray=${`${c * pct} ${c}`} />`}</svg>
     <div class="c"><div><b>${value}</b><div class="small muted">de ${max}</div></div></div></div>`;
 }
 
@@ -700,13 +737,13 @@ function App() {
   return html`<div class="shell">
     <aside class="side">
       <div class="logo"><i></i>Rumo</div>
-      <${Nav} v="hoje" ico="☀️" label="Hoje" n=${nToday} cur=${route.view === "hoje"} />
-      <${Nav} v="proximos" ico="🗓️" label="Próximos 7 dias" cur=${route.view === "proximos"} />
-      <${Nav} v="calendario" ico="📆" label="Calendário" cur=${route.view === "calendario"} />
-      <${Nav} v="dashboard" ico="📊" label="Dashboard" cur=${route.view === "dashboard"} />
-      <div class="side-sep"><span class="eyebrow side-projects-title">Projetos</span><button class="btn ghost sm" onClick=${() => setModal("novo-projeto")} aria-label="Novo projeto" title="Novo projeto">＋</button></div>
-      ${projects.map((p) => html`<${Nav} key=${p.id} v="projeto" extra=${{ id: p.id }} ico=${p.icone || "•"} label=${p.nome} n=${cnt((t) => t.projectId === p.id)} cur=${route.view === "projeto" && route.id === p.id} />`)}
-      <button class="nav-btn" onClick=${() => setModal("novo-projeto")}><span class="ico" style=${{ color: "var(--accent)" }}>＋</span><span class="lbl" style=${{ color: "var(--accent)" }}>Novo projeto</span></button>
+      <${Nav} v="hoje" ico=${html`<${Icon} n="sun" />`} label="Hoje" n=${nToday} cur=${route.view === "hoje"} />
+      <${Nav} v="proximos" ico=${html`<${Icon} n="week" />`} label="Próximos 7 dias" cur=${route.view === "proximos"} />
+      <${Nav} v="calendario" ico=${html`<${Icon} n="cal" />`} label="Calendário" cur=${route.view === "calendario"} />
+      <${Nav} v="dashboard" ico=${html`<${Icon} n="chart" />`} label="Dashboard" cur=${route.view === "dashboard"} />
+      <div class="side-sep"><span class="eyebrow side-projects-title">Projetos</span><button class="btn ghost sm" onClick=${() => setModal("novo-projeto")} aria-label="Novo projeto" title="Novo projeto"><${Icon} n="plus" s=${14} /></button></div>
+      ${projects.map((p) => html`<${Nav} key=${p.id} v="projeto" extra=${{ id: p.id }} ico=${p.id === "inbox" ? html`<${Icon} n="inbox" />` : html`<${PDot} c=${p.cor} />`} label=${p.nome} n=${cnt((t) => t.projectId === p.id)} cur=${route.view === "projeto" && route.id === p.id} />`)}
+      <button class="nav-btn" onClick=${() => setModal("novo-projeto")}><span class="ico"><${Icon} n="plus" /></span><span class="lbl">Novo projeto</span></button>
     </aside>
     <main class="work">
       ${st.mode === "local" && st.ready && html`<p class="note" style=${{ marginTop: 0 }}>Modo local: os dados ficam só neste navegador.</p>`}
@@ -738,24 +775,24 @@ function TodayView({ open, today, go, openModal }) {
   const empty = st.taskList().length === 0 && st.projectList().length <= 1;
   return html`<div class="stack">
     <div class="head"><div><h1>${saud}${cfg.nome ? ", " + cfg.nome : ""}</h1><div class="sub">${R.DIAS_LONGO[new Date().getDay()]}, ${new Date().getDate()} de ${R.MESES_LONGO[new Date().getMonth()]}</div></div>
-      <button class="btn sm" style=${{ marginLeft: "auto" }} onClick=${() => openModal("ajustes")}>⚙ Meta e horário</button></div>
+      <button class="btn sm" style=${{ marginLeft: "auto" }} onClick=${() => openModal("ajustes")}><${Icon} n="sliders" s=${14} />Meta e horário</button></div>
     <div class="today-top">
       <div class="stack">
         <${QuickAdd} defaults=${{ data: today }} placeholder="O que precisa ser feito hoje? ex.: Enviar proposta 15h #sdr p1" />
-        ${empty && html`<div class="card"><h2>Comece por um projeto</h2><p style=${{ margin: "6px 0 12px" }}>Crie um projeto e o Claude te pergunta sobre ele para montar etapas, rotina e primeiras tarefas.</p><button class="btn primary" onClick=${() => openModal("novo-projeto")}>＋ Criar projeto com o Claude</button></div>`}
+        ${empty && html`<div class="card"><h2>Comece por um projeto</h2><p style=${{ margin: "6px 0 12px" }}>Crie um projeto e o Claude te pergunta sobre ele para montar etapas, rotina e primeiras tarefas.</p><button class="btn primary" onClick=${() => openModal("novo-projeto")}>Criar projeto com o Claude</button></div>`}
         <${DayPlan} list=${[...atrasadas, ...hoje]} cfg=${cfg} today=${today} />
         ${atrasadas.length > 0 && html`<section><div class="sec-h" style=${{ color: "var(--bad)" }}>Atrasadas <span class="n">${atrasadas.length}</span>
           <button class="btn ghost sm" style=${{ marginLeft: "auto" }} onClick=${() => { atrasadas.forEach((t) => store.saveTask({ ...t, data: today })); toast(`${atrasadas.length} tarefas trazidas para hoje.`); }}>Trazer tudo para hoje</button></div>
           <ul class="tlist">${atrasadas.map((t) => html`<${TaskRow} key=${t.id} t=${t} today=${today} open=${open} />`)}</ul></section>`}
         <section><div class="sec-h">Hoje <span class="n">${hoje.length}</span></div>
           ${hoje.length === 0 ? html`<div class="empty">${atrasadas.length ? "Nada novo para hoje. Resolva as atrasadas acima." : "Nada planejado para hoje. Adicione uma tarefa acima ou puxe algo dos próximos dias."}</div>` : html`<ul class="tlist">${hoje.map((t) => html`<${TaskRow} key=${t.id} t=${t} today=${today} open=${open} />`)}</ul>`}</section>
-        ${feitas.length > 0 && html`<section><button class="sec-h btn link" style=${{ color: "var(--ink-3)" }} onClick=${() => setShowDone(!showDone)}>${showDone ? "▾" : "▸"} Concluídas hoje <span class="n">${feitas.length}</span></button>
+        ${feitas.length > 0 && html`<section><button class="sec-h btn link" style=${{ color: "var(--ink-3)" }} onClick=${() => setShowDone(!showDone)}><${Icon} n=${showDone ? "down" : "right"} s=${14} /> Concluídas hoje <span class="n">${feitas.length}</span></button>
           ${showDone && html`<ul class="tlist">${feitas.map((t) => html`<${TaskRow} key=${t.id} t=${t} today=${today} open=${open} />`)}</ul>`}</section>`}
       </div>
       <div class="stack">
         <div class="card"><div class="eyebrow">Meta do dia</div>
           <div class="row" style=${{ gap: 16, marginTop: 8, flexWrap: "nowrap" }}><${Ring} value=${m.doneToday} max=${m.meta} />
-            <div><div class="streak">🔥 ${m.streak} dia${m.streak === 1 ? "" : "s"}</div><div class="small muted">em sequência batendo a meta</div><div class="small muted" style=${{ marginTop: 6 }}>Recorde: ${m.best} · Semana: ${m.semana}/7</div></div></div>
+            <div><div class="streak"><${Icon} n="flame" s=${18} />${m.streak} dia${m.streak === 1 ? "" : "s"}</div><div class="small muted">em sequência batendo a meta</div><div class="small muted" style=${{ marginTop: 6 }}>Recorde: ${m.best} · Semana: ${m.semana}/7</div></div></div>
           <p class="small" style=${{ margin: "12px 0 0" }}>${m.doneToday >= m.meta ? "Meta batida! Cada tarefa a mais é bônus." : `Faltam ${m.meta - m.doneToday} para a meta de hoje.`}</p></div>
         <div class="card small"><b>Atalhos</b><div class="muted" style=${{ marginTop: 4 }}><kbd>N</kbd> nova tarefa · <kbd>H</kbd> hoje · <kbd>P</kbd> próximos · <kbd>C</kbd> calendário · <kbd>D</kbd> dashboard · <kbd>?</kbd> ajuda</div>
           <div class="muted" style=${{ marginTop: 6 }}>Na caixa de tarefa: <b>amanhã</b>, <b>sexta</b>, <b>12/10</b>, <b>14h</b>, <b>#projeto</b>, <b>p1</b>, <b>todo dia</b>.</div></div>
@@ -784,7 +821,7 @@ function DayPlan({ list, cfg, today }) {
   }
   const name = (id) => list.find((t) => t.id === id)?.titulo ?? "?";
   return html`<div class="ai">
-    <div class="row"><span class="ai-badge"><i></i>Claude</span><span class="small muted">Monte uma ordem realista para as ${list.length} tarefas de hoje.</span>
+    <div class="row"><span class="ai-badge"><${Icon} n="spark" s=${14} />Claude</span><span class="small muted">Monte uma ordem realista para as ${list.length} tarefas de hoje.</span>
       ${!state?.loading && !state?.plan && html`<button class="btn dark sm" style=${{ marginLeft: "auto" }} onClick=${run}>Planejar meu dia</button>`}
       ${state?.loading && html`<button class="btn sm" style=${{ marginLeft: "auto" }} onClick=${() => ctl.current?.abort()}>Parar</button>`}</div>
     ${state?.loading && html`<p class="thinking" style=${{ margin: "10px 0 0" }}>Pensando no seu dia…</p>`}
@@ -792,7 +829,7 @@ function DayPlan({ list, cfg, today }) {
     ${state?.plan && html`<div style=${{ marginTop: 10 }}><p style=${{ margin: "0 0 8px" }}>${state.plan.resumo}</p>
       <ul class="plan-list">${state.plan.blocos.map((b) => html`<li key=${b.id} class="row" style=${{ flexWrap: "nowrap", alignItems: "flex-start" }}><b class="mono" style=${{ width: 48, flex: "none" }}>${b.inicio}</b><span>${name(b.id)} <span class="small muted">· ${b.motivo || ""}</span></span></li>`)}</ul>
       ${state.plan.adiar.length > 0 && html`<p class="small muted">Adiar: ${state.plan.adiar.map(name).join(", ")}</p>`}
-      ${state.plan.dica && html`<p class="small" style=${{ margin: "8px 0" }}>💡 ${state.plan.dica}</p>`}
+      ${state.plan.dica && html`<p class="small muted" style=${{ margin: "8px 0" }}>Dica: ${state.plan.dica}</p>`}
       <div class="row"><button class="btn primary sm" onClick=${apply}>Aplicar horários</button><button class="btn sm" onClick=${() => setState(null)}>Descartar</button></div></div>`}
   </div>`;
 }
@@ -831,7 +868,7 @@ function CalendarView({ open, today, projectId }) {
   const selList = byDay(sel);
   return html`<div class="stack">
     ${!projectId && html`<div class="head"><div><h1>Calendário</h1><div class="sub">Arraste uma tarefa para outro dia para reagendar.</div></div></div>`}
-    <div class="row"><button class="btn sm" onClick=${() => shift(-1)} aria-label="Mês anterior">‹</button><h2 style=${{ minWidth: 170, textAlign: "center" }}>${R.MESES_LONGO[mo - 1]} ${y}</h2><button class="btn sm" onClick=${() => shift(1)} aria-label="Próximo mês">›</button>
+    <div class="row"><button class="btn ghost sm" onClick=${() => shift(-1)} aria-label="Mês anterior"><${Icon} n="left" /></button><h2 style=${{ minWidth: 150, textAlign: "center", textTransform: "capitalize" }}>${R.MESES_LONGO[mo - 1]} ${y}</h2><button class="btn ghost sm" onClick=${() => shift(1)} aria-label="Próximo mês"><${Icon} n="right" /></button>
       <button class="btn sm" onClick=${() => { setMonth(today.slice(0, 7)); setSel(today); }}>Hoje</button>
       <label class="small row" style=${{ marginLeft: "auto", gap: 6 }}><input type="checkbox" id="cal-done" checked=${showDone} onChange=${(e) => setShowDone(e.target.checked)} /> Mostrar concluídas</label></div>
     <div class="cal-layout">
@@ -861,11 +898,11 @@ function ProjectView({ id, tab: tab0, go, open, today, openModal }) {
   const done = tasks.filter((t) => t.concluida).length;
   const TABS = [["quadro", "Quadro"], ["lista", "Lista"], ["calendario", "Calendário"], ["claude", "Claude"]];
   return html`<div class="stack">
-    <div class="head"><div style=${{ minWidth: 0 }}><h1><span style=${{ marginRight: 8 }}>${p.icone}</span>${p.nome}</h1>${p.descricao && html`<div class="sub" style=${{ maxWidth: 720 }}>${p.descricao}</div>`}</div>
+    <div class="head"><div style=${{ minWidth: 0 }}><h1 class="row" style=${{ gap: 10 }}><span class="dot" style=${{ background: p.cor, width: 10, height: 10 }}></span>${p.nome}</h1>${p.descricao && html`<div class="sub" style=${{ maxWidth: 720 }}>${p.descricao}</div>`}</div>
       <div class="row" style=${{ marginLeft: "auto" }}>
-        <div style=${{ width: 160 }}><div class="small muted">${done}/${tasks.length} concluídas</div><div class="bar-track"><div class="bar-fill" style=${{ width: (tasks.length ? (done / tasks.length) * 100 : 0) + "%", background: p.cor }}></div></div></div>
+        <div style=${{ width: 160 }}><div class="small muted">${done}/${tasks.length} concluídas</div><div class="bar-track"><div class="bar-fill" style=${{ width: (tasks.length ? (done / tasks.length) * 100 : 0) + "%" }}></div></div></div>
         <button class="btn sm" onClick=${() => openModal({ editProject: id })}>Editar projeto</button></div></div>
-    <div class="seg" role="tablist">${TABS.map(([k, l]) => html`<button key=${k} role="tab" aria-pressed=${tab === k} onClick=${() => setTab(k)}>${k === "claude" ? "✦ " : ""}${l}</button>`)}</div>
+    <div class="seg" role="tablist">${TABS.map(([k, l]) => html`<button key=${k} role="tab" aria-pressed=${tab === k} onClick=${() => setTab(k)}>${k === "claude" ? html`<${Icon} n="spark" s=${13} />` : ""}${l}</button>`)}</div>
     ${tab === "quadro" && html`<${Board} p=${p} tasks=${tasks} open=${open} today=${today} />`}
     ${tab === "lista" && html`<${ProjectList} p=${p} tasks=${tasks} open=${open} today=${today} />`}
     ${tab === "calendario" && html`<${CalendarView} projectId=${id} open=${open} today=${today} />`}
@@ -889,7 +926,7 @@ function Board({ p, tasks, open, today }) {
     else ordem = i === 0 ? list[0].ordem - 1000 : (list[i - 1].ordem + list[i].ordem) / 2;
     const { task, next } = R.moveToStage(t, p, stageId);
     store.saveTask({ ...task, ordem }); if (next) store.saveTask(next);
-    if (task.concluida && !t.concluida) toast("✔ Concluída.", "", { label: "Desfazer", fn: () => { store.saveTask(t); if (next) store.deleteTask(next.id); } });
+    if (task.concluida && !t.concluida) toast("Tarefa concluída.", "", { label: "Desfazer", fn: () => { store.saveTask(t); if (next) store.deleteTask(next.id); } });
   }
   const saveStages = (stages) => store.saveProject({ ...p, stages });
   function stageAction(i, act) {
@@ -909,32 +946,32 @@ function Board({ p, tasks, open, today }) {
       return html`<div key=${s.id} class=${"col" + (over === s.id ? " over" : "")} onDragOver=${(e) => { e.preventDefault(); setOver(s.id); }} onDragLeave=${(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOver((o) => (o === s.id ? null : o)); }} onDrop=${(e) => { e.preventDefault(); drop(s.id, before); }}>
         <div class="col-h">
           ${editing === s.id ? html`<input class="input" autoFocus defaultValue=${s.nome} id=${"stage-" + s.id} onBlur=${(e) => { const v = e.target.value.trim(); if (v) saveStages(p.stages.map((x) => (x.id === s.id ? { ...x, nome: v } : x))); setEditing(null); }} onKeyDown=${(e) => e.key === "Enter" && e.target.blur()} />`
-            : html`<span class="name" onDoubleClick=${() => setEditing(s.id)} title="Clique duas vezes para renomear">${s.final ? "✅ " : ""}${s.nome}</span><span class="small muted">${list.length}</span>`}
+            : html`<span class="name" onDoubleClick=${() => setEditing(s.id)} title="Clique duas vezes para renomear">${s.nome}${s.final ? html`<span class="muted" title="Etapa final: conclui as tarefas"><${Icon} n="check" s=${13} /></span>` : ""}</span><span class="small muted">${list.length}</span>`}
           <${StageMenu} s=${s} i=${i} n=${p.stages.length} onAct=${(a) => (a === "rename" ? setEditing(s.id) : stageAction(i, a))} />
         </div>
         <div class="col-list">${list.map((t) => html`<div key=${t.id} class=${"kcard" + (t.concluida ? " done" : "") + (drag === t.id ? " dragging" : "") + (before === t.id && over === s.id ? " drop-before" : "")} draggable="true"
             onDragStart=${(e) => { e.dataTransfer.setData("text/plain", t.id); e.dataTransfer.effectAllowed = "move"; setDrag(t.id); }} onDragEnd=${() => { setDrag(null); setOver(null); setBefore(null); }}
             onDragOver=${(e) => { e.preventDefault(); setOver(s.id); setBefore(t.id); }} onClick=${() => open(t.id)}>
-          <button class=${"check p" + t.prioridade + (t.concluida ? " on" : "")} onClick=${(e) => { e.stopPropagation(); toggleDone(t); }} aria-label="Concluir">✓</button>
+          <button class=${"check p" + t.prioridade + (t.concluida ? " on" : "")} onClick=${(e) => { e.stopPropagation(); toggleDone(t); }} aria-label="Concluir"><${Icon} n="check" s=${11} w=${3} /></button>
           <div style=${{ minWidth: 0, flex: 1 }}><div class="title">${t.titulo}</div><${TaskMeta} t=${t} today=${today} showProject=${false} /></div></div>`)}
           <div style=${{ minHeight: 8 }} onDragOver=${(e) => { e.preventDefault(); setOver(s.id); setBefore(null); }}></div></div>
         ${adding === s.id ? html`<${QuickAdd} defaults=${{ projectId: p.id, stageId: s.id }} autoFocus placeholder="Título, data, p1…" />
-          <button class="btn ghost sm" onClick=${() => setAdding(null)}>Fechar</button>` : html`<button class="btn ghost sm" style=${{ justifyContent: "flex-start" }} onClick=${() => setAdding(s.id)}>＋ Adicionar tarefa</button>`}
+          <button class="btn ghost sm" onClick=${() => setAdding(null)}>Fechar</button>` : html`<button class="btn ghost sm" style=${{ justifyContent: "flex-start" }} onClick=${() => setAdding(s.id)}><${Icon} n="plus" s=${14} />Adicionar tarefa</button>`}
       </div>`; })}
-    <div class="add-col"><button class="btn" style=${{ width: "100%" }} onClick=${() => { const s = { id: R.uid("s"), nome: "Nova etapa", final: false }; const fi = p.stages.findIndex((x) => x.final); const list = [...p.stages]; list.splice(fi === -1 ? list.length : fi, 0, s); saveStages(list); setEditing(s.id); }}>＋ Nova etapa</button>
-      <p class="small muted">Clique duas vezes no nome para renomear. A etapa ✅ conclui as tarefas que chegam nela.</p></div>
+    <div class="add-col"><button class="btn ghost" style=${{ width: "100%", justifyContent: "flex-start" }} onClick=${() => { const s = { id: R.uid("s"), nome: "Nova etapa", final: false }; const fi = p.stages.findIndex((x) => x.final); const list = [...p.stages]; list.splice(fi === -1 ? list.length : fi, 0, s); saveStages(list); setEditing(s.id); }}><${Icon} n="plus" s=${14} />Nova etapa</button>
+      <p class="small muted">Clique duas vezes no nome para renomear. A etapa marcada como final conclui as tarefas que chegam nela.</p></div>
   </div>`;
 }
 function StageMenu({ s, i, n, onAct }) {
   const [openM, setOpen] = useState(false);
   const act = (a) => { setOpen(false); onAct(a); };
-  return html`<span style=${{ position: "relative" }}><button class="btn ghost sm" onClick=${() => setOpen(!openM)} aria-label="Opções da etapa">⋯</button>
-    ${openM && html`<div class="card" style=${{ position: "absolute", right: 0, top: 28, zIndex: 10, padding: 6, width: 200, display: "flex", flexDirection: "column", gap: 2 }} onMouseLeave=${() => setOpen(false)}>
-      <button class="nav-btn" onClick=${() => act("rename")}>✎ Renomear</button>
-      ${i > 0 && html`<button class="nav-btn" onClick=${() => act("left")}>← Mover para a esquerda</button>`}
-      ${i < n - 1 && html`<button class="nav-btn" onClick=${() => act("right")}>→ Mover para a direita</button>`}
-      <button class="nav-btn" onClick=${() => act("final")}>${s.final ? "Desmarcar como etapa final" : "✅ Marcar como etapa final"}</button>
-      <${Confirm} className="nav-btn" label="🗑 Excluir etapa" confirmLabel="Confirmar exclusão" onConfirm=${() => act("delete")} /></div>`}</span>`;
+  return html`<span style=${{ position: "relative" }}><button class="btn ghost sm" onClick=${() => setOpen(!openM)} aria-label="Opções da etapa"><${Icon} n="more" /></button>
+    ${openM && html`<div class="menu" onMouseLeave=${() => setOpen(false)}>
+      <button class="nav-btn" onClick=${() => act("rename")}>Renomear</button>
+      ${i > 0 && html`<button class="nav-btn" onClick=${() => act("left")}>Mover para a esquerda</button>`}
+      ${i < n - 1 && html`<button class="nav-btn" onClick=${() => act("right")}>Mover para a direita</button>`}
+      <button class="nav-btn" onClick=${() => act("final")}>${s.final ? "Desmarcar como etapa final" : "Marcar como etapa final"}</button>
+      <${Confirm} className="nav-btn" label="Excluir etapa" confirmLabel="Confirmar exclusão" onConfirm=${() => act("delete")} /></div>`}</span>`;
 }
 function ProjectList({ p, tasks, open, today }) {
   const [showDone, setShowDone] = useState(false);
@@ -942,7 +979,7 @@ function ProjectList({ p, tasks, open, today }) {
   return html`<div class="stack"><${QuickAdd} defaults=${{ projectId: p.id }} placeholder=${`Nova tarefa em ${p.nome}…`} />
     ${p.stages.filter((s) => !s.final).map((s) => { const l = sorted(tasks.filter((t) => t.stageId === s.id && !t.concluida)); return html`<section key=${s.id}><div class="sec-h">${s.nome} <span class="n">${l.length}</span></div>
       ${l.length ? html`<ul class="tlist">${l.map((t) => html`<${TaskRow} key=${t.id} t=${t} today=${today} open=${open} showProject=${false} />`)}</ul>` : html`<div class="empty small">Vazio</div>`}</section>`; })}
-    <section><button class="sec-h btn link" style=${{ color: "var(--ink-3)" }} onClick=${() => setShowDone(!showDone)}>${showDone ? "▾" : "▸"} Concluídas <span class="n">${tasks.filter((t) => t.concluida).length}</span></button>
+    <section><button class="sec-h btn link" style=${{ color: "var(--ink-3)" }} onClick=${() => setShowDone(!showDone)}><${Icon} n=${showDone ? "down" : "right"} s=${14} /> Concluídas <span class="n">${tasks.filter((t) => t.concluida).length}</span></button>
       ${showDone && html`<ul class="tlist">${tasks.filter((t) => t.concluida).sort((a, b) => b.concluidaEm - a.concluidaEm).slice(0, 100).map((t) => html`<${TaskRow} key=${t.id} t=${t} today=${today} open=${open} showProject=${false} />`)}</ul>`}</section></div>`;
 }
 function ProjectAI({ p, tasks, today }) {
@@ -977,12 +1014,12 @@ function ProjectAI({ p, tasks, today }) {
     toast(`${novas.length} tarefas adicionadas ao projeto.`); setSug(null);
   }
   return html`<div class="grid-2">
-    <div class="card stack" style=${{ gap: 10 }}><span class="ai-badge"><i></i>Plano do projeto</span>
+    <div class="card stack" style=${{ gap: 10 }}><span class="ai-badge"><${Icon} n="spark" s=${14} />Plano do projeto</span>
       ${p.plano?.resumo ? html`<p style=${{ margin: 0, fontWeight: 600 }}>${p.plano.resumo}</p>` : html`<p class="muted" style=${{ margin: 0 }}>Este projeto ainda não tem um plano. Converse com o Claude ao lado para montar um.</p>`}
       ${p.plano?.mensagem && html`<p style=${{ margin: 0, whiteSpace: "pre-wrap" }}>${p.plano.mensagem}</p>`}
       ${p.plano?.dicas?.length > 0 && html`<div><div class="eyebrow" style=${{ marginBottom: 4 }}>Dicas</div><ul style=${{ margin: 0, paddingLeft: 18 }}>${p.plano.dicas.map((d, i) => html`<li key=${i}>${d}</li>`)}</ul></div>`}
     </div>
-    <div class="card stack" style=${{ gap: 10 }}><span class="ai-badge"><i></i>Converse com o Claude sobre este projeto</span>
+    <div class="card stack" style=${{ gap: 10 }}><span class="ai-badge"><${Icon} n="spark" s=${14} />Converse com o Claude sobre este projeto</span>
       ${ai === false ? html`<p class="muted">O Claude não está disponível nesta visualização.</p>` : html`
       <div class="msgs">${chat.length === 0 && html`<div class="msg ai">Posso sugerir próximas tarefas, reorganizar prioridades ou ajustar as etapas. O que você precisa?</div>`}
         ${chat.map((m, i) => html`<div key=${i} class=${"msg " + (m.role === "user" ? "me" : "ai")}>${m.content}</div>`)}
@@ -1042,19 +1079,18 @@ function NewProject({ onClose, go }) {
     toast(`Projeto criado com ${tasks.length} tarefas.`); onClose(); go("projeto", { id: project.id });
   }
   const Check = ({ group, i, children }) => html`<li><label><input type="checkbox" checked=${sel[group][i]} onChange=${() => setSel({ ...sel, [group]: sel[group].map((x, j) => (j === i ? !x : x)) })} /><span>${children}</span></label></li>`;
-  return html`<${Modal} title=${step === "info" ? "Novo projeto" : step === "chat" ? `✦ Organizando "${info.nome}"` : "Plano sugerido"} onClose=${onClose} wide>
+  return html`<${Modal} title=${step === "info" ? "Novo projeto" : step === "chat" ? `Organizando "${info.nome}"` : "Plano sugerido"} onClose=${onClose} wide>
     ${step === "info" && html`<div class="stack" style=${{ gap: 14 }}>
       <div><span class="lbl">Começar de</span><div class="tpl-grid">
-        ${[["branco", "✦ Conversar com o Claude", "Descreva o projeto e receba etapas, rotina e tarefas."], ["sdr", "📞 Prospecção SDR", "SLA de 5 min, cadência e meta de 10 reuniões/dia."], ["estudos", "📚 Estudos", "Sessões diárias e revisões."], ["pessoal", "🏠 Pessoal", "Casa, saúde e semana planejada."]].map(([k, t, d]) => html`<button key=${k} class="tpl" aria-pressed=${tpl === k} onClick=${() => pickTpl(k)}><b>${t}</b><span class="small muted">${d}</span></button>`)}</div></div>
+        ${[["branco", "Conversar com o Claude", "Descreva o projeto e receba etapas, rotina e tarefas."], ["sdr", "Prospecção SDR", "SLA de 5 min, cadência e meta de 10 reuniões/dia."], ["estudos", "Estudos", "Sessões diárias e revisões."], ["pessoal", "Pessoal", "Casa, saúde e semana planejada."]].map(([k, t, d]) => html`<button key=${k} class="tpl" aria-pressed=${tpl === k} onClick=${() => pickTpl(k)}><b>${t}</b><span class="small muted">${d}</span></button>`)}</div></div>
       <div><label class="lbl" for="np-nome">Nome do projeto</label><input id="np-nome" class="input" value=${info.nome} onInput=${(e) => setInfo({ ...info, nome: e.target.value })} placeholder="Ex.: Lançar meu curso, Mudança de casa…" autoFocus /></div>
       <div class="row" style=${{ alignItems: "flex-start", gap: 24 }}>
-        <div><span class="lbl">Ícone</span><div class="row" style=${{ gap: 4, maxWidth: 260 }}>${EMOJIS.map((e) => html`<button key=${e} class="emoji-btn" aria-pressed=${info.icone === e} onClick=${() => setInfo({ ...info, icone: e })}>${e}</button>`)}</div></div>
         <div><span class="lbl">Cor</span><div class="swatches">${R.PROJECT_COLORS.map((c) => html`<button key=${c} class="swatch" style=${{ background: c }} aria-label=${"Cor " + c} aria-pressed=${info.cor === c} onClick=${() => setInfo({ ...info, cor: c })}></button>`)}</div></div></div>
       ${err && html`<p class="small" style=${{ color: "var(--bad)", margin: 0 }}>${err}</p>`}
       ${tpl === "branco" && ai === false && html`<p class="note">O Claude não está disponível nesta visualização. O projeto será criado com as etapas padrão.</p>`}
       <div class="row" style=${{ justifyContent: "flex-end" }}>
         ${tpl === "branco" && ai && html`<button class="btn" onClick=${() => { if (!info.nome.trim()) return setErr("Dê um nome ao projeto."); create(R.template("branco")); }}>Criar em branco</button>`}
-        <button class="btn primary" onClick=${next}>${tpl === "branco" ? (ai ? "Continuar com o Claude →" : "Criar projeto") : "Ver plano do modelo →"}</button></div></div>`}
+        <button class="btn primary" onClick=${next}>${tpl === "branco" ? (ai ? "Continuar com o Claude" : "Criar projeto") : "Ver plano do modelo"}</button></div></div>`}
     ${step === "chat" && html`<div class="stack" style=${{ gap: 12 }}>
       <div class="msgs" style=${{ maxHeight: "45vh", overflowY: "auto" }}>${chat.map((m, i) => html`<div key=${i} class=${"msg " + (m.role === "user" ? "me" : "ai")}>${m.content}</div>`)}
         ${busy && html`<div class="msg ai thinking">Pensando no seu projeto… (pode levar até um minuto)</div>`}</div>
@@ -1065,11 +1101,11 @@ function NewProject({ onClose, go }) {
     ${step === "plano" && plan && html`<div class="stack" style=${{ gap: 14 }}>
       ${plan.mensagem && html`<div class="msg ai" style=${{ maxWidth: "100%" }}>${plan.mensagem}</div>`}
       ${plan.resumo && html`<p style=${{ margin: 0 }}><b>Objetivo:</b> ${plan.resumo || plan.descricao}</p>`}
-      <div><span class="lbl">Etapas do quadro</span><div class="chips">${(plan.etapas || []).map((e, i) => html`<span key=${i} class="chip">${i === plan.etapas.length - 1 ? "✅ " : ""}${e}</span>`)}</div></div>
+      <div><span class="lbl">Etapas do quadro</span><div class="chips">${(plan.etapas || []).map((e, i) => html`<span key=${i} class="chip">${e}</span>`)}</div></div>
       ${plan.rotina?.length > 0 && html`<div><span class="lbl">Rotina (tarefas recorrentes)</span><ul class="plan-list">${plan.rotina.map((r, i) => html`<${Check} key=${i} group="rotina" i=${i}>${r.titulo} <span class="small muted">· ${R.RECORRENCIA[r.recorrencia]}${r.hora ? " às " + r.hora : ""}</span><//>`)}</ul></div>`}
       ${plan.tarefas?.length > 0 && html`<div><span class="lbl">Primeiras tarefas</span><ul class="plan-list">${plan.tarefas.map((t, i) => html`<${Check} key=${i} group="tarefas" i=${i}>${t.titulo} <span class="small muted">· P${t.prioridade} · ${t.emDias === 0 ? "hoje" : `em ${t.emDias} dia${t.emDias > 1 ? "s" : ""}`}${t.subtarefas?.length ? ` · ${t.subtarefas.length} passos` : ""}</span><//>`)}</ul></div>`}
       ${plan.dicas?.length > 0 && html`<div><span class="lbl">Dicas</span><ul style=${{ margin: 0, paddingLeft: 18 }}>${plan.dicas.map((d, i) => html`<li key=${i}>${d}</li>`)}</ul></div>`}
-      <div class="row" style=${{ justifyContent: "space-between" }}><button class="btn" onClick=${() => setStep(tpl === "branco" && ai ? "chat" : "info")}>← Voltar</button>
+      <div class="row" style=${{ justifyContent: "space-between" }}><button class="btn" onClick=${() => setStep(tpl === "branco" && ai ? "chat" : "info")}><${Icon} n="arrowL" s=${14} />Voltar</button>
         <button class="btn primary" onClick=${() => create(plan, sel)}>Criar projeto</button></div></div>`}
   <//>`;
 }
@@ -1081,9 +1117,8 @@ function EditProject({ id, onClose, go }) {
     <div class="stack" style=${{ gap: 12 }}>
       <div><label class="lbl" for="ep-nome">Nome</label><input id="ep-nome" class="input" value=${f.nome} onInput=${(e) => setF({ ...f, nome: e.target.value })} /></div>
       <div><label class="lbl" for="ep-desc">Descrição</label><textarea id="ep-desc" class="input" rows="3" value=${f.descricao} onInput=${(e) => setF({ ...f, descricao: e.target.value })}></textarea></div>
-      <div><span class="lbl">Ícone</span><div class="row" style=${{ gap: 4 }}>${EMOJIS.map((e) => html`<button key=${e} class="emoji-btn" aria-pressed=${f.icone === e} onClick=${() => setF({ ...f, icone: e })}>${e}</button>`)}</div></div>
       <div><span class="lbl">Cor</span><div class="swatches">${R.PROJECT_COLORS.map((c) => html`<button key=${c} class="swatch" style=${{ background: c }} aria-label=${"Cor " + c} aria-pressed=${f.cor === c} onClick=${() => setF({ ...f, cor: c })}></button>`)}</div></div>
-      <p class="small muted" style=${{ margin: 0 }}>As etapas do quadro são editadas direto no Quadro (⋯ em cada coluna).</p>
+      <p class="small muted" style=${{ margin: 0 }}>As etapas do quadro são editadas direto no Quadro (menu ⋯ de cada coluna).</p>
       <div class="row" style=${{ justifyContent: "space-between" }}>
         ${id !== "inbox" ? html`<${Confirm} label="Excluir projeto e tarefas" confirmLabel="Confirmar exclusão" onConfirm=${async () => { onClose(); go("hoje"); await store.deleteProject(id); toast("Projeto excluído."); }} />` : html`<span></span>`}
         <button class="btn primary" onClick=${() => { if (!f.nome.trim()) return; store.saveProject({ ...p, ...f, nome: f.nome.trim() }); onClose(); }}>Salvar</button></div></div><//>`;
@@ -1112,10 +1147,10 @@ function TaskModal({ id, onClose, today }) {
   return html`<${Modal} title="Tarefa" onClose=${() => save(true)} wide>
     <div class="stack" style=${{ gap: 12 }}>
       <div class="row" style=${{ flexWrap: "nowrap", alignItems: "flex-start" }}>
-        <button class=${"check p" + f.prioridade + (t.concluida ? " on" : "")} style=${{ marginTop: 8 }} onClick=${() => { toggleDone(t); onClose(); }} aria-label="Concluir">✓</button>
+        <button class=${"check p" + f.prioridade + (t.concluida ? " on" : "")} style=${{ marginTop: 8 }} onClick=${() => { toggleDone(t); onClose(); }} aria-label="Concluir"><${Icon} n="check" s=${11} w=${3} /></button>
         <input id="tk-titulo" class="input" style=${{ fontSize: 17, fontWeight: 700 }} value=${f.titulo} onInput=${(e) => upd({ titulo: e.target.value })} /></div>
       <div class="form-grid">
-        <div><label class="lbl" for="tk-proj">Projeto</label><select id="tk-proj" class="input" value=${f.projectId} onChange=${(e) => { const np = store.project(e.target.value) ?? R.INBOX; upd({ projectId: np.id, stageId: R.firstOpenStage(np).id }); }}>${projects.map((x) => html`<option key=${x.id} value=${x.id}>${x.icone} ${x.nome}</option>`)}</select></div>
+        <div><label class="lbl" for="tk-proj">Projeto</label><select id="tk-proj" class="input" value=${f.projectId} onChange=${(e) => { const np = store.project(e.target.value) ?? R.INBOX; upd({ projectId: np.id, stageId: R.firstOpenStage(np).id }); }}>${projects.map((x) => html`<option key=${x.id} value=${x.id}>${x.nome}</option>`)}</select></div>
         <div><label class="lbl" for="tk-stage">Etapa</label><select id="tk-stage" class="input" value=${f.stageId} onChange=${(e) => upd({ stageId: e.target.value })}>${p.stages.map((s) => html`<option key=${s.id} value=${s.id}>${s.nome}</option>`)}</select></div>
         <div><label class="lbl" for="tk-prio">Prioridade</label><select id="tk-prio" class="input" value=${f.prioridade} onChange=${(e) => upd({ prioridade: Number(e.target.value) })}>${[1, 2, 3, 4].map((n) => html`<option key=${n} value=${n}>${PRIO_LABEL[n]}</option>`)}</select></div>
         <div><label class="lbl" for="tk-data">Data</label><input id="tk-data" type="date" class="input" value=${f.data || ""} onInput=${(e) => upd({ data: e.target.value || null })} /></div>
@@ -1127,11 +1162,11 @@ function TaskModal({ id, onClose, today }) {
       <div><span class="lbl">Subtarefas ${f.subtarefas.length ? `(${f.subtarefas.filter((s) => s.ok).length}/${f.subtarefas.length})` : ""}</span>
         <ul class="subtasks">${f.subtarefas.map((s) => html`<li key=${s.id}><input type="checkbox" id=${"sub-" + s.id} checked=${s.ok} onChange=${() => upd({ subtarefas: f.subtarefas.map((x) => (x.id === s.id ? { ...x, ok: !x.ok } : x)) })} />
           <label for=${"sub-" + s.id} style=${{ flex: 1, textDecoration: s.ok ? "line-through" : "none", color: s.ok ? "var(--ink-3)" : "inherit" }}>${s.t}</label>
-          <button class="btn ghost sm" onClick=${() => upd({ subtarefas: f.subtarefas.filter((x) => x.id !== s.id) })} aria-label="Remover subtarefa">✕</button></li>`)}</ul>
+          <button class="btn ghost sm" onClick=${() => upd({ subtarefas: f.subtarefas.filter((x) => x.id !== s.id) })} aria-label="Remover subtarefa"><${Icon} n="x" s=${14} /></button></li>`)}</ul>
         <form class="row" style=${{ flexWrap: "nowrap", marginTop: 6 }} onSubmit=${(e) => { e.preventDefault(); if (sub.trim()) { upd({ subtarefas: [...f.subtarefas, { id: R.uid("st"), t: sub.trim(), ok: false }] }); setSub(""); } }}>
-          <input id="tk-sub" class="input" value=${sub} onInput=${(e) => setSub(e.target.value)} placeholder="Adicionar subtarefa" /><button class="btn sm">＋</button></form></div>
+          <input id="tk-sub" class="input" value=${sub} onInput=${(e) => setSub(e.target.value)} placeholder="Adicionar subtarefa" /><button class="btn sm" aria-label="Adicionar subtarefa"><${Icon} n="plus" s=${14} /></button></form></div>
       <div class="row" style=${{ justifyContent: "space-between" }}>
-        <div class="row">${g ? html`<a class="btn sm" href=${g} target="_blank" rel="noreferrer">📆 Adicionar ao Google Agenda</a>` : html`<span class="small muted">Defina uma data para enviar ao Google Agenda.</span>`}
+        <div class="row">${g ? html`<a class="btn sm" href=${g} target="_blank" rel="noreferrer"><${Icon} n="ext" s=${14} />Adicionar ao Google Agenda</a>` : html`<span class="small muted">Defina uma data para enviar ao Google Agenda.</span>`}
           <${Confirm} label="Excluir" confirmLabel="Confirmar exclusão" onConfirm=${() => { store.deleteTask(t.id); onClose(); toast("Tarefa excluída.", "", { label: "Desfazer", fn: () => store.saveTask(t) }); }} /></div>
         <button class="btn primary" onClick=${() => save(true)}>Salvar</button></div>
       <p class="small muted" style=${{ margin: 0 }}>Criada em ${new Date(t.createdAt).toLocaleDateString("pt-BR")}${t.concluidaEm ? ` · concluída em ${new Date(t.concluidaEm).toLocaleString("pt-BR")}` : ""}</p>
@@ -1145,15 +1180,14 @@ function DashboardView({ today, openModal }) {
   const m = R.metrics(tasks, projects, st.cfg, today);
   const Kpi = ({ label, v, sub, tone }) => html`<div class="card kpi"><div class="eyebrow">${label}</div><div class="v" style=${tone ? { color: `var(--${tone})` } : null}>${v}</div>${sub && html`<div class="small muted">${sub}</div>`}</div>`;
   return html`<div class="stack">
-    <div class="head"><div><h1>Dashboard</h1><div class="sub">Sua disciplina em números.</div></div><button class="btn sm" style=${{ marginLeft: "auto" }} onClick=${() => openModal("ajustes")}>⚙ Meta diária: ${m.meta}</button></div>
+    <div class="head"><div><h1>Dashboard</h1><div class="sub">Sua disciplina em números.</div></div><button class="btn sm" style=${{ marginLeft: "auto" }} onClick=${() => openModal("ajustes")}><${Icon} n="sliders" s=${14} />Meta diária: ${m.meta}</button></div>
     <div class="kpis">
-      <${Kpi} label="Concluídas hoje" v=${html`${m.doneToday}<small> / ${m.meta}</small>`} sub=${m.doneToday >= m.meta ? "Meta batida ✔" : `Faltam ${m.meta - m.doneToday}`} tone=${m.doneToday >= m.meta ? "ok" : null} />
-      <${Kpi} label="Para hoje (abertas)" v=${m.dueToday} sub=${`${m.createdToday} criadas hoje`} />
+      <${Kpi} label="Concluídas hoje" v=${html`${m.doneToday}<small> / ${m.meta}</small>`} sub=${m.doneToday >= m.meta ? "Meta batida" : `Faltam ${m.meta - m.doneToday}`} tone=${m.doneToday >= m.meta ? "ok" : null} />
+      <${Kpi} label="Para hoje" v=${m.dueToday} sub=${`${m.abertas} abertas no total`} />
       <${Kpi} label="Atrasadas" v=${m.overdue} tone=${m.overdue ? "bad" : null} sub=${m.overdue ? "Resolva ou reagende" : "Nada atrasado"} />
-      <${Kpi} label="Sequência" v=${`🔥 ${m.streak}`} sub=${`Recorde: ${m.best} dias`} />
+      <${Kpi} label="Sequência (dias)" v=${m.streak} sub=${`Recorde: ${m.best} dias`} />
       <${Kpi} label="Últimos 7 dias" v=${m.last7} sub=${`Meta batida em ${m.semana} de 7 dias`} />
       <${Kpi} label="Entregues no prazo" v=${pctTxt(m.pctNoPrazo)} sub=${`${m.noPrazo} de ${m.recentes} com data (30 dias)`} />
-      <${Kpi} label="Tarefas abertas" v=${m.abertas} sub=${`em ${projects.length} projetos`} />
     </div>
     <div class="grid-2">
       <div class="card"><h2 style=${{ fontSize: 16 }}>Concluídas por dia</h2><p class="small muted" style=${{ margin: "2px 0 8px" }}>Últimos 14 dias. Linha tracejada: sua meta diária.</p>
@@ -1175,7 +1209,7 @@ function Settings({ onClose }) {
       <div><label class="lbl" for="cf-meta">Meta de tarefas concluídas por dia</label><input id="cf-meta" type="number" min="1" class="input" value=${f.metaDiaria} onInput=${(e) => setF({ ...f, metaDiaria: Math.max(1, Number(e.target.value) || 1) })} /></div>
       <div><label class="lbl" for="cf-ini">Início do dia de trabalho</label><input id="cf-ini" type="time" class="input" value=${f.inicio} onInput=${(e) => setF({ ...f, inicio: e.target.value })} /></div>
       <div><label class="lbl" for="cf-fim">Fim do dia de trabalho</label><input id="cf-fim" type="time" class="input" value=${f.fim} onInput=${(e) => setF({ ...f, fim: e.target.value })} /></div>
-      <p class="small muted span-all" style=${{ margin: 0 }}>A sequência 🔥 conta os dias seguidos em que você bate a meta. O horário é usado pelo Claude ao planejar seu dia.</p>
+      <p class="small muted span-all" style=${{ margin: 0 }}>A sequência conta os dias seguidos em que você bate a meta. O horário é usado pelo Claude ao planejar seu dia.</p>
       <div class="span-all row" style=${{ justifyContent: "flex-end" }}><button class="btn primary" onClick=${() => { store.saveSettings(f); onClose(); toast("Salvo."); }}>Salvar</button></div>
     </div><//>`;
 }
