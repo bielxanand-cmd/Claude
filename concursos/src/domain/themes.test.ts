@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { themesAsText, themesQuickSummary } from './assistant'
 import { rootThemes, sortThemes, subthemesOf, themePreview, withThemes, type Theme } from './themes'
 
 const theme = (p: Partial<Theme>): Theme => ({ id: 'x', topicId: 't', title: 'Tema', summary: '', keyPoints: '', order: 0, createdAt: '2026-01-01', updatedAt: '2026-01-01', ...p })
@@ -35,5 +36,31 @@ describe('subtemas', () => {
     const content = withThemes({ summary: '', keyPoints: '', pitfalls: '', notes: '' }, themes)
     expect(content.summary).toBe('<h2>Poder derivado</h2><p>Secundário</p><h3>Reformador</h3><p>Emendas</p>')
     expect(content.keyPoints).toBe('<h2>Poder derivado</h2><h3>Revisor</h3><p>Só uma vez, em 1993</p>')
+  })
+})
+
+describe('resumo geral a partir dos temas', () => {
+  const themes = [
+    theme({ id: 'o', title: 'Originário', order: 0, summary: '<ul><li><p>Cria nova ordem jurídica</p></li><li><p>Características: inicial e ilimitado</p></li></ul>', keyPoints: '<p>Único que cria cláusulas pétreas</p>' }),
+    theme({ id: 'd', title: 'Derivado', order: 1, summary: '<p>Secundário e condicionado</p>' }),
+    theme({ id: 'r', parentId: 'd', title: 'Reformador', summary: '<p>Emendas com 3/5 em dois turnos</p>' }),
+    theme({ id: 'x', parentId: 'd', title: 'Vazio' }),
+    theme({ id: 'v', title: 'Sem texto', order: 2 }),
+  ]
+
+  it('sem IA: um bloco por tema, com pontos de atenção e subtemas em negrito', () => {
+    expect(themesQuickSummary(themes)).toBe(
+      '<h3>Originário</h3><ul><li><p>Cria nova ordem jurídica</p></li><li><p>Características: Inicial e ilimitado</p></li><li><p><strong>Atenção:</strong> Único que cria cláusulas pétreas</p></li></ul>' +
+        '<h3>Derivado</h3><ul><li><p>Secundário e condicionado</p></li><li><p><strong>Reformador</strong>: Emendas com 3/5 em dois turnos</p></li></ul>',
+    )
+  })
+
+  it('texto numerado para o Claude', () => {
+    const text = themesAsText(themes)
+    expect(text).toContain('TEMA 1: Originário\nResumo:\nCria nova ordem jurídica')
+    expect(text).toContain('TEMA 2: Derivado')
+    expect(text).toContain('  SUBTEMA 2.1: Reformador\n  Resumo:\n  Emendas com 3/5 em dois turnos')
+    expect(text).not.toContain('Vazio')
+    expect(text).not.toContain('Sem texto')
   })
 })

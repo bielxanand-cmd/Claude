@@ -664,3 +664,44 @@ test('subtemas: criados dentro do tema, salvos e excluídos junto com ele', asyn
   await page.reload()
   await expect(themes.getByText('Nenhum tema ainda')).toBeVisible()
 })
+
+test('resumir conteúdo reconhece temas e subtemas e gera o resumo geral em Meu resumo', async ({ page }) => {
+  await page.goto('/')
+  await page.evaluate(() => {
+    const topicId = 'direito-constitucional__remedios-constitucionais'
+    const now = new Date().toISOString()
+    const t = (id: string, title: string, order: number, summary: string, extra: Record<string, unknown> = {}) => ({
+      id, topicId, title, summary, keyPoints: '', order, createdAt: now, updatedAt: now, ...extra,
+    })
+    localStorage.setItem(
+      'concursos.user.v1',
+      JSON.stringify({
+        profile: { id: 'e2e', name: 'Ana', email: null, createdAt: now },
+        selection: { positionId: 'auditor-fiscal-estadual', sphere: 'estadual', state: 'SP', createdAt: now },
+        history: [], topics: {}, flashcards: {}, quizzes: {},
+        summaries: {},
+        themes: {
+          [topicId]: [
+            t('a', 'Habeas corpus', 0, '<ul><li><p>Protege a liberdade de locomoção</p></li><li><p>Gratuito e sem advogado</p></li></ul>', { keyPoints: '<p>Não cabe em punição disciplinar militar</p>' }),
+            t('b', 'Mandado de segurança', 1, '<p>Protege direito líquido e certo</p>'),
+            t('c', 'Coletivo', 0, '<p>Partido político com representação no Congresso</p>', { parentId: 'b' }),
+          ],
+        },
+      }),
+    )
+  })
+  await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
+  await page.getByRole('button', { name: 'Resumir temas' }).click()
+  const dialog = page.getByRole('dialog', { name: /Resumir conteúdo/ })
+  await expect(dialog.getByText('2 temas e 1 subtema')).toBeVisible()
+  await dialog.getByRole('button', { name: 'Resumir' }).click()
+  await expect(dialog.getByRole('heading', { name: 'Mandado de segurança' })).toBeVisible()
+  await expect(dialog.getByText('Coletivo', { exact: true })).toBeVisible()
+  await dialog.getByRole('button', { name: 'Usar como Meu resumo' }).click()
+  const summary = page.getByRole('textbox', { name: 'Meu resumo' })
+  await expect(summary.getByRole('heading', { name: 'Habeas corpus' })).toBeVisible()
+  await expect(summary).toContainText('Atenção: Não cabe em punição disciplinar militar')
+  await expect(summary).toContainText('Coletivo: Partido político com representação no Congresso')
+  await page.getByRole('button', { name: /^Salvar/ }).click()
+  await expect(page.getByText('Resumo salvo!')).toBeVisible()
+})

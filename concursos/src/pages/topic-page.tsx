@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, ArrowRight, BookOpenText, Check, CheckCircle2, FileQuestion, Layers3, Lightbulb, Network, NotebookPen, Save, SearchX, StickyNote } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, BookOpenText, Check, CheckCircle2, FileQuestion, Layers3, Lightbulb, Network, NotebookPen, Save, SearchX, StickyNote, Wand2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useBlocker, useParams } from 'react-router-dom'
@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { useFlashcards, useSaveSummary, useStudy, useThemes, type Study } from '@/data/queries'
 import type { Flashcard } from '@/domain/flashcards'
 import { statusOf } from '@/domain/progress'
+import { filledThemes } from '@/domain/assistant'
 import { rootThemes, themeTreeHtml, treeHasContent, withThemes } from '@/domain/themes'
 import { htmlToText } from '@/lib/text'
 import type { SummaryContent } from '@/domain/types'
@@ -94,6 +95,7 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
   // Resumo geral + temas: base do mapa mental, flashcards, questões e assistentes
   const themes = useThemes()
   const topicThemes = useMemo(() => (themes.data ?? []).filter((t) => t.topicId === topicId), [themes.data, topicId])
+  const themesFilled = filledThemes(topicThemes).length > 0
   const studyContent = useMemo(() => withThemes(draft, topicThemes), [draft, topicThemes])
   const mindMapSections = useMemo(
     () => [
@@ -240,7 +242,14 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
                 <h2 id={`section-${key}`} className="font-bold tracking-tight">
                   {title}
                 </h2>
-                <p className="hidden truncate text-xs text-muted sm:block">{hint}</p>
+                <p className="hidden min-w-0 truncate text-xs text-muted sm:block">
+                  {key === 'summary' && themesFilled ? 'O resumo geral do assunto, a partir dos temas e subtemas.' : hint}
+                </p>
+                {key === 'summary' && themesFilled && (
+                  <Button variant="secondary" size="sm" className="ml-auto shrink-0 self-center" onClick={() => setSummarizeOpen(true)}>
+                    <Wand2 /> Resumir temas
+                  </Button>
+                )}
               </div>
               <RichEditor
                 value={draft[key]}
@@ -391,7 +400,8 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
         open={summarizeOpen}
         onOpenChange={setSummarizeOpen}
         topic={topicInfo}
-        content={studyContent}
+        content={draft}
+        themes={topicThemes}
         onInsert={(html, mode) => setDraft((d) => ({ ...d, summary: mode === 'replace' ? html : d.summary + html }))}
       />
       <QuestionsDialog open={questionsOpen} onOpenChange={setQuestionsOpen} topicId={topicId} topic={topicInfo} content={studyContent} examBoard={examBoard} />
