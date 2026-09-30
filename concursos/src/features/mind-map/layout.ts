@@ -1,52 +1,74 @@
-import type { MindMap, MindMapNode } from '@/domain/mind-map'
+import type { MindMap, MindMapCard } from '@/domain/mind-map'
 
 /**
- * Layout do mapa mental: o assunto no centro, ramos distribuídos à direita e à
- * esquerda (equilibrando a altura), cada nível mais afastado do centro.
- * Cada subárvore ocupa a soma das alturas dos filhos, então nada se sobrepõe.
+ * Layout do infográfico: o assunto num "balão" no centro, um cartão à
+ * esquerda e outro à direita dele, e os demais cartões em faixas acima e
+ * abaixo (em colunas, como um mural), todos ligados ao centro.
  */
-
-export type NodeKind = 'root' | 'branch' | 'group' | 'leaf'
-
-export interface PlacedNode {
-  id: string
-  kind: NodeKind
-  lines: string[]
-  color: string
-  /** centro do nó */
-  x: number
-  y: number
-  w: number
-  h: number
-  side: 1 | -1
-  fontSize: number
-  fontWeight: number
-  lineHeight: number
-  parent: PlacedNode | null
-}
-
-export interface MindMapLayout {
-  nodes: PlacedNode[]
-  bounds: { minX: number; minY: number; width: number; height: number }
-}
 
 export type Measure = (text: string, fontSize: number, fontWeight: number) => number
 
 /** Medida aproximada (usada fora do navegador). */
 export const approxMeasure: Measure = (text, fontSize, fontWeight) => text.length * fontSize * (fontWeight >= 600 ? 0.58 : 0.53)
 
-const STYLE: Record<NodeKind, { fontSize: number; fontWeight: number; maxWidth: number; padX: number; padY: number; lineHeight: number }> = {
-  root: { fontSize: 22, fontWeight: 800, maxWidth: 260, padX: 26, padY: 18, lineHeight: 28 },
-  branch: { fontSize: 16, fontWeight: 700, maxWidth: 200, padX: 18, padY: 11, lineHeight: 21 },
-  group: { fontSize: 14, fontWeight: 650, maxWidth: 220, padX: 14, padY: 9, lineHeight: 19 },
-  leaf: { fontSize: 13.5, fontWeight: 500, maxWidth: 240, padX: 12, padY: 8, lineHeight: 18 },
+export const CARD_W = 300
+const GAP = 30
+const CENTER_W = CARD_W * 2 + GAP
+export const CARD_PAD = 18
+const TEXT_W = CARD_W - CARD_PAD * 2 - 16
+/** Os cartões ao lado do balão ficam um pouco mais afastados (as "nuvens" passam da caixa) */
+const SIDE_OFFSET = 44
+
+export const FONT = {
+  title: { size: 17, weight: 800, line: 21 },
+  heading: { size: 13.5, weight: 700, line: 18 },
+  text: { size: 13, weight: 500, line: 17.5 },
+  center: { size: 34, weight: 800, line: 38 },
+  centerSub: { size: 15, weight: 700, line: 20 },
+  centerDesc: { size: 15, weight: 500, line: 21 },
+}
+export const HEADER_ICON = 34
+const ITEM_GAP = 10
+
+export interface PlacedItem {
+  heading: string[]
+  lines: string[][]
+  /** topo do item (relativo ao cartão) */
+  y: number
 }
 
-const H_GAP = 56
-const V_GAP = 12
+export interface PlacedCard {
+  card: MindMapCard
+  index: number
+  x: number
+  y: number
+  w: number
+  h: number
+  titleLines: string[]
+  headerH: number
+  items: PlacedItem[]
+  /** De que lado do centro o cartão está (para a ligação) */
+  side: 'top' | 'bottom' | 'left' | 'right'
+}
 
-function wrap(text: string, maxWidth: number, fontSize: number, fontWeight: number, measure: Measure, maxLines = 4): string[] {
-  const words = text.split(/\s+/)
+export interface PlacedCenter {
+  x: number
+  y: number
+  w: number
+  h: number
+  titleLines: string[]
+  subtitle: string
+  descLines: string[]
+}
+
+export interface MindMapLayout {
+  center: PlacedCenter
+  cards: PlacedCard[]
+  bounds: { minX: number; minY: number; width: number; height: number }
+}
+
+export function wrap(text: string, maxWidth: number, fontSize: number, fontWeight: number, measure: Measure, maxLines = 6): string[] {
+  const words = text.split(/\s+/).filter(Boolean)
   const lines: string[] = []
   let current = ''
   for (const word of words) {
@@ -66,86 +88,89 @@ function wrap(text: string, maxWidth: number, fontSize: number, fontWeight: numb
   return lines
 }
 
-interface Sized {
-  node: MindMapNode
-  kind: NodeKind
-  lines: string[]
-  w: number
-  h: number
-  subtree: number
-  children: Sized[]
+function sizeCard(card: MindMapCard, index: number, measure: Measure): Omit<PlacedCard, 'x' | 'y' | 'side'> {
+  const { title, heading, text } = FONT
+  const titleLines = wrap(card.title.toLocaleUpperCase('pt-BR'), CARD_W - CARD_PAD * 2 - HEADER_ICON - 12, title.size, title.weight, measure, 3)
+  const headerH = Math.max(HEADER_ICON, titleLines.length * title.line) + CARD_PAD * 2 - 4
+  let y = headerH + 12
+  const items: PlacedItem[] = card.items.map((item) => {
+    const placed: PlacedItem = {
+      heading: item.heading ? wrap(item.heading, TEXT_W, heading.size, heading.weight, measure, 3) : [],
+      lines: item.lines.map((l) => wrap(l, TEXT_W, text.size, text.weight, measure, 5)),
+      y,
+    }
+    y += placed.heading.length * heading.line + placed.lines.reduce((n, l) => n + l.length, 0) * text.line + (placed.heading.length && placed.lines.length ? 3 : 0) + ITEM_GAP
+    return placed
+  })
+  return { card, index, w: CARD_W, h: Math.ceil(y - ITEM_GAP + CARD_PAD), titleLines, headerH, items }
 }
 
-function size(node: MindMapNode, kind: NodeKind, measure: Measure): Sized {
-  const s = STYLE[kind]
-  const lines = wrap(node.label, s.maxWidth, s.fontSize, s.fontWeight, measure)
-  const textWidth = Math.max(...lines.map((l) => measure(l, s.fontSize, s.fontWeight)))
-  const w = Math.ceil(textWidth + s.padX * 2)
-  const h = Math.ceil(lines.length * s.lineHeight + s.padY * 2)
-  const children = node.children.map((c) => size(c, c.children.length > 0 ? 'group' : 'leaf', measure))
-  const childrenHeight = children.reduce((sum, c) => sum + c.subtree, 0) + V_GAP * Math.max(0, children.length - 1)
-  return { node, kind, lines, w, h, subtree: Math.max(h, childrenHeight), children }
+function sizeCenter(map: MindMap, measure: Measure): Omit<PlacedCenter, 'x' | 'y'> {
+  const titleLines = wrap(map.title.toLocaleUpperCase('pt-BR'), CENTER_W - 150, FONT.center.size, FONT.center.weight, measure, 3)
+  const descLines = map.description ? wrap(map.description, CENTER_W - 170, FONT.centerDesc.size, FONT.centerDesc.weight, measure, 5) : []
+  const h = 70 + 44 + titleLines.length * FONT.center.line + 10 + FONT.centerSub.line + (descLines.length ? 14 + descLines.length * FONT.centerDesc.line : 0)
+  return { w: CENTER_W, h: Math.max(h, 230), titleLines, subtitle: map.subtitle, descLines }
+}
+
+/** Distribui cartões em colunas (sempre na mais baixa), como um mural. */
+function masonry(cards: Omit<PlacedCard, 'x' | 'y' | 'side'>[], columns: number) {
+  const cols = Array.from({ length: columns }, () => ({ height: 0, cards: [] as typeof cards }))
+  for (const card of cards) {
+    const col = cols.reduce((a, b) => (b.height < a.height ? b : a))
+    col.cards.push(card)
+    col.height += card.h + GAP
+  }
+  return cols
 }
 
 export function layoutMindMap(map: MindMap, measure: Measure = approxMeasure): MindMapLayout {
-  const nodes: PlacedNode[] = []
-  const rootSized = size({ label: map.title, children: [] }, 'root', measure)
-  const root = place(rootSized, 0, 0, 1, '#09090B', null, 'root')
+  const sized = map.cards.map((c, i) => sizeCard(c, i, measure))
+  const c = sizeCenter(map, measure)
+  const colX = (i: number) => i * (CARD_W + GAP)
+  const cards: PlacedCard[] = []
 
-  const branches = map.branches.map((b) => ({ branch: b, sized: size(b, 'branch', measure) }))
+  // Faixa do meio: um cartão de cada lado do centro
+  const [left, right, ...rest] = sized
+  const midH = Math.max(c.h, left?.h ?? 0, right?.h ?? 0)
+  const center: PlacedCenter = { ...c, x: colX(1), y: (midH - c.h) / 2 }
+  if (left) cards.push({ ...left, x: colX(0) - SIDE_OFFSET, y: (midH - left.h) / 2, side: 'left' })
+  if (right) cards.push({ ...right, x: colX(3) + SIDE_OFFSET, y: (midH - right.h) / 2, side: 'right' })
 
-  // Distribui os ramos entre direita e esquerda equilibrando a altura total
-  const right: typeof branches = []
-  const left: typeof branches = []
-  let rightH = 0
-  let leftH = 0
-  for (const item of branches) {
-    if (rightH <= leftH) {
-      right.push(item)
-      rightH += item.sized.subtree + V_GAP * 3
-    } else {
-      left.push(item)
-      leftH += item.sized.subtree + V_GAP * 3
-    }
-  }
-
-  for (const [side, items, total] of [
-    [1, right, rightH],
-    [-1, left, leftH],
+  // Faixas de cima e de baixo (centralizadas quando têm menos de 4 colunas)
+  const half = Math.ceil(rest.length / 2)
+  for (const [band, items] of [
+    ['top', rest.slice(0, half)],
+    ['bottom', rest.slice(half)],
   ] as const) {
-    let top = -(total - V_GAP * 3) / 2
-    items.forEach(({ branch, sized }, i) => {
-      const cy = top + sized.subtree / 2
-      const cx = side * (rootSized.w / 2 + H_GAP * 1.4 + sized.w / 2)
-      const placed = place(sized, cx, cy, side, branch.color, root, `b${side}-${i}`)
-      layoutChildren(sized, placed, side, branch.color)
-      top += sized.subtree + V_GAP * 3
+    if (!items.length) continue
+    const columns = Math.min(4, items.length)
+    const offset = ((4 - columns) * (CARD_W + GAP)) / 2
+    masonry(items, columns).forEach((col, i) => {
+      if (band === 'top') {
+        // Colunas de cima encostam por baixo, perto do centro
+        let y = -GAP * 1.6
+        for (const card of [...col.cards].reverse()) {
+          y -= card.h
+          cards.push({ ...card, x: offset + colX(i), y, side: 'top' })
+          y -= GAP
+        }
+      } else {
+        let y = midH + GAP * 1.6
+        for (const card of col.cards) {
+          cards.push({ ...card, x: offset + colX(i), y, side: 'bottom' })
+          y += card.h + GAP
+        }
+      }
     })
   }
+  cards.sort((a, b) => a.index - b.index)
 
-  function place(s: Sized, x: number, y: number, side: 1 | -1, color: string, parent: PlacedNode | null, id: string): PlacedNode {
-    const st = STYLE[s.kind]
-    const node: PlacedNode = { id, kind: s.kind, lines: s.lines, color, x, y, w: s.w, h: s.h, side, fontSize: st.fontSize, fontWeight: st.fontWeight, lineHeight: st.lineHeight, parent }
-    nodes.push(node)
-    return node
-  }
-
-  function layoutChildren(s: Sized, parent: PlacedNode, side: 1 | -1, color: string) {
-    const total = s.children.reduce((sum, c) => sum + c.subtree, 0) + V_GAP * Math.max(0, s.children.length - 1)
-    let top = parent.y - total / 2
-    s.children.forEach((child, i) => {
-      const cy = top + child.subtree / 2
-      const cx = parent.x + side * (parent.w / 2 + H_GAP + child.w / 2)
-      const placed = place(child, cx, cy, side, color, parent, `${parent.id}-${i}`)
-      layoutChildren(child, placed, side, color)
-      top += child.subtree + V_GAP
-    })
-  }
-
-  const margin = 40
-  const minX = Math.min(...nodes.map((n) => n.x - n.w / 2)) - margin
-  const maxX = Math.max(...nodes.map((n) => n.x + n.w / 2)) + margin
-  const minY = Math.min(...nodes.map((n) => n.y - n.h / 2)) - margin
-  const maxY = Math.max(...nodes.map((n) => n.y + n.h / 2)) + margin
-  return { nodes, bounds: { minX, minY, width: maxX - minX, height: maxY - minY } }
+  const margin = 36
+  const boxes = [center, ...cards]
+  // Espaço extra do balão (as "nuvens" passam um pouco da caixa)
+  const minX = Math.min(...boxes.map((b) => b.x), center.x - 20) - margin
+  const maxX = Math.max(...boxes.map((b) => b.x + b.w), center.x + center.w + 20) + margin
+  const minY = Math.min(...boxes.map((b) => b.y), center.y - 30) - margin
+  const maxY = Math.max(...boxes.map((b) => b.y + b.h), center.y + center.h + 30) + margin + 22
+  return { center, cards, bounds: { minX, minY, width: maxX - minX, height: maxY - minY } }
 }

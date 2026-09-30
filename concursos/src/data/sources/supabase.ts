@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Flashcard } from '@/domain/flashcards'
+import type { PinnedMindMap } from '@/domain/mind-map'
 import type { Quiz } from '@/domain/questions'
 import { planNoticeImport } from '@/domain/import-notice'
 import type {
@@ -356,6 +357,20 @@ export function createSupabaseDataSource(url: string, anonKey: string): DataSour
       must(await client.from('ai_generations').delete().eq('user_id', id).eq('kind', 'questions').eq('topic_id', topicId))
       if (quiz) must(await client.from('ai_generations').insert({ user_id: id, topic_id: topicId, kind: 'questions', output: quiz }))
       return quiz
+    },
+
+    // Mapas fixados na disciplina: ai_generations (kind = 'mind_map'), um por assunto
+    async listMindMaps() {
+      const id = await userId()
+      const rows = await selectAll(client, 'ai_generations', '*', (q) => q.eq('user_id', id).eq('kind', 'mind_map'))
+      return rows.map((r) => r.output as PinnedMindMap).filter((m) => m?.topicId && m.map)
+    },
+
+    async saveMindMap(topicId, pinned) {
+      const id = await userId()
+      must(await client.from('ai_generations').delete().eq('user_id', id).eq('kind', 'mind_map').eq('topic_id', topicId))
+      if (pinned) must(await client.from('ai_generations').insert({ user_id: id, topic_id: topicId, kind: 'mind_map', output: pinned }))
+      return pinned
     },
 
     async resetUserData() {

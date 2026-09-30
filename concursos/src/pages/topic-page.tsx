@@ -29,8 +29,6 @@ import { cn, formatRelative, formatTime } from '@/lib/utils'
 
 const EMPTY_CONTENT: SummaryContent = { summary: '', keyPoints: '', pitfalls: '', notes: '' }
 
-/** Cor de cada campo no mapa mental. */
-const SECTION_COLORS: Record<keyof SummaryContent, string> = { summary: '#7C3AED', keyPoints: '#D97706', pitfalls: '#DC2626', notes: '#0891B2' }
 
 const SECTIONS: { key: keyof SummaryContent; title: string; hint: string; icon: typeof NotebookPen; minHeight: number; placeholder: string }[] = [
   { key: 'summary', title: 'Meu resumo', hint: 'O essencial do assunto com suas palavras.', icon: NotebookPen, minHeight: 240, placeholder: 'Escreva seu resumo… Use títulos, listas e destaques para organizar.' },
@@ -91,7 +89,7 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
   const flashcards = useFlashcards()
   const deckSize = (flashcards.data ?? []).filter((c) => c.topicId === topicId).length
   const mindMapSections = useMemo(
-    () => visibleSections.map(({ key, title }) => ({ key, label: title, color: SECTION_COLORS[key], html: draft[key] })),
+    () => visibleSections.map(({ key, title }) => ({ key, label: title, html: draft[key] })),
     [draft],
   )
   const saveSummary = useSaveSummary()
@@ -397,6 +395,7 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
         title={planTopic.topic.name}
         subtitle={`${subject.subject.name} · ${plan!.position.name}`}
         sections={mindMapSections}
+        pin={{ topicId, subjectId: subject.subject.id, subjectName: subject.subject.name }}
       />
 
       <Dialog open={blocker.state === 'blocked'} onOpenChange={(open) => !open && blocker.state === 'blocked' && blocker.reset()}>

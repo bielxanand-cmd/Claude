@@ -1,41 +1,22 @@
-import { Download, Maximize2, Minus, Network, Plus } from 'lucide-react'
+import { Download, Maximize2, Minus, Network, Pin, PinOff, Plus, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { EmptyState } from '@/components/study/feedback'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
-import { buildMindMap, type MindMapSection } from '@/domain/mind-map'
-import { slugify } from '@/lib/text'
+import { useMindMaps, useSaveMindMap } from '@/data/queries'
+import { buildMindMap, type MindMap, type MindMapSection } from '@/domain/mind-map'
+import { useCanSaveFiles } from '@/lib/save-file'
+import { downloadMindMap } from './export'
 import { MindMapSvg, useMindMapLayout } from './mind-map-svg'
 
-/** A versão de demonstração publicada não pode oferecer downloads. */
-const CAN_DOWNLOAD = import.meta.env.VITE_MEMORY_ROUTER !== 'true'
-const ZOOMS = [0.4, 0.6, 0.8, 1, 1.25, 1.5]
+const ZOOMS = [0.3, 0.45, 0.6, 0.8, 1, 1.25, 1.5]
 
-async function svgToPng(svg: SVGSVGElement, scale = 2): Promise<Blob> {
-  const width = svg.viewBox.baseVal.width
-  const height = svg.viewBox.baseVal.height
-  const clone = svg.cloneNode(true) as SVGSVGElement
-  clone.setAttribute('width', String(width))
-  clone.setAttribute('height', String(height))
-  clone.removeAttribute('style')
-  clone.removeAttribute('class')
-  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml;charset=utf-8' }))
-  try {
-    const img = new Image()
-    img.decoding = 'async'
-    img.src = url
-    await img.decode()
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.round(width * scale)
-    canvas.height = Math.round(height * scale)
-    const ctx = canvas.getContext('2d')!
-    ctx.scale(scale, scale)
-    ctx.drawImage(img, 0, 0, width, height)
-    return await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('png'))), 'image/png'))
-  } finally {
-    URL.revokeObjectURL(url)
-  }
+/** Onde o mapa pode ser fixado (página do assunto). */
+export interface MindMapPinTarget {
+  topicId: string
+  subjectId: string
+  subjectName: string
 }
 
 export function MindMapDialog({
@@ -44,22 +25,37 @@ export function MindMapDialog({
   title,
   subtitle,
   sections,
+  map: givenMap,
+  pin,
+  description = 'Gerado a partir do texto de todos os campos do resumo, incluindo alterações ainda não salvas.',
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   title: string
   subtitle: string
-  sections: MindMapSection[]
+  /** Campos do resumo (o mapa é montado ao abrir) */
+  sections?: MindMapSection[]
+  /** Ou um mapa pronto (ex.: o fixado na disciplina) */
+  map?: MindMap
+  pin?: MindMapPinTarget
+  description?: string
 }) {
   const svgRef = useRef<SVGSVGElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   // Em telas estreitas o mapa inteiro ficaria ilegível: abre com zoom e rolagem
-  const initialZoom = (): number | 'fit' => (typeof window !== 'undefined' && window.innerWidth < 768 ? 0.6 : 'fit')
+  const initialZoom = (): number | 'fit' => (typeof window !== 'undefined' && window.innerWidth < 768 ? 0.45 : 'fit')
   const [zoom, setZoom] = useState<number | 'fit'>(initialZoom)
   const [exporting, setExporting] = useState(false)
+  const canSave = useCanSaveFiles()
+  const pinned = useMindMaps()
+  const saveMindMap = useSaveMindMap()
+  const current = pin ? (pinned.data ?? []).find((m) => m.topicId === pin.topicId) : undefined
 
   // Monta o mapa só quando a janela abre (usa o texto atual, mesmo sem salvar)
-  const map = useMemo(() => (open ? buildMindMap({ title, subtitle, sections }) : null), [open, title, subtitle, sections])
+  const map = useMemo(
+    () => (!open ? null : (givenMap ?? (sections ? buildMindMap({ title, subtitle, sections }) : null))),
+    [open, givenMap, title, subtitle, sections],
+  )
 
   const layout = useMindMapLayout(map)
   const naturalWidth = layout?.bounds.width ?? 0
@@ -69,32 +65,37 @@ export function MindMapDialog({
     if (!open) return
     const id = requestAnimationFrame(() => {
       const el = scrollRef.current
-      if (el) el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2
+      if (el) {
+        el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2
+        el.scrollTop = (el.scrollHeight - el.clientHeight) / 2
+      }
     })
     return () => cancelAnimationFrame(id)
   }, [open, zoom, map])
   const step = (dir: 1 | -1) => {
-    const current = zoom === 'fit' ? (svgRef.current ? svgRef.current.getBoundingClientRect().width / naturalWidth : 1) : zoom
-    const next = dir > 0 ? ZOOMS.find((z) => z > current + 0.01) : [...ZOOMS].reverse().find((z) => z < current - 0.01)
+    const now = zoom === 'fit' ? (svgRef.current ? svgRef.current.getBoundingClientRect().width / naturalWidth : 1) : zoom
+    const next = dir > 0 ? ZOOMS.find((z) => z > now + 0.01) : [...ZOOMS].reverse().find((z) => z < now - 0.01)
     if (next) setZoom(next)
   }
 
   const download = async () => {
-    if (!svgRef.current) return
     setExporting(true)
-    try {
-      const blob = await svgToPng(svgRef.current)
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = `mapa-mental-${slugify(title)}.png`
-      a.click()
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000)
-      toast.success('Imagem baixada')
-    } catch {
-      toast.error('Não foi possível gerar a imagem.')
-    } finally {
-      setExporting(false)
-    }
+    await downloadMindMap(svgRef.current, title)
+    setExporting(false)
+  }
+
+  const togglePin = (on: boolean) => {
+    if (!pin || !map) return
+    saveMindMap.mutate(
+      { topicId: pin.topicId, pinned: on ? { topicId: pin.topicId, subjectId: pin.subjectId, pinnedAt: new Date().toISOString(), map } : null },
+      {
+        onSuccess: () =>
+          on
+            ? toast.success(current ? 'Mapa atualizado na disciplina' : 'Mapa fixado na disciplina', { description: `Aparece em destaque em ${pin.subjectName}.` })
+            : toast('Mapa removido da disciplina'),
+        onError: () => toast.error('Não foi possível salvar. Tente de novo.'),
+      },
+    )
   }
 
   return (
@@ -105,16 +106,16 @@ export function MindMapDialog({
         if (!next) setZoom(initialZoom())
       }}
     >
-      <DialogContent className="flex h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-6xl flex-col gap-0 overflow-hidden p-0 sm:h-auto sm:max-h-[calc(100dvh-1.5rem)]">
-        <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-start sm:px-6 sm:pr-16">
+      <DialogContent className="flex h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-7xl flex-col gap-0 overflow-hidden p-0 sm:h-auto sm:max-h-[calc(100dvh-1.5rem)]">
+        <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:px-6 sm:pr-16 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1 pr-10 sm:pr-0">
             <DialogTitle className="flex items-center gap-2">
               <Network className="size-5 text-primary" /> Mapa mental
             </DialogTitle>
-            <DialogDescription>Gerado a partir do texto de todos os campos do resumo, incluindo alterações ainda não salvas.</DialogDescription>
+            <DialogDescription>{description}</DialogDescription>
           </div>
           {layout && (
-            <div className="-ml-2 flex items-center gap-1 sm:ml-0">
+            <div className="-ml-2 flex flex-wrap items-center gap-1 sm:ml-0">
               <Button variant="ghost" size="icon-sm" onClick={() => step(-1)} aria-label="Diminuir zoom">
                 <Minus />
               </Button>
@@ -124,11 +125,26 @@ export function MindMapDialog({
               <Button variant="ghost" size="icon-sm" onClick={() => step(1)} aria-label="Aumentar zoom">
                 <Plus />
               </Button>
-              {CAN_DOWNLOAD && (
-                <Button variant="outline" size="sm" className="ml-2" onClick={download} loading={exporting}>
-                  {!exporting && <Download />} Baixar PNG
+              {canSave && (
+                <Button variant="outline" size="sm" className="ml-1" onClick={download} loading={exporting}>
+                  {!exporting && <Download />} Baixar JPEG
                 </Button>
               )}
+              {pin &&
+                (current ? (
+                  <>
+                    <Button size="sm" className="ml-1" onClick={() => togglePin(true)} loading={saveMindMap.isPending}>
+                      {!saveMindMap.isPending && <RefreshCw />} Atualizar na disciplina
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => togglePin(false)} disabled={saveMindMap.isPending}>
+                      <PinOff /> Desafixar
+                    </Button>
+                  </>
+                ) : (
+                  <Button size="sm" className="ml-1" onClick={() => togglePin(true)} loading={saveMindMap.isPending}>
+                    {!saveMindMap.isPending && <Pin />} Fixar na disciplina
+                  </Button>
+                ))}
             </div>
           )}
         </div>
@@ -138,7 +154,7 @@ export function MindMapDialog({
             <EmptyState
               icon={Network}
               title="Escreva seu resumo primeiro"
-              description="O mapa mental é montado a partir do que você escreve em Meu resumo, Pontos importantes e Observações. Use listas e títulos para um mapa mais organizado."
+              description="O mapa mental é montado a partir do que você escreve em Meu resumo, Pontos importantes e Observações. Use títulos e listas: cada título vira um cartão, e os itens viram os tópicos dele."
               className="bg-surface"
             />
           ) : (

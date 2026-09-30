@@ -15,21 +15,35 @@ export interface MindMapNode {
   children: MindMapNode[]
 }
 
-export interface MindMapBranch extends MindMapNode {
-  key: string
-  color: string
+export type MindMapCardKind = 'concept' | 'checklist' | 'alert' | 'notes'
+
+/** Um tópico dentro do cartão: título em negrito (opcional) e as linhas de texto. */
+export interface MindMapItem {
+  heading?: string
+  lines: string[]
 }
 
+/** Cartão do infográfico: um conceito do resumo com seus tópicos. */
+export interface MindMapCard {
+  title: string
+  kind: MindMapCardKind
+  items: MindMapItem[]
+}
+
+/**
+ * Mapa mental em formato de infográfico: o assunto no centro (com uma frase
+ * de definição, quando houver) e um cartão por conceito ao redor.
+ */
 export interface MindMap {
   title: string
   subtitle: string
-  branches: MindMapBranch[]
+  description: string
+  cards: MindMapCard[]
 }
 
 export interface MindMapSection {
   key: string
   label: string
-  color: string
   html: string
 }
 
@@ -49,14 +63,14 @@ export function shorten(text: string, max = MAX_LABEL): string {
 }
 
 /** "Habeas corpus: protege a liberdade" → nó "Habeas corpus" com filho "protege a liberdade". */
-function labelled(text: string): MindMapNode {
+function labelled(text: string, max = MAX_LABEL): MindMapNode {
   const t = clean(text).replace(/[.;]+$/, '')
   const m = t.match(/^(.{2,48}?)\s*(?::|\s[–-]|=>|→)\s+(.{2,})$/)
   if (m && !/\d$/.test(m[1])) {
     const detail = m[2].charAt(0).toUpperCase() + m[2].slice(1)
-    return { label: shorten(m[1], 48), children: [{ label: shorten(detail), children: [] }] }
+    return { label: shorten(m[1], 48), children: [{ label: shorten(detail, max), children: [] }] }
   }
-  return { label: shorten(t), children: [] }
+  return { label: shorten(t, max), children: [] }
 }
 
 function sentences(text: string): string[] {
@@ -65,12 +79,12 @@ function sentences(text: string): string[] {
     .filter((s) => s.replace(/[^\p{L}\p{N}]/gu, '').length > 1)
 }
 
-function listItems(list: HtmlNode): MindMapNode[] {
+function listItems(list: HtmlNode, max: number): MindMapNode[] {
   return list.children
     .filter((c): c is HtmlNode => typeof c !== 'string' && c.tag === 'li')
     .map((li) => {
-      const node = labelled(textOf(li))
-      const nested = collectLists(li).flatMap(listItems)
+      const node = labelled(ownText(li), max)
+      const nested = collectLists(li).flatMap((l) => listItems(l, max))
       node.children.push(...nested)
       return node
     })
@@ -87,8 +101,17 @@ function collectLists(node: HtmlNode): HtmlNode[] {
   return found
 }
 
+/** Texto de um item de lista sem as sublistas (elas viram filhos). */
+function ownText(li: HtmlNode): string {
+  const strip = (node: HtmlNode): HtmlNode => ({
+    ...node,
+    children: node.children.filter((c) => typeof c === 'string' || (c.tag !== 'ul' && c.tag !== 'ol')).map((c) => (typeof c === 'string' ? c : strip(c))),
+  })
+  return textOf(strip(li))
+}
+
 /** Converte o HTML de um campo do resumo em nós do mapa. */
-export function htmlToNodes(html: string): MindMapNode[] {
+export function htmlToNodes(html: string, max = MAX_LABEL): MindMapNode[] {
   const root = parseHtml(html)
   const result: MindMapNode[] = []
   let h2: MindMapNode | null = null
@@ -98,7 +121,7 @@ export function htmlToNodes(html: string): MindMapNode[] {
   const visit = (nodes: (HtmlNode | string)[]) => {
     for (const node of nodes) {
       if (typeof node === 'string') {
-        for (const s of sentences(node)) target().push(labelled(s))
+        for (const s of sentences(node)) target().push(labelled(s, max))
         continue
       }
       const text = clean(textOf(node))
@@ -117,11 +140,11 @@ export function htmlToNodes(html: string): MindMapNode[] {
           break
         case 'ul':
         case 'ol':
-          target().push(...listItems(node))
+          target().push(...listItems(node, max))
           break
         case 'p':
         case 'blockquote':
-          for (const s of sentences(textOf(node))) target().push(labelled(s))
+          for (const s of sentences(textOf(node))) target().push(labelled(s, max))
           break
         default:
           visit(node.children)
@@ -132,24 +155,63 @@ export function htmlToNodes(html: string): MindMapNode[] {
   return result
 }
 
-/** Limita largura e profundidade para o mapa continuar legível. */
-function prune(nodes: MindMapNode[], depth: number, maxChildren: number, maxDepth: number): MindMapNode[] {
-  const kept = nodes.slice(0, maxChildren).map((n) => ({
-    label: n.label,
-    children: depth >= maxDepth ? [] : prune(n.children, depth + 1, Math.max(3, maxChildren - 2), maxDepth),
-  }))
-  if (nodes.length > maxChildren) kept.push({ label: `+${nodes.length - maxChildren} itens`, children: [] })
-  return kept
+/* -------------------------------------------------------------------------- */
+/* Infográfico: cartões por conceito                                          */
+/* -------------------------------------------------------------------------- */
+
+const CARD_TEXT = 200
+const MAX_CARDS = 12
+const MAX_ITEMS = 7
+const MAX_LINES = 4
+
+const KIND_BY_SECTION: Record<string, MindMapCardKind> = { keyPoints: 'checklist', pitfalls: 'alert', notes: 'notes' }
+
+/** Folhas de uma subárvore, em ordem (para caber num tópico do cartão). */
+function flatten(nodes: MindMapNode[]): string[] {
+  return nodes.flatMap((n) => (n.children.length ? [n.label, ...flatten(n.children)] : [n.label]))
 }
 
+function toItem(node: MindMapNode): MindMapItem {
+  if (node.children.length === 0) return { lines: [node.label] }
+  const lines = flatten(node.children)
+  const extra = lines.length - MAX_LINES
+  return { heading: node.label, lines: extra > 0 ? [...lines.slice(0, MAX_LINES - 1), `+${extra + 1} detalhes`] : lines }
+}
+
+function limitItems(items: MindMapItem[]): MindMapItem[] {
+  if (items.length <= MAX_ITEMS) return items
+  return [...items.slice(0, MAX_ITEMS - 1), { lines: [`+${items.length - MAX_ITEMS + 1} itens no resumo`] }]
+}
+
+/** Nó que merece cartão próprio: título com vários tópicos ou com subníveis. */
+const isConcept = (n: MindMapNode) => n.children.length >= 2 || n.children.some((c) => c.children.length > 0)
+
 export function buildMindMap(input: { title: string; subtitle: string; sections: MindMapSection[] }): MindMap {
-  const branches = input.sections
-    .map((section) => ({
-      key: section.key,
-      color: section.color,
-      label: section.label,
-      children: prune(htmlToNodes(section.html), 2, 8, 4),
-    }))
-    .filter((b) => b.children.length > 0)
-  return { title: input.title, subtitle: input.subtitle, branches }
+  const cards: MindMapCard[] = []
+  let description = ''
+  input.sections.forEach((section, index) => {
+    const kind = KIND_BY_SECTION[section.key] ?? 'concept'
+    const nodes = htmlToNodes(section.html, CARD_TEXT)
+    // Frase de abertura do resumo ("X é ...") vira a definição no centro
+    if (index === 0 && !description && nodes[0] && nodes[0].children.length === 0 && nodes[0].label.length >= 30) {
+      description = nodes.shift()!.label
+    }
+    const loose: MindMapItem[] = []
+    for (const node of nodes) {
+      if (isConcept(node)) cards.push({ title: node.label, kind: kind === 'notes' ? 'concept' : kind, items: limitItems(node.children.map(toItem)) })
+      else loose.push(toItem(node))
+    }
+    // Itens soltos do campo formam um cartão com o nome do campo
+    if (loose.length) cards.push({ title: section.label, kind, items: limitItems(loose) })
+  })
+  const kept = cards.slice(0, MAX_CARDS)
+  return { title: input.title, subtitle: input.subtitle, description, cards: kept }
+}
+
+/** Mapa fixado na página da disciplina (guarda o desenho, não a imagem). */
+export interface PinnedMindMap {
+  topicId: string
+  subjectId: string
+  pinnedAt: string
+  map: MindMap
 }

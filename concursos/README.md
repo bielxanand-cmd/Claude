@@ -93,6 +93,12 @@ A camada `src/data/persistence` carrega tudo uma vez e grava só o documento afe
 
 Cada assunto tem **Meu resumo**, **Pontos importantes** e **Observações**. O antigo campo *Pegadinhas* foi retirado: ele só aparece em resumos que já têm texto nele (para não esconder conteúdo) e some quando esvaziado. Exceções e armadilhas agora ficam em Pontos importantes.
 
+### Mapa mental (infográfico)
+
+**Criar mapa mental** monta um infográfico a partir do resumo (`domain/mind-map.ts`, sem IA): o assunto fica num balão escuro no centro, com a primeira frase do resumo como definição; cada título (ou item com subitens) vira um cartão colorido com ícone pelo tema, e os itens viram tópicos (“Tema: explicação” → tópico em negrito com a explicação embaixo). Pontos importantes viram um cartão de checklist e Observações um cartão próprio. O desenho é um SVG autocontido (`features/mind-map/`) e pode ser baixado em **JPEG** (no claude.ai, pela capacidade `downloads`).
+
+**Fixar na disciplina** guarda o mapa (a estrutura, não a imagem) e ele aparece em **Mapas mentais em destaque** no topo da página da disciplina, com ampliar, baixar JPEG e desafixar. Depois de editar o resumo, **Atualizar na disciplina** troca o mapa fixado.
+
 ### Flashcards
 
 Em cada assunto, **Flashcards** (ou “✨ Criar flashcards” no assistente) sugere cartões a partir do resumo (`domain/flashcards.ts`, sem IA):

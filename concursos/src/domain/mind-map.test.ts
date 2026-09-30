@@ -41,18 +41,32 @@ describe('htmlToNodes', () => {
 })
 
 describe('buildMindMap', () => {
-  it('cria um ramo por campo preenchido e limita a quantidade de itens', () => {
+  it('monta um cartão por conceito, com a definição no centro', () => {
     const map = buildMindMap({
       title: 'Remédios constitucionais',
       subtitle: 'Direito Constitucional',
       sections: [
-        { key: 'summary', label: 'Meu resumo', color: '#7C3AED', html: `<ul>${Array.from({ length: 12 }, (_, i) => `<li><p>Item ${i + 1}</p></li>`).join('')}</ul>` },
-        { key: 'keyPoints', label: 'Pontos importantes', color: '#D97706', html: '' },
-        { key: 'pitfalls', label: 'Pegadinhas', color: '#DC2626', html: '<p>Não cabe HC em punição disciplinar militar.</p>' },
+        {
+          key: 'summary',
+          label: 'Meu resumo',
+          html:
+            '<p>Remédios constitucionais são garantias que protegem direitos fundamentais.</p>' +
+            '<ul><li><p>Mandado de segurança: direito líquido e certo</p></li></ul>' +
+            '<h2>Habeas corpus</h2><ul><li><p>O que é: protege a liberdade de locomoção</p></li><li><p>Gratuito e sem advogado</p></li></ul>',
+        },
+        { key: 'keyPoints', label: 'Pontos importantes', html: `<ul>${Array.from({ length: 9 }, (_, i) => `<li><p>Item ${i + 1}</p></li>`).join('')}</ul>` },
+        { key: 'notes', label: 'Observações', html: '' },
       ],
     })
-    expect(map.branches.map((b) => b.label)).toEqual(['Meu resumo', 'Pegadinhas'])
-    expect(map.branches[0].children).toHaveLength(9)
-    expect(map.branches[0].children.at(-1)!.label).toBe('+4 itens')
+    expect(map.description).toBe('Remédios constitucionais são garantias que protegem direitos fundamentais')
+    expect(map.cards.map((c) => [c.title, c.kind])).toEqual([
+      ['Habeas corpus', 'concept'],
+      ['Meu resumo', 'concept'],
+      ['Pontos importantes', 'checklist'],
+    ])
+    expect(map.cards[0].items).toEqual([{ heading: 'O que é', lines: ['Protege a liberdade de locomoção'] }, { lines: ['Gratuito e sem advogado'] }])
+    expect(map.cards[1].items).toEqual([{ heading: 'Mandado de segurança', lines: ['Direito líquido e certo'] }])
+    expect(map.cards[2].items).toHaveLength(7)
+    expect(map.cards[2].items.at(-1)!.lines).toEqual(['+3 itens no resumo'])
   })
 })

@@ -266,25 +266,60 @@ test('cria mapa mental a partir do resumo do assunto', async ({ page, isMobile }
   await page.keyboard.press('Escape')
 
   // Texto ainda não salvo já entra no mapa
-  await page.getByRole('textbox', { name: 'Meu resumo' }).click()
-  await page.keyboard.type('Habeas corpus: protege a liberdade de locomoção. Mandado de segurança: direito líquido e certo.')
+  const summary = page.getByRole('textbox', { name: 'Meu resumo' })
+  await summary.click()
+  await page.keyboard.type('Remédios constitucionais são ações que protegem direitos fundamentais.')
+  await page.keyboard.press('Enter')
+  await page.keyboard.type('## Habeas corpus')
+  await page.keyboard.press('Enter')
+  await page.keyboard.type('- O que é: protege a liberdade de locomoção')
+  await page.keyboard.press('Enter')
+  await page.keyboard.type('Gratuito e dispensa advogado')
+  await page.keyboard.press('Enter')
+  await page.keyboard.press('Enter')
+  await page.keyboard.type('## Mandado de segurança')
+  await page.keyboard.press('Enter')
+  await page.keyboard.type('- Prazo: 120 dias')
+  await page.keyboard.press('Enter')
+  await page.keyboard.type('Direito líquido e certo')
   await page.getByRole('textbox', { name: 'Pontos importantes' }).click()
   await page.keyboard.type('Pessoa jurídica não propõe ação popular')
 
   await page.getByRole('button', { name: 'Criar mapa mental' }).first().click()
-  const map = page.getByRole('img', { name: 'Mapa mental: Remédios constitucionais' })
+  const dialog = page.getByRole('dialog', { name: 'Mapa mental' })
+  const map = dialog.getByRole('img', { name: 'Mapa mental: Remédios constitucionais' })
   await expect(map).toBeVisible()
-  for (const text of ['Meu resumo', 'Habeas corpus', 'Mandado de segurança', 'Pontos importantes'])
+  // Um cartão por título, com os tópicos; a primeira frase vira a definição no centro
+  for (const text of ['HABEAS CORPUS', 'O que é', 'Prazo', 'Gratuito e dispensa advogado'])
     await expect(map.getByText(text, { exact: true })).toHaveCount(1)
-  // textos longos quebram em mais de uma linha dentro do nó
-  await expect(map.getByText(/liberdade de/)).toHaveCount(1)
+  await expect(map.getByText(/^MANDADO DE/)).toHaveCount(1)
+  await expect(map.getByText(/^PONTOS/)).toHaveCount(1)
+  await expect(map.getByText(/protegem direitos/)).toHaveCount(1)
   await expect(map.getByText(/Pessoa jurídica/)).toHaveCount(1)
+  await shot(page, 'mapa-mental')
 
   if (!isMobile) {
     const download = page.waitForEvent('download')
-    await page.getByRole('button', { name: /Baixar PNG/ }).click()
-    expect((await download).suggestedFilename()).toBe('mapa-mental-remedios-constitucionais.png')
+    await dialog.getByRole('button', { name: /Baixar JPEG/ }).click()
+    expect((await download).suggestedFilename()).toBe('mapa-mental-remedios-constitucionais.jpg')
   }
+
+  // Fixar na disciplina: aparece em destaque na página da disciplina
+  await dialog.getByRole('button', { name: /Fixar na disciplina/ }).click()
+  await expect(page.getByText('Mapa fixado na disciplina')).toBeVisible()
+  await expect(dialog.getByRole('button', { name: /Atualizar na disciplina/ })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: /^Salvar/ }).click()
+  await page.goto('/disciplina/direito-constitucional')
+  const featured = page.getByRole('region', { name: 'Mapas mentais em destaque' })
+  await expect(featured.getByRole('img', { name: 'Mapa mental: Remédios constitucionais' })).toBeVisible()
+  await shot(page, 'mapa-disciplina')
+  await featured.getByRole('button', { name: /Ampliar mapa mental/ }).click()
+  await expect(page.getByRole('dialog', { name: 'Mapa mental' }).getByText('HABEAS CORPUS', { exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await page.reload()
+  await featured.getByRole('button', { name: /Desafixar mapa/ }).click()
+  await expect(featured).toHaveCount(0)
 })
 
 test('Meus concursos: troca entre concursos já abertos mantendo o progresso', async ({ page, isMobile }) => {

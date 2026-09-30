@@ -1,5 +1,6 @@
 import type { Contest, ContestSubject, ContestTopic, Subject, Summary, Topic, UserProfile, UserSelection, UserTopic } from '@/domain/types'
 import type { Flashcard } from '@/domain/flashcards'
+import type { PinnedMindMap } from '@/domain/mind-map'
 import type { Quiz } from '@/domain/questions'
 import type { CatalogRows } from '../seed'
 
@@ -15,6 +16,8 @@ export interface UserState {
   flashcards: Record<string, Flashcard[]>
   /** Questões e desempenho por assunto */
   quizzes: Record<string, Quiz>
+  /** Mapas mentais fixados nas disciplinas, por assunto */
+  mindMaps: Record<string, PinnedMindMap>
 }
 
 /** Catálogo criado pelo usuário (carreiras/cargos manuais e editais importados). */
@@ -46,6 +49,7 @@ export type Change =
   | { type: 'summary'; topicId: string }
   | { type: 'flashcards'; topicId: string }
   | { type: 'quiz'; topicId: string }
+  | { type: 'mindmap'; topicId: string }
   | { type: 'catalog-meta' } // carreiras e cargos manuais
   | { type: 'import'; rows: ImportRows }
 

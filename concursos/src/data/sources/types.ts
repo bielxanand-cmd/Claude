@@ -1,4 +1,5 @@
 import type { Flashcard } from '@/domain/flashcards'
+import type { PinnedMindMap } from '@/domain/mind-map'
 import type { Quiz } from '@/domain/questions'
 import type {
   Career,
@@ -64,6 +65,9 @@ export interface DataSource {
   listQuizzes(): Promise<Quiz[]>
   /** Salva (ou remove, com `null`) as questões de um assunto */
   saveQuiz(topicId: string, quiz: Quiz | null): Promise<Quiz | null>
+  listMindMaps(): Promise<PinnedMindMap[]>
+  /** Fixa (ou desafixa, com `null`) o mapa mental de um assunto na disciplina */
+  saveMindMap(topicId: string, pinned: PinnedMindMap | null): Promise<PinnedMindMap | null>
   resetUserData(): Promise<void>
   /** Avisa quando dados mudam fora desta página (outra aba/aparelho) */
   subscribe?(listener: (what: 'userTopics') => void): () => void

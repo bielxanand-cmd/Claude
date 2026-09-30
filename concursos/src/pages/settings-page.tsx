@@ -11,6 +11,7 @@ import { useProfile, useResetData, useSelection, useSummaries, useUpdateProfile,
 import { useSyncStatus } from '@/data/persistence/status'
 import { dataSource } from '@/data/sources'
 import { useTheme, type Theme } from '@/hooks/use-theme'
+import { saveFile, useCanSaveFiles } from '@/lib/save-file'
 import { cn } from '@/lib/utils'
 
 const THEMES: { value: Theme; label: string; icon: typeof Sun }[] = [
@@ -41,16 +42,13 @@ export function SettingsPage() {
     } })
   }
 
+  const canSave = useCanSaveFiles()
   const exportData = () => {
     const blob = new Blob(
       [JSON.stringify({ exportedAt: new Date().toISOString(), profile: profile.data, selection: selection.data, topics: userTopics.data, summaries: summaries.data }, null, 2)],
       { type: 'application/json' },
     )
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `aprova-backup-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(a.href)
+    void saveFile(`aprova-backup-${new Date().toISOString().slice(0, 10)}.json`, blob)
   }
 
   return (
@@ -141,8 +139,7 @@ export function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 sm:flex-row">
-            {/* A versão de demonstração publicada não pode oferecer downloads */}
-            {import.meta.env.VITE_MEMORY_ROUTER !== 'true' && (
+            {canSave && (
               <Button variant="outline" onClick={exportData}>
                 <Download /> Exportar meus dados
               </Button>
