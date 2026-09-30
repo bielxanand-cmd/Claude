@@ -24,7 +24,6 @@ const freshUser = (): UserState => ({
   summaries: {},
   flashcards: {},
   quizzes: {},
-  mindMaps: {},
 })
 
 /**
@@ -296,19 +295,6 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
       else delete u.quizzes[topicId]
       save({ type: 'quiz', topicId })
       return delay(quiz, 0)
-    },
-
-    async listMindMaps() {
-      return delay(Object.values((await user()).mindMaps ?? {}), 0)
-    },
-
-    async saveMindMap(topicId, pinned) {
-      const u = await user()
-      u.mindMaps ??= {}
-      if (pinned) u.mindMaps[topicId] = { ...pinned, topicId }
-      else delete u.mindMaps[topicId]
-      save({ type: 'mindmap', topicId })
-      return delay(pinned, 0)
     },
 
     subscribe(listener) {

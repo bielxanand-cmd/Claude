@@ -1,23 +1,14 @@
-import { Download, Maximize2, Minus, Network, Pin, PinOff, Plus, RefreshCw } from 'lucide-react'
+import { Download, Maximize2, Minus, Network, Plus } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { toast } from 'sonner'
 import { EmptyState } from '@/components/study/feedback'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
-import { useMindMaps, useSaveMindMap } from '@/data/queries'
 import { buildMindMap, type MindMap, type MindMapSection } from '@/domain/mind-map'
 import { useCanSaveFiles } from '@/lib/save-file'
 import { downloadMindMap } from './export'
 import { MindMapSvg, useMindMapLayout } from './mind-map-svg'
 
 const ZOOMS = [0.3, 0.45, 0.6, 0.8, 1, 1.25, 1.5]
-
-/** Onde o mapa pode ser fixado (página do assunto). */
-export interface MindMapPinTarget {
-  topicId: string
-  subjectId: string
-  subjectName: string
-}
 
 export function MindMapDialog({
   open,
@@ -26,7 +17,6 @@ export function MindMapDialog({
   subtitle,
   sections,
   map: givenMap,
-  pin,
   description = 'Gerado a partir do texto de todos os campos do resumo, incluindo alterações ainda não salvas.',
 }: {
   open: boolean
@@ -35,9 +25,8 @@ export function MindMapDialog({
   subtitle: string
   /** Campos do resumo (o mapa é montado ao abrir) */
   sections?: MindMapSection[]
-  /** Ou um mapa pronto (ex.: o fixado na disciplina) */
+  /** Ou um mapa pronto */
   map?: MindMap
-  pin?: MindMapPinTarget
   description?: string
 }) {
   const svgRef = useRef<SVGSVGElement>(null)
@@ -47,9 +36,6 @@ export function MindMapDialog({
   const [zoom, setZoom] = useState<number | 'fit'>(initialZoom)
   const [exporting, setExporting] = useState(false)
   const canSave = useCanSaveFiles()
-  const pinned = useMindMaps()
-  const saveMindMap = useSaveMindMap()
-  const current = pin ? (pinned.data ?? []).find((m) => m.topicId === pin.topicId) : undefined
 
   // Monta o mapa só quando a janela abre (usa o texto atual, mesmo sem salvar)
   const map = useMemo(
@@ -84,20 +70,6 @@ export function MindMapDialog({
     setExporting(false)
   }
 
-  const togglePin = (on: boolean) => {
-    if (!pin || !map) return
-    saveMindMap.mutate(
-      { topicId: pin.topicId, pinned: on ? { topicId: pin.topicId, subjectId: pin.subjectId, pinnedAt: new Date().toISOString(), map } : null },
-      {
-        onSuccess: () =>
-          on
-            ? toast.success(current ? 'Mapa atualizado na disciplina' : 'Mapa fixado na disciplina', { description: `Aparece em destaque em ${pin.subjectName}.` })
-            : toast('Mapa removido da disciplina'),
-        onError: () => toast.error('Não foi possível salvar. Tente de novo.'),
-      },
-    )
-  }
-
   return (
     <Dialog
       open={open}
@@ -130,21 +102,6 @@ export function MindMapDialog({
                   {!exporting && <Download />} Baixar JPEG
                 </Button>
               )}
-              {pin &&
-                (current ? (
-                  <>
-                    <Button size="sm" className="ml-1" onClick={() => togglePin(true)} loading={saveMindMap.isPending}>
-                      {!saveMindMap.isPending && <RefreshCw />} Atualizar na disciplina
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => togglePin(false)} disabled={saveMindMap.isPending}>
-                      <PinOff /> Desafixar
-                    </Button>
-                  </>
-                ) : (
-                  <Button size="sm" className="ml-1" onClick={() => togglePin(true)} loading={saveMindMap.isPending}>
-                    {!saveMindMap.isPending && <Pin />} Fixar na disciplina
-                  </Button>
-                ))}
             </div>
           )}
         </div>
@@ -165,7 +122,7 @@ export function MindMapDialog({
               className="mx-auto block rounded-xl shadow-soft"
               style={
                 zoom === 'fit'
-                  ? { width: '100%', height: 'auto', maxHeight: 'calc(100dvh - 11rem)' }
+                  ? { width: '100%', height: 'auto', maxWidth: 1400 }
                   : { width: naturalWidth * zoom, height: 'auto', maxWidth: 'none' }
               }
             />

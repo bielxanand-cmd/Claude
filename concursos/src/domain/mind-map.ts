@@ -207,11 +207,3 @@ export function buildMindMap(input: { title: string; subtitle: string; sections:
   const kept = cards.slice(0, MAX_CARDS)
   return { title: input.title, subtitle: input.subtitle, description, cards: kept }
 }
-
-/** Mapa fixado na página da disciplina (guarda o desenho, não a imagem). */
-export interface PinnedMindMap {
-  topicId: string
-  subjectId: string
-  pinnedAt: string
-  map: MindMap
-}

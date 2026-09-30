@@ -303,23 +303,6 @@ test('cria mapa mental a partir do resumo do assunto', async ({ page, isMobile }
     await dialog.getByRole('button', { name: /Baixar JPEG/ }).click()
     expect((await download).suggestedFilename()).toBe('mapa-mental-remedios-constitucionais.jpg')
   }
-
-  // Fixar na disciplina: aparece em destaque na página da disciplina
-  await dialog.getByRole('button', { name: /Fixar na disciplina/ }).click()
-  await expect(page.getByText('Mapa fixado na disciplina')).toBeVisible()
-  await expect(dialog.getByRole('button', { name: /Atualizar na disciplina/ })).toBeVisible()
-  await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: /^Salvar/ }).click()
-  await page.goto('/disciplina/direito-constitucional')
-  const featured = page.getByRole('region', { name: 'Mapas mentais em destaque' })
-  await expect(featured.getByRole('img', { name: 'Mapa mental: Remédios constitucionais' })).toBeVisible()
-  await shot(page, 'mapa-disciplina')
-  await featured.getByRole('button', { name: /Ampliar mapa mental/ }).click()
-  await expect(page.getByRole('dialog', { name: 'Mapa mental' }).getByText('HABEAS CORPUS', { exact: true })).toBeVisible()
-  await page.keyboard.press('Escape')
-  await page.reload()
-  await featured.getByRole('button', { name: /Desafixar mapa/ }).click()
-  await expect(featured).toHaveCount(0)
 })
 
 test('Meus concursos: troca entre concursos já abertos mantendo o progresso', async ({ page, isMobile }) => {

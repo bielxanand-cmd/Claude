@@ -15,7 +15,6 @@ import { statusOf, subjectProgress } from '@/domain/progress'
 import type { TopicStatus } from '@/domain/types'
 import { FillSubjectDialog } from '@/features/book/fill-subject-dialog'
 import { SubjectFlashcards } from '@/features/flashcards/subject-flashcards'
-import { SubjectMindMaps } from '@/features/mind-map/subject-mind-maps'
 import { useTopicActions } from '@/hooks/use-topic-actions'
 import { percent } from '@/lib/text'
 import { cn } from '@/lib/utils'
@@ -83,8 +82,6 @@ export function SubjectPage() {
           </p>
         </div>
       </header>
-
-      <SubjectMindMaps subject={subject} />
 
       <Card className="p-5 sm:p-6">
         <div className="flex flex-wrap items-end justify-between gap-3">

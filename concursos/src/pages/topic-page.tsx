@@ -395,7 +395,6 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
         title={planTopic.topic.name}
         subtitle={`${subject.subject.name} · ${plan!.position.name}`}
         sections={mindMapSections}
-        pin={{ topicId, subjectId: subject.subject.id, subjectName: subject.subject.name }}
       />
 
       <Dialog open={blocker.state === 'blocked'} onOpenChange={(open) => !open && blocker.state === 'blocked' && blocker.reset()}>

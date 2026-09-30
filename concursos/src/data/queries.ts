@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 import { consolidateStudyPlan } from '@/domain/consolidate'
 import type { Flashcard } from '@/domain/flashcards'
-import type { PinnedMindMap } from '@/domain/mind-map'
 import type { Quiz } from '@/domain/questions'
 import { toStatusMap } from '@/domain/progress'
 import type {
@@ -31,7 +30,6 @@ export const queryKeys = {
   summaries: ['summaries'] as const,
   flashcards: ['flashcards'] as const,
   quizzes: ['quizzes'] as const,
-  mindMaps: ['mind-maps'] as const,
 }
 
 /* ------------------------------------------------------------------ Catálogo */
@@ -198,23 +196,6 @@ export function useSaveQuiz() {
       return { previous }
     },
     onError: (_e, _v, context) => qc.setQueryData(queryKeys.quizzes, context?.previous),
-  })
-}
-
-export const useMindMaps = () => useQuery({ queryKey: queryKeys.mindMaps, queryFn: () => dataSource.listMindMaps() })
-
-/** Fixa/desafixa o mapa mental de um assunto na página da disciplina. */
-export function useSaveMindMap() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ topicId, pinned }: { topicId: string; pinned: PinnedMindMap | null }) => dataSource.saveMindMap(topicId, pinned),
-    onMutate: async ({ topicId, pinned }) => {
-      await qc.cancelQueries({ queryKey: queryKeys.mindMaps })
-      const previous = qc.getQueryData<PinnedMindMap[]>(queryKeys.mindMaps)
-      qc.setQueryData<PinnedMindMap[]>(queryKeys.mindMaps, (list = []) => [...list.filter((m) => m.topicId !== topicId), ...(pinned ? [pinned] : [])])
-      return { previous }
-    },
-    onError: (_e, _v, context) => qc.setQueryData(queryKeys.mindMaps, context?.previous),
   })
 }
 
