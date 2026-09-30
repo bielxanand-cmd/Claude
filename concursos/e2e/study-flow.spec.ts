@@ -610,3 +610,57 @@ test('temas do assunto: cria, escreve com salvamento automático, reordena e exc
   await page.reload()
   await expect(themes.getByRole('article')).toHaveCount(1)
 })
+
+test('subtemas: criados dentro do tema, salvos e excluídos junto com ele', async ({ page }) => {
+  await page.goto('/')
+  await seedUser(page)
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('concursos.user.v1')!)
+    raw.selection = { positionId: 'auditor-fiscal-estadual', sphere: 'estadual', state: 'SP', createdAt: new Date().toISOString() }
+    localStorage.setItem('concursos.user.v1', JSON.stringify(raw))
+  })
+  await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
+  const themes = page.getByRole('region', { name: 'Temas do assunto' })
+  await themes.getByRole('button', { name: 'Adicionar tema' }).click()
+  await themes.getByLabel('Nome do novo tema').fill('Poder derivado')
+  await page.keyboard.press('Enter')
+
+  // Dois subtemas dentro do tema aberto
+  const subs = themes.getByRole('group', { name: 'Subtemas de Poder derivado' })
+  for (const [name, text] of [
+    ['Reformador', 'Emendas com 3/5 em dois turnos.'],
+    ['Revisor', 'Uma única revisão, em 1993.'],
+  ]) {
+    await subs.getByRole('button', { name: 'Adicionar subtema' }).click()
+    await subs.getByLabel('Nome do novo subtema').fill(name)
+    await page.keyboard.press('Enter')
+    await subs.getByRole('textbox', { name: `Resumo do subtema ${name}` }).click()
+    await page.keyboard.type(text)
+  }
+  await expect(subs.getByText('1.2', { exact: true })).toBeVisible()
+  await expect(themes.getByText('Salvando…')).toHaveCount(0)
+  await shot(page, 'subtemas')
+
+  // Recarrega: o tema mostra quantos subtemas tem e eles continuam lá
+  await page.reload()
+  const card = themes.getByRole('article').first()
+  await expect(card).toContainText('2 subtemas')
+  await card.getByRole('button', { name: /Poder derivado/ }).click()
+  await subs.getByRole('button', { name: /Revisor/ }).click()
+  await expect(subs.getByRole('textbox', { name: 'Resumo do subtema Revisor' })).toContainText('Uma única revisão, em 1993.')
+
+  // Subtemas aparecem no mapa mental, dentro do cartão do tema
+  await page.getByRole('button', { name: 'Criar mapa mental' }).first().click()
+  const map = page.getByRole('img', { name: /Mapa mental:/ })
+  await expect(map.getByText('Reformador', { exact: true })).toHaveCount(1)
+  await expect(map.getByText('Revisor', { exact: true })).toHaveCount(1)
+  await page.keyboard.press('Escape')
+
+  // Excluir o tema leva os subtemas
+  await themes.getByRole('button', { name: 'Excluir tema' }).click()
+  await expect(page.getByText(/e os 2 subtemas dele/)).toBeVisible()
+  await page.getByRole('dialog', { name: 'Excluir tema?' }).getByRole('button', { name: 'Excluir' }).click()
+  await expect(themes.getByText('Nenhum tema ainda')).toBeVisible()
+  await page.reload()
+  await expect(themes.getByText('Nenhum tema ainda')).toBeVisible()
+})

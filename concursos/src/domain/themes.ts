@@ -13,6 +13,8 @@ export interface Theme {
   title: string
   summary: string
   keyPoints: string
+  /** Tema ao qual este subtema pertence (`null`/ausente: tema principal) */
+  parentId?: string | null
   /** Posição na lista (menor primeiro) */
   order: number
   createdAt: string
@@ -22,6 +24,28 @@ export interface Theme {
 export const sortThemes = (themes: Theme[]) => [...themes].sort((a, b) => a.order - b.order || a.createdAt.localeCompare(b.createdAt))
 
 export const themeHasContent = (t: Pick<Theme, 'summary' | 'keyPoints'>) => !!(htmlToText(t.summary) || htmlToText(t.keyPoints))
+
+/** Temas principais (sem pai), em ordem. */
+export const rootThemes = (themes: Theme[]) => sortThemes(themes.filter((t) => !t.parentId))
+
+/** Subtemas de um tema, em ordem. */
+export const subthemesOf = (themes: Theme[], parentId: string) => sortThemes(themes.filter((t) => t.parentId === parentId))
+
+/** Tema com conteúdo próprio ou em algum subtema. */
+export const treeHasContent = (theme: Theme, themes: Theme[]) => themeHasContent(theme) || subthemesOf(themes, theme.id).some(themeHasContent)
+
+/**
+ * HTML de um tema com os subtemas (cada subtema como título de nível 3,
+ * com o seu resumo e pontos importantes).
+ */
+export function themeTreeHtml(theme: Theme, themes: Theme[], part: 'summary' | 'keyPoints' | 'all' = 'all'): string {
+  const pick = (t: Theme) => (part === 'all' ? t.summary + t.keyPoints : t[part])
+  const subs = subthemesOf(themes, theme.id)
+    .filter((s) => s.title.trim() && htmlToText(pick(s)))
+    .map((s) => `<h3>${escapeHtml(s.title.trim())}</h3>${pick(s)}`)
+    .join('')
+  return (part === 'all' ? theme.summary : pick(theme)) + subs
+}
 
 /** Primeira linha do resumo do tema, para a prévia do cartão. */
 export function themePreview(t: Theme, max = 140): string {
@@ -35,12 +59,13 @@ export function themePreview(t: Theme, max = 140): string {
  * importantes do tema vão para os pontos importantes do assunto.
  */
 export function withThemes(content: SummaryContent, themes: Theme[]): SummaryContent {
-  const filled = sortThemes(themes).filter((t) => t.title.trim() && themeHasContent(t))
+  const filled = rootThemes(themes).filter((t) => t.title.trim() && treeHasContent(t, themes))
   if (filled.length === 0) return content
-  const heading = (t: Theme) => `<h2>${escapeHtml(t.title.trim())}</h2>`
-  return {
-    ...content,
-    summary: content.summary + filled.filter((t) => htmlToText(t.summary)).map((t) => heading(t) + t.summary).join(''),
-    keyPoints: content.keyPoints + filled.filter((t) => htmlToText(t.keyPoints)).map((t) => heading(t) + t.keyPoints).join(''),
-  }
+  const block = (part: 'summary' | 'keyPoints') =>
+    filled
+      .map((t) => ({ t, html: themeTreeHtml(t, themes, part) }))
+      .filter(({ html }) => htmlToText(html))
+      .map(({ t, html }) => `<h2>${escapeHtml(t.title.trim())}</h2>${html}`)
+      .join('')
+  return { ...content, summary: content.summary + block('summary'), keyPoints: content.keyPoints + block('keyPoints') }
 }

@@ -81,7 +81,7 @@ export function globalSearch(
     summaries.push({
       kind: 'summary',
       id: `theme:${theme.id}`,
-      title: `${info.name} · ${theme.title}`,
+      title: `${info.name} · ${[data.themes!.find((t) => t.id === theme.parentId)?.title, theme.title].filter(Boolean).join(' › ')}`,
       subtitle: snippet(text, terms[0]),
       icon: info.icon,
       href: `/assunto/${theme.topicId}`,
