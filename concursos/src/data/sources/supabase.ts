@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Flashcard } from '@/domain/flashcards'
 import type { Quiz } from '@/domain/questions'
 import type { Theme } from '@/domain/themes'
+import type { Attachment } from '@/domain/attachments'
 import { planNoticeImport } from '@/domain/import-notice'
 import type {
   Career,
@@ -396,6 +397,45 @@ export function createSupabaseDataSource(url: string, anonKey: string): DataSour
         }),
       )
       return { ...theme, updatedAt }
+    },
+
+    // Fichas dos anexos; os arquivos ficam no navegador (IndexedDB) neste modo
+    async listAttachments() {
+      const id = await userId()
+      const rows = await selectAll(client, 'topic_attachments', '*', (q) => q.eq('user_id', id))
+      return rows.map(
+        (r): Attachment => ({
+          id: r.id as string,
+          topicId: r.topic_id as string,
+          name: r.name as string,
+          type: r.content_type as string,
+          size: r.size_bytes as number,
+          blobId: r.blob_id as string,
+          createdAt: r.created_at as string,
+        }),
+      )
+    },
+
+    async saveAttachment(item) {
+      const id = await userId()
+      must(
+        await client.from('topic_attachments').upsert({
+          id: item.id,
+          user_id: id,
+          topic_id: item.topicId,
+          name: item.name,
+          content_type: item.type,
+          size_bytes: item.size,
+          blob_id: item.blobId,
+          created_at: item.createdAt,
+        }),
+      )
+      return item
+    },
+
+    async deleteAttachment(topicId, attachmentId) {
+      const id = await userId()
+      must(await client.from('topic_attachments').delete().eq('user_id', id).eq('topic_id', topicId).eq('id', attachmentId))
     },
 
     async deleteTheme(topicId, themeId) {

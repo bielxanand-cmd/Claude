@@ -705,3 +705,97 @@ test('resumir conteúdo reconhece temas e subtemas e gera o resumo geral em Meu 
   await page.getByRole('button', { name: /^Salvar/ }).click()
   await expect(page.getByText('Resumo salvo!')).toBeVisible()
 })
+
+test('anexos do assunto: envia PDF e imagem, visualiza, baixa e exclui', async ({ page, isMobile }) => {
+  await page.goto('/')
+  await seedUser(page)
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('concursos.user.v1')!)
+    raw.selection = { positionId: 'auditor-fiscal-estadual', sphere: 'estadual', state: 'SP', createdAt: new Date().toISOString() }
+    localStorage.setItem('concursos.user.v1', JSON.stringify(raw))
+  })
+  await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
+  const card = page.getByRole('region', { name: 'Anexos' })
+  await expect(card.getByText('Nenhum anexo')).toBeVisible()
+
+  // PNG 1x1 e um PDF pequeno
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64')
+  await card.getByLabel('Adicionar anexos ao assunto').setInputFiles([
+    { name: 'apostila.pdf', mimeType: 'application/pdf', buffer: makePdf(['REMEDIOS CONSTITUCIONAIS', 'Habeas corpus protege a liberdade.']) },
+    { name: 'esquema.png', mimeType: 'image/png', buffer: png },
+    { name: 'planilha.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from('x') },
+  ])
+  await expect(page.getByText('“planilha.xlsx” não é aceito')).toBeVisible()
+  await expect(card.getByRole('listitem')).toHaveCount(2)
+
+  // Continua lá depois de recarregar
+  await page.reload()
+  await expect(card.getByRole('listitem')).toHaveCount(2)
+
+  // PDF abre página a página
+  await card.getByRole('button', { name: 'Ver apostila.pdf' }).click()
+  const viewer = page.getByRole('dialog', { name: 'apostila.pdf' })
+  await expect(viewer.getByLabel('Página 1 de 1')).toBeVisible()
+  if (!isMobile) {
+    const download = page.waitForEvent('download')
+    await viewer.getByRole('button', { name: 'Baixar' }).click()
+    expect((await download).suggestedFilename()).toBe('apostila.pdf')
+  }
+  await page.keyboard.press('Escape')
+
+  // Imagem
+  await card.getByRole('button', { name: 'Ver esquema.png' }).click()
+  await expect(page.getByRole('dialog', { name: 'esquema.png' }).getByRole('img', { name: 'esquema.png' })).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  // Excluir
+  await card.getByRole('button', { name: 'Excluir esquema.png' }).click()
+  await page.getByRole('dialog', { name: 'Excluir anexo?' }).getByRole('button', { name: 'Excluir' }).click()
+  await expect(card.getByRole('listitem')).toHaveCount(1)
+  await page.reload()
+  await expect(card.getByRole('listitem')).toHaveCount(1)
+})
+
+test('mapa mental de um tema e de um subtema', async ({ page }) => {
+  await page.goto('/')
+  await page.evaluate(() => {
+    const topicId = 'direito-constitucional__remedios-constitucionais'
+    const now = new Date().toISOString()
+    const t = (id: string, title: string, summary: string, extra: Record<string, unknown> = {}) => ({
+      id, topicId, title, summary, keyPoints: '', order: 0, createdAt: now, updatedAt: now, ...extra,
+    })
+    localStorage.setItem(
+      'concursos.user.v1',
+      JSON.stringify({
+        profile: { id: 'e2e', name: 'Ana', email: null, createdAt: now },
+        selection: { positionId: 'auditor-fiscal-estadual', sphere: 'estadual', state: 'SP', createdAt: now },
+        history: [], topics: {}, flashcards: {}, quizzes: {}, summaries: {},
+        themes: {
+          [topicId]: [
+            t('a', 'Mandado de segurança', '<ul><li><p>Prazo: 120 dias</p></li><li><p>Direito líquido e certo</p></li></ul>', { keyPoints: '<p>Não cabe contra lei em tese</p>' }),
+            t('b', 'Coletivo', '<ul><li><p>Partido político: com representação no Congresso</p></li><li><p>Sindicato: em funcionamento há 1 ano</p></li></ul>', { parentId: 'a' }),
+          ],
+        },
+      }),
+    )
+  })
+  await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
+  const themes = page.getByRole('region', { name: 'Temas do assunto' })
+  await themes.getByRole('button', { name: /Mandado de segurança/ }).click()
+
+  // Mapa do tema: resumo, pontos importantes e o subtema
+  await themes.getByRole('button', { name: 'Mapa mental' }).first().click()
+  let map = page.getByRole('img', { name: 'Mapa mental: Mandado de segurança' })
+  await expect(map.getByText('Prazo', { exact: true })).toHaveCount(1)
+  await expect(map.getByText('Não cabe contra lei em tese')).toHaveCount(1)
+  await expect(map.getByText('COLETIVO', { exact: true })).toHaveCount(1)
+  await page.keyboard.press('Escape')
+
+  // Mapa do subtema
+  const subs = themes.getByRole('group', { name: 'Subtemas de Mandado de segurança' })
+  await subs.getByRole('button', { name: /Coletivo/ }).click()
+  await subs.getByRole('button', { name: 'Mapa mental' }).click()
+  map = page.getByRole('img', { name: 'Mapa mental: Coletivo' })
+  await expect(map.getByText('Partido político', { exact: true })).toHaveCount(1)
+  await expect(map.getByText(/Remédios constitucionais · Mandado de segurança/).first()).toBeVisible()
+})

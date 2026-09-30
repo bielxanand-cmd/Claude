@@ -99,9 +99,13 @@ No topo de cada assunto, acima do resumo geral, **Temas do assunto** divide o as
 
 Os temas também entram no mapa mental (um cartão por tema), nos flashcards, nas questões, nos assistentes e na busca global.
 
+### Anexos do assunto
+
+Na coluna lateral de cada assunto, **Anexos** guarda PDFs, imagens (JPEG, PNG, GIF, WEBP, SVG), vídeos (MP4, WEBM) e textos (TXT, MD, CSV, JSON) — até 20 MB por arquivo. Envie pelo botão **Adicionar** ou arrastando para o cartão; clique no nome para ver (PDF desenhado página a página com o pdf.js, imagem, vídeo ou texto), baixe ou exclua. Na página publicada, o arquivo fica nos assets da página (capacidade `assets`) e a ficha na conta do usuário (`state/attachments`), então aparece em qualquer aparelho; fora dela, o arquivo fica no IndexedDB do navegador (`src/data/files.ts`; no Supabase, tabela `topic_attachments` com as fichas).
+
 ### Mapa mental (infográfico)
 
-**Criar mapa mental** monta um infográfico a partir do resumo (`domain/mind-map.ts`, sem IA): o assunto fica num balão escuro no centro, com a primeira frase do resumo como definição; cada título (ou item com subitens) vira um cartão colorido com ícone pelo tema, e os itens viram tópicos (“Tema: explicação” → tópico em negrito com a explicação embaixo). Pontos importantes viram um cartão de checklist e Observações um cartão próprio. O desenho é um SVG autocontido (`features/mind-map/`) e pode ser baixado em **JPEG** (no claude.ai, pela capacidade `downloads`).
+**Criar mapa mental** monta um infográfico a partir do resumo (`domain/mind-map.ts`, sem IA): o assunto fica num balão escuro no centro, com a primeira frase do resumo como definição; cada título (ou item com subitens) vira um cartão colorido com ícone pelo tema, e os itens viram tópicos (“Tema: explicação” → tópico em negrito com a explicação embaixo). Pontos importantes viram um cartão de checklist e Observações um cartão próprio. Cada tema e subtema também tem o seu botão **Mapa mental** (dentro da caixa do tema), com o resumo, os pontos importantes e, no caso do tema, um cartão por subtema. O desenho é um SVG autocontido (`features/mind-map/`) e pode ser baixado em **JPEG** (no claude.ai, pela capacidade `downloads`).
 
 ### Flashcards
 

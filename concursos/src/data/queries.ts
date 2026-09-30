@@ -4,6 +4,7 @@ import { consolidateStudyPlan } from '@/domain/consolidate'
 import type { Flashcard } from '@/domain/flashcards'
 import type { Quiz } from '@/domain/questions'
 import type { Theme } from '@/domain/themes'
+import type { Attachment } from '@/domain/attachments'
 import { toStatusMap } from '@/domain/progress'
 import type {
   Contest,
@@ -32,6 +33,7 @@ export const queryKeys = {
   flashcards: ['flashcards'] as const,
   quizzes: ['quizzes'] as const,
   themes: ['themes'] as const,
+  attachments: ['attachments'] as const,
 }
 
 /* ------------------------------------------------------------------ Catálogo */
@@ -229,6 +231,36 @@ export function useDeleteTheme() {
       return { previous }
     },
     onError: (_e, _v, context) => qc.setQueryData(queryKeys.themes, context?.previous),
+  })
+}
+
+export const useAttachments = () => useQuery({ queryKey: queryKeys.attachments, queryFn: () => dataSource.listAttachments() })
+
+export function useSaveAttachment() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (item: Attachment) => dataSource.saveAttachment(item),
+    onMutate: async (item) => {
+      await qc.cancelQueries({ queryKey: queryKeys.attachments })
+      const previous = qc.getQueryData<Attachment[]>(queryKeys.attachments)
+      qc.setQueryData<Attachment[]>(queryKeys.attachments, (list = []) => [...list.filter((a) => a.id !== item.id), item])
+      return { previous }
+    },
+    onError: (_e, _v, context) => qc.setQueryData(queryKeys.attachments, context?.previous),
+  })
+}
+
+export function useDeleteAttachment() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ topicId, attachmentId }: { topicId: string; attachmentId: string }) => dataSource.deleteAttachment(topicId, attachmentId),
+    onMutate: async ({ attachmentId }) => {
+      await qc.cancelQueries({ queryKey: queryKeys.attachments })
+      const previous = qc.getQueryData<Attachment[]>(queryKeys.attachments)
+      qc.setQueryData<Attachment[]>(queryKeys.attachments, (list = []) => list.filter((a) => a.id !== attachmentId))
+      return { previous }
+    },
+    onError: (_e, _v, context) => qc.setQueryData(queryKeys.attachments, context?.previous),
   })
 }
 

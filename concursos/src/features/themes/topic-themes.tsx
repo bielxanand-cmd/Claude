@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Check, ChevronDown, Lightbulb, ListTree, Loader2, NotebookPen, Plus, Shapes, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, ChevronDown, Lightbulb, ListTree, Loader2, Network, NotebookPen, Plus, Shapes, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { RichEditor } from '@/components/editor/rich-editor'
@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useDeleteTheme, useSaveTheme, useThemes } from '@/data/queries'
-import { rootThemes, subthemesOf, themePreview, treeHasContent, type Theme } from '@/domain/themes'
+import { rootThemes, subthemesOf, themeHasContent, themePreview, treeHasContent, type Theme } from '@/domain/themes'
+import { MindMapDialog } from '@/features/mind-map/mind-map-dialog'
+import { htmlToText } from '@/lib/text'
 import { uuid } from '@/lib/storage'
 import { cn, formatRelative } from '@/lib/utils'
 
@@ -18,7 +20,7 @@ const AUTOSAVE_MS = 800
  * pode ter subtemas (mesma estrutura, um nível). Tudo é salvo
  * automaticamente.
  */
-export function TopicThemes({ topicId }: { topicId: string }) {
+export function TopicThemes({ topicId, topicName }: { topicId: string; topicName: string }) {
   const query = useThemes()
   const saveTheme = useSaveTheme()
   const deleteTheme = useDeleteTheme()
@@ -67,6 +69,8 @@ export function TopicThemes({ topicId }: { topicId: string }) {
       label={label}
       nested={!!theme.parentId}
       subCount={theme.parentId ? 0 : subthemesOf(all, theme.id).length}
+      subthemes={theme.parentId ? [] : subthemesOf(all, theme.id)}
+      mapSubtitle={theme.parentId ? `${topicName} · ${all.find((t) => t.id === theme.parentId)?.title ?? ''}` : topicName}
       open={openIds.has(theme.id)}
       onToggle={() => toggle(theme.id)}
       onSave={(t) => saveTheme.mutateAsync(t)}
@@ -259,6 +263,8 @@ function ThemeCard({
   label,
   nested,
   subCount,
+  subthemes,
+  mapSubtitle,
   children,
   open,
   onToggle,
@@ -273,6 +279,9 @@ function ThemeCard({
   label: string
   nested: boolean
   subCount: number
+  /** Subtemas (entram no mapa mental do tema) */
+  subthemes: Theme[]
+  mapSubtitle: string
   children?: React.ReactNode
   open: boolean
   onToggle: () => void
@@ -330,6 +339,18 @@ function ThemeCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const [mapOpen, setMapOpen] = useState(false)
+  // Mapa mental do tema (com o texto atual, mesmo antes de salvar) e dos subtemas
+  const mapSections = useMemo(
+    () => [
+      { key: 'summary', label: `Resumo do ${nested ? 'subtema' : 'tema'}`, html: draft.summary },
+      { key: 'keyPoints', label: 'Pontos importantes', html: draft.keyPoints },
+      ...subthemes
+        .filter((sub) => sub.title.trim() && themeHasContent(sub))
+        .map((sub) => ({ key: 'theme', label: sub.title, html: sub.summary + (htmlToText(sub.keyPoints) ? `<h3>Pontos importantes</h3>${sub.keyPoints}` : '') })),
+    ],
+    [draft.summary, draft.keyPoints, subthemes, nested],
+  )
   const preview = themePreview({ ...theme, ...draft })
   const noun = nested ? 'subtema' : 'tema'
   const pending = !sameDraft(draft, base.current)
@@ -417,6 +438,9 @@ function ThemeCard({
                 </>
               )}
             </span>
+            <Button variant="secondary" size="sm" onClick={() => setMapOpen(true)}>
+              <Network /> Mapa mental
+            </Button>
             <Button variant="ghost" size="icon-sm" onClick={() => onMove(-1)} disabled={!canMoveUp} aria-label={`Mover ${noun} para cima`}>
               <ArrowUp />
             </Button>
@@ -428,6 +452,14 @@ function ThemeCard({
             </Button>
           </div>
           {children}
+          <MindMapDialog
+            open={mapOpen}
+            onOpenChange={setMapOpen}
+            title={draft.title.trim() || theme.title}
+            subtitle={mapSubtitle}
+            sections={mapSections}
+            description={`Gerado a partir do ${nested ? 'subtema' : 'tema e dos subtemas'}, incluindo alterações ainda não salvas.`}
+          />
         </div>
       )}
     </article>

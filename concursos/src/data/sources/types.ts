@@ -1,6 +1,7 @@
 import type { Flashcard } from '@/domain/flashcards'
 import type { Quiz } from '@/domain/questions'
 import type { Theme } from '@/domain/themes'
+import type { Attachment } from '@/domain/attachments'
 import type {
   Career,
   CatalogSnapshot,
@@ -69,6 +70,9 @@ export interface DataSource {
   /** Cria ou atualiza um tema de um assunto */
   saveTheme(theme: Theme): Promise<Theme>
   deleteTheme(topicId: string, themeId: string): Promise<void>
+  listAttachments(): Promise<Attachment[]>
+  saveAttachment(item: Attachment): Promise<Attachment>
+  deleteAttachment(topicId: string, attachmentId: string): Promise<void>
   resetUserData(): Promise<void>
   /** Avisa quando dados mudam fora desta página (outra aba/aparelho) */
   subscribe?(listener: (what: 'userTopics' | 'all') => void): () => void

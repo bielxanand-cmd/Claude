@@ -149,3 +149,10 @@ export async function extractPdfText(file: File, onProgress?: (page: number, tot
     throw new PdfReadError('Este PDF parece ser uma imagem escaneada, sem texto selecionável. Cole o conteúdo programático como texto.', 'no-text')
   return { pages }
 }
+
+/** Abre um PDF para exibição (anexos): documento do pdf.js e como liberá-lo. */
+export async function openPdf(data: Uint8Array) {
+  const pdfjs = await loadPdfJs()
+  const { task, doc } = await openDocument(pdfjs, data)
+  return { doc, destroy: () => void task.destroy() }
+}

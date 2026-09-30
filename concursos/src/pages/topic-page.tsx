@@ -28,6 +28,7 @@ import { FlashcardsDialog } from '@/features/flashcards/flashcards-dialog'
 import { StudySession } from '@/features/flashcards/study-session'
 import { MindMapDialog } from '@/features/mind-map/mind-map-dialog'
 import { TopicThemes } from '@/features/themes/topic-themes'
+import { TopicAttachments } from '@/features/attachments/topic-attachments'
 import { useTopicActions } from '@/hooks/use-topic-actions'
 import { cn, formatRelative, formatTime } from '@/lib/utils'
 
@@ -242,7 +243,7 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_300px]">
         <div className="min-w-0 space-y-5">
-          <TopicThemes topicId={topicId} />
+          <TopicThemes topicId={topicId} topicName={planTopic.topic.name} />
 
           {visibleSections.map(({ key, title, hint, icon: Icon, minHeight, placeholder }) => (
             <section key={key} aria-labelledby={`section-${key}`}>
@@ -293,6 +294,7 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
         </div>
 
         <aside className="space-y-5">
+          <TopicAttachments topicId={topicId} />
           {planTopic.details.length > 0 && (
             <Card className="p-5">
               <h2 className="text-sm font-bold">O que o edital cobra</h2>

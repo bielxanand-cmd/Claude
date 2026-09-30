@@ -25,6 +25,7 @@ const freshUser = (): UserState => ({
   flashcards: {},
   quizzes: {},
   themes: {},
+  attachments: {},
 })
 
 /**
@@ -332,6 +333,32 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
       else list.push(saved)
       save({ type: 'theme', topicId: theme.topicId, themeId: theme.id })
       return delay(saved, 0)
+    },
+
+    async listAttachments() {
+      return delay(Object.values((await user()).attachments ?? {}).flat(), 0)
+    },
+
+    async saveAttachment(item) {
+      const u = await user()
+      u.attachments ??= {}
+      const list = (u.attachments[item.topicId] ??= [])
+      const i = list.findIndex((a) => a.id === item.id)
+      if (i >= 0) list[i] = item
+      else list.push(item)
+      save({ type: 'attachment', topicId: item.topicId, attachmentId: item.id })
+      return delay(item, 0)
+    },
+
+    async deleteAttachment(topicId, attachmentId) {
+      const u = await user()
+      const list = u.attachments?.[topicId]
+      if (list) {
+        u.attachments[topicId] = list.filter((a) => a.id !== attachmentId)
+        if (u.attachments[topicId].length === 0) delete u.attachments[topicId]
+      }
+      save({ type: 'attachment', topicId, attachmentId })
+      return delay(undefined, 0)
     },
 
     async deleteTheme(topicId, themeId) {
