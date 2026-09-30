@@ -95,7 +95,7 @@ Cada assunto tem **Meu resumo**, **Pontos importantes** e **Observações**. O a
 
 ### Temas do assunto
 
-Abaixo do resumo geral, **Temas do assunto** divide o assunto em temas (ex.: em “Poder constituinte”: Originário, Reformador, Decorrente, Revisor). Os temas aparecem como cartões em lista, um embaixo do outro, com número, nome e prévia do texto; **Adicionar tema** cria um novo. Clicar no cartão abre a caixa do tema com **Resumo do tema** e **Pontos importantes** (editores de texto rico), renomear, mover para cima/baixo e excluir. Tudo é salvo automaticamente (`features/themes/`, `domain/themes.ts`; na nuvem, um documento por tema em `state/themes`; no Supabase, tabela `topic_themes`).
+No topo de cada assunto, acima do resumo geral, **Temas do assunto** divide o assunto em temas (ex.: em “Poder constituinte”: Originário, Reformador, Decorrente, Revisor). Os temas aparecem como cartões em lista, um embaixo do outro, com número, nome e prévia do texto; **Adicionar tema** cria um novo. Clicar no cartão abre a caixa do tema com **Resumo do tema** e **Pontos importantes** (editores de texto rico), renomear, mover para cima/baixo e excluir. Tudo é salvo automaticamente (`features/themes/`, `domain/themes.ts`; na nuvem, um documento por tema em `state/themes`; no Supabase, tabela `topic_themes`).
 
 Os temas também entram no mapa mental (um cartão por tema), nos flashcards, nas questões, nos assistentes e na busca global.
 

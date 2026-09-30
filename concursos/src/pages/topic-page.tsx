@@ -226,6 +226,8 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_300px]">
         <div className="min-w-0 space-y-5">
+          <TopicThemes topicId={topicId} />
+
           {visibleSections.map(({ key, title, hint, icon: Icon, minHeight, placeholder }) => (
             <section key={key} aria-labelledby={`section-${key}`}>
               <div className="mb-2 flex items-baseline gap-2">
@@ -244,8 +246,6 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
               />
             </section>
           ))}
-
-          <TopicThemes topicId={topicId} />
 
           <nav aria-label="Outros assuntos" className="grid gap-3 pt-4 sm:grid-cols-2">
             {prev ? (
