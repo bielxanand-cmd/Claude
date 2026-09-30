@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 import { consolidateStudyPlan } from '@/domain/consolidate'
 import type { Flashcard } from '@/domain/flashcards'
+import type { Quiz } from '@/domain/questions'
 import { toStatusMap } from '@/domain/progress'
 import type {
   Contest,
@@ -28,6 +29,7 @@ export const queryKeys = {
   userTopics: ['user-topics'] as const,
   summaries: ['summaries'] as const,
   flashcards: ['flashcards'] as const,
+  quizzes: ['quizzes'] as const,
 }
 
 /* ------------------------------------------------------------------ Catálogo */
@@ -177,6 +179,23 @@ export function useSaveTopicFlashcards() {
       return { previous }
     },
     onError: (_e, _v, context) => qc.setQueryData(queryKeys.flashcards, context?.previous),
+  })
+}
+
+export const useQuizzes = () => useQuery({ queryKey: queryKeys.quizzes, queryFn: () => dataSource.listQuizzes() })
+
+/** Salva as questões de um assunto (otimista: a correção aparece na hora). */
+export function useSaveQuiz() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ topicId, quiz }: { topicId: string; quiz: Quiz | null }) => dataSource.saveQuiz(topicId, quiz),
+    onMutate: async ({ topicId, quiz }) => {
+      await qc.cancelQueries({ queryKey: queryKeys.quizzes })
+      const previous = qc.getQueryData<Quiz[]>(queryKeys.quizzes)
+      qc.setQueryData<Quiz[]>(queryKeys.quizzes, (list = []) => [...list.filter((q) => q.topicId !== topicId), ...(quiz ? [quiz] : [])])
+      return { previous }
+    },
+    onError: (_e, _v, context) => qc.setQueryData(queryKeys.quizzes, context?.previous),
   })
 }
 

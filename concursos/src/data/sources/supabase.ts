@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Flashcard } from '@/domain/flashcards'
+import type { Quiz } from '@/domain/questions'
 import { planNoticeImport } from '@/domain/import-notice'
 import type {
   Career,
@@ -343,9 +344,23 @@ export function createSupabaseDataSource(url: string, anonKey: string): DataSour
       return rows.map(toFlashcard)
     },
 
+    // Questões geradas ficam em ai_generations (kind = 'questions'), uma por assunto
+    async listQuizzes() {
+      const id = await userId()
+      const rows = await selectAll(client, 'ai_generations', '*', (q) => q.eq('user_id', id).eq('kind', 'questions'))
+      return rows.map((r) => r.output as Quiz).filter((q) => q?.topicId)
+    },
+
+    async saveQuiz(topicId, quiz) {
+      const id = await userId()
+      must(await client.from('ai_generations').delete().eq('user_id', id).eq('kind', 'questions').eq('topic_id', topicId))
+      if (quiz) must(await client.from('ai_generations').insert({ user_id: id, topic_id: topicId, kind: 'questions', output: quiz }))
+      return quiz
+    },
+
     async resetUserData() {
       const id = await userId()
-      await Promise.all(['user_topics', 'summaries', 'user_positions', 'flashcards'].map(async (t) => must(await client.from(t).delete().eq('user_id', id))))
+      await Promise.all(['user_topics', 'summaries', 'user_positions', 'flashcards', 'ai_generations'].map(async (t) => must(await client.from(t).delete().eq('user_id', id))))
       removeKey(ANON_USER_KEY)
       userIdPromise = null
     },

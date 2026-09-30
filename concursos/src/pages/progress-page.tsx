@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleDot, Circle, History } from 'lucide-react'
+import { CheckCircle2, CircleDot, Circle, FileQuestion, History } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { SubjectBars } from '@/components/charts/subject-bars'
 import { EmptyPlan } from '@/components/study/empty-plan'
@@ -6,13 +6,15 @@ import { EmptyState, ErrorState, PageSkeleton } from '@/components/study/feedbac
 import { PageHeader } from '@/components/study/page-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProgressRing } from '@/components/ui/progress-ring'
-import { useStudy } from '@/data/queries'
+import { useQuizzes, useStudy } from '@/data/queries'
 import { planProgress } from '@/domain/progress'
+import { performanceOf } from '@/domain/questions'
 import { percent } from '@/lib/text'
 import { formatRelative } from '@/lib/utils'
 
 export function ProgressPage() {
   const { plan, statuses, userTopics, topicIndex, isLoading, error, refetch } = useStudy()
+  const quizzes = useQuizzes()
 
   if (error) return <ErrorState error={error} onRetry={refetch} />
   if (isLoading || !plan) return <PageSkeleton />
@@ -22,6 +24,14 @@ export function ProgressPage() {
     .filter((t) => t.status === 'completed' && t.completedAt && topicIndex.has(t.topicId))
     .sort((a, b) => b.completedAt!.localeCompare(a.completedAt!))
     .slice(0, 8)
+
+  // Desempenho em questões por disciplina (só dos assuntos deste plano)
+  const planQuizzes = (quizzes.data ?? []).filter((q) => q.answered > 0 && topicIndex.has(q.topicId))
+  const overall = performanceOf(planQuizzes)
+  const bySubject = plan.subjects
+    .map((s) => ({ subject: s.subject, perf: performanceOf(planQuizzes.filter((q) => topicIndex.get(q.topicId)!.subject === s)) }))
+    .filter((x) => x.perf.answered > 0)
+    .sort((a, b) => a.perf.accuracy - b.perf.accuracy)
 
   const legend = [
     { label: 'Concluídos', value: progress.completed, icon: CheckCircle2, className: 'text-success' },
@@ -56,6 +66,48 @@ export function ProgressPage() {
                   </li>
                 ))}
               </ul>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Desempenho em questões</CardTitle>
+                <FileQuestion className="size-4 text-subtle" aria-hidden />
+              </CardHeader>
+              <CardContent className="pt-3">
+                {overall.answered === 0 ? (
+                  <EmptyState
+                    icon={FileQuestion}
+                    title="Nenhuma questão respondida"
+                    description="Use “Criar questões” na página de um assunto para treinar e acompanhar seus acertos."
+                    className="border-none py-6"
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted">
+                      <span className="text-3xl font-extrabold tracking-tight text-foreground tabular-nums">{percent(overall.accuracy)}</span> de acertos ·{' '}
+                      {overall.correct} de {overall.answered}
+                    </p>
+                    <ul className="space-y-3">
+                      {bySubject.map(({ subject, perf }) => (
+                        <li key={subject.id} className="text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="min-w-0 flex-1 truncate font-medium">{subject.name}</span>
+                            <span className="shrink-0 text-xs text-muted tabular-nums">
+                              {perf.correct}/{perf.answered} · <strong className="text-foreground">{percent(perf.accuracy)}</strong>
+                            </span>
+                          </div>
+                          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-foreground/[0.06]">
+                            <div
+                              className={perf.accuracy >= 0.7 ? 'h-full rounded-full bg-success' : perf.accuracy >= 0.5 ? 'h-full rounded-full bg-primary' : 'h-full rounded-full bg-danger'}
+                              style={{ width: `${Math.round(perf.accuracy * 100)}%` }}
+                            />
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
             </Card>
 
             <Card>

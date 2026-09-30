@@ -23,6 +23,7 @@ const freshUser = (): UserState => ({
   topics: {},
   summaries: {},
   flashcards: {},
+  quizzes: {},
 })
 
 /**
@@ -281,6 +282,19 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
       else delete u.flashcards[topicId]
       save({ type: 'flashcards', topicId })
       return delay(u.flashcards[topicId] ?? [], 0)
+    },
+
+    async listQuizzes() {
+      return delay(Object.values((await user()).quizzes ?? {}), 0)
+    },
+
+    async saveQuiz(topicId, quiz) {
+      const u = await user()
+      u.quizzes ??= {}
+      if (quiz) u.quizzes[topicId] = { ...quiz, topicId }
+      else delete u.quizzes[topicId]
+      save({ type: 'quiz', topicId })
+      return delay(quiz, 0)
     },
 
     subscribe(listener) {

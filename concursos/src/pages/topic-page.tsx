@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, ArrowRight, BookOpenText, Check, CheckCircle2, Layers3, Lightbulb, Network, NotebookPen, Save, SearchX, StickyNote } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, BookOpenText, Check, CheckCircle2, FileQuestion, Layers3, Lightbulb, Network, NotebookPen, Save, SearchX, StickyNote } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useBlocker, useParams } from 'react-router-dom'
@@ -17,6 +17,9 @@ import type { Flashcard } from '@/domain/flashcards'
 import { statusOf } from '@/domain/progress'
 import type { SummaryContent } from '@/domain/types'
 import { AiPanel } from '@/features/ai/ai-panel'
+import { ExplainDialog } from '@/features/assistant/explain-dialog'
+import { QuestionsDialog } from '@/features/assistant/questions-dialog'
+import { SummarizeDialog, type TopicInfo } from '@/features/assistant/summarize-dialog'
 import { FillTopicDialog } from '@/features/book/fill-topic-dialog'
 import { FlashcardsDialog } from '@/features/flashcards/flashcards-dialog'
 import { StudySession } from '@/features/flashcards/study-session'
@@ -81,6 +84,9 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
   const [mindMapOpen, setMindMapOpen] = useState(false)
   const [flashcardsOpen, setFlashcardsOpen] = useState(false)
   const [bookOpen, setBookOpen] = useState(false)
+  const [summarizeOpen, setSummarizeOpen] = useState(false)
+  const [questionsOpen, setQuestionsOpen] = useState(false)
+  const [explainOpen, setExplainOpen] = useState(false)
   const [studyCards, setStudyCards] = useState<Flashcard[] | null>(null)
   const flashcards = useFlashcards()
   const deckSize = (flashcards.data ?? []).filter((c) => c.topicId === topicId).length
@@ -146,6 +152,13 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
 
   const sources = useMemo(() => planTopic.contestIds.map((id) => contestIndex.get(id)!).filter(Boolean), [planTopic.contestIds, contestIndex])
   const index = subject.topics.indexOf(planTopic)
+  const topicInfo: TopicInfo = {
+    topicName: planTopic.topic.name,
+    subjectName: subject.subject.name,
+    positionName: plan!.position.name,
+    details: planTopic.details,
+  }
+  const examBoard = sources.find((c) => c.examBoard)?.examBoard ?? null
   const prev = subject.topics[index - 1]
   const next = subject.topics[index + 1]
 
@@ -187,6 +200,9 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
             <Button variant="secondary" size="sm" onClick={() => setFlashcardsOpen(true)}>
               <Layers3 /> Flashcards
               {deckSize > 0 && <span className="rounded-full bg-primary px-1.5 text-[11px] font-bold text-white tabular-nums">{deckSize}</span>}
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setQuestionsOpen(true)}>
+              <FileQuestion /> Questões
             </Button>
             <Button variant="secondary" size="sm" onClick={() => setBookOpen(true)}>
               <BookOpenText /> Preencher com livro (PDF)
@@ -272,7 +288,15 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
               ))}
             </ul>
           </Card>
-          <AiPanel onAction={{ mind_map: () => setMindMapOpen(true), flashcards: () => setFlashcardsOpen(true) }} />
+          <AiPanel
+            onAction={{
+              summarize: () => setSummarizeOpen(true),
+              questions: () => setQuestionsOpen(true),
+              explain: () => setExplainOpen(true),
+              mind_map: () => setMindMapOpen(true),
+              flashcards: () => setFlashcardsOpen(true),
+            }}
+          />
         </aside>
       </div>
 
@@ -344,6 +368,21 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
           setFlashcardsOpen(false)
           setStudyCards(cards)
         }}
+      />
+      <SummarizeDialog
+        open={summarizeOpen}
+        onOpenChange={setSummarizeOpen}
+        topic={topicInfo}
+        content={draft}
+        onInsert={(html, mode) => setDraft((d) => ({ ...d, summary: mode === 'replace' ? html : d.summary + html }))}
+      />
+      <QuestionsDialog open={questionsOpen} onOpenChange={setQuestionsOpen} topicId={topicId} topic={topicInfo} content={draft} examBoard={examBoard} />
+      <ExplainDialog
+        open={explainOpen}
+        onOpenChange={setExplainOpen}
+        topic={topicInfo}
+        content={draft}
+        onSaveToNotes={(html) => setDraft((d) => ({ ...d, notes: d.notes + html }))}
       />
       <StudySession
         open={!!studyCards}

@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import { AI_ACTIONS, type AiActionId } from './actions'
 
 /**
- * Painel de ações do assistente. Ações sem `available` aparecem como
+ * Painel de ações do assistente. Ações sem `available` (ou sem handler) aparecem como
  * "em breve" até que um provedor de IA seja configurado.
  */
 export function AiPanel({ onAction }: { onAction?: Partial<Record<AiActionId, () => void>> }) {

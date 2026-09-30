@@ -455,3 +455,81 @@ test('livro em PDF preenche o resumo do assunto e os resumos da disciplina', asy
   await page.goto('/resumos')
   await expect(page.getByRole('link', { name: 'Poder Legislativo' })).toBeVisible()
 })
+
+test('assistentes: resumir, criar questões (com placar no progresso) e explicar com o livro', async ({ page }) => {
+  await page.goto('/')
+  await page.evaluate(() => {
+    const topicId = 'direito-constitucional__remedios-constitucionais'
+    localStorage.setItem(
+      'concursos.user.v1',
+      JSON.stringify({
+        profile: { id: 'e2e', name: 'Ana', email: null, createdAt: new Date().toISOString() },
+        selection: { positionId: 'auditor-fiscal-estadual', sphere: 'estadual', state: 'SP', createdAt: new Date().toISOString() },
+        history: [],
+        topics: {},
+        flashcards: {},
+        summaries: {
+          [topicId]: {
+            topicId,
+            plainText: 'x',
+            updatedAt: new Date().toISOString(),
+            content: {
+              summary:
+                '<h2>Mandado de segurança</h2><ul><li><p>O mandado de segurança deve ser impetrado em 120 dias.</p></li><li><p>O habeas corpus é gratuito e dispensa advogado.</p></li></ul>',
+              keyPoints: '<ul><li><p>O habeas data assegura o acesso a informações pessoais.</p></li><li><p>Não cabe habeas corpus em punição disciplinar militar.</p></li></ul>',
+              pitfalls: '',
+              notes: '',
+            },
+          },
+        },
+      }),
+    )
+  })
+  await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
+  await expect(page.getByText('em breve')).toHaveCount(0)
+
+  // 1. Resumir conteúdo → adiciona ao "Meu resumo"
+  await page.getByRole('button', { name: /Resumir conteúdo/ }).click()
+  const summarize = page.getByRole('dialog', { name: /Resumir conteúdo/ })
+  await summarize.getByRole('button', { name: 'Resumir' }).click()
+  await expect(summarize.getByText('Resumo rápido — Remédios constitucionais')).toBeVisible()
+  await summarize.getByRole('button', { name: 'Adicionar ao Meu resumo' }).click()
+  await expect(page.getByRole('textbox', { name: 'Meu resumo' })).toContainText('Resumo rápido')
+
+  // 2. Criar questões: Certo/Errado gerado das anotações, corrigido na hora
+  await page.getByRole('button', { name: /^Questões$/ }).click()
+  const quiz = page.getByRole('dialog', { name: 'Questões' })
+  await quiz.getByRole('button', { name: 'Gerar questões' }).click()
+  const items = quiz.getByRole('listitem')
+  await expect(items.first()).toBeVisible()
+  const total = await items.count()
+  expect(total).toBeGreaterThanOrEqual(3)
+  await items.nth(0).getByRole('button', { name: 'Certo' }).click()
+  await expect(items.nth(0).getByRole('status')).toContainText('Você acertou.')
+  await items.nth(1).getByRole('button', { name: 'Certo' }).click()
+  await expect(items.nth(1).getByRole('status')).toContainText('Você errou.')
+  await expect(quiz.getByText(/2 de \d+ respondidas/)).toBeVisible()
+  await expect(quiz.getByText(/desempenho no assunto: 1 de 2/)).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  // Placar persistido e visível no progresso
+  await page.goto('/progresso')
+  await expect(page.getByText('Desempenho em questões')).toBeVisible()
+  await expect(page.getByText('1/2 · 50%')).toBeVisible()
+
+  // 3. Explicar assunto: sem Claude, mostra o que o livro diz
+  await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
+  await page.getByRole('button', { name: /Explicar assunto/ }).click()
+  const explain = page.getByRole('dialog', { name: /Explicar assunto/ })
+  const book = makePdf([
+    'CAPITULO 7 - REMEDIOS CONSTITUCIONAIS',
+    'Os remedios constitucionais sao garantias que protegem direitos fundamentais contra abusos.',
+    'O habeas corpus protege a liberdade de locomocao e pode ser impetrado por qualquer pessoa.',
+    'O mandado de seguranca deve ser impetrado no prazo de 120 dias contados da ciencia do ato.',
+  ])
+  await explain.locator('#explain-book-file').setInputFiles({ name: 'constitucional.pdf', mimeType: 'application/pdf', buffer: book })
+  await explain.getByRole('button', { name: /O que o livro diz/ }).click()
+  await expect(explain.getByText(/habeas corpus protege a liberdade/)).toBeVisible()
+  await explain.getByRole('button', { name: 'Salvar em Observações' }).click()
+  await expect(page.getByRole('textbox', { name: 'Observações' })).toContainText('Explicação')
+})

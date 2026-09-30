@@ -100,6 +100,15 @@ trechos em negrito/destaque viram lacunas, “Tema: explicação” vira pergunt
 
 A revisão usa um SM-2 simplificado (Errei 10 min · Difícil 1 h/×1,2 · Acertei 1 → 3 → ×facilidade dias · Fácil). A página da disciplina reúne os cartões de todos os assuntos e mostra quantos estão para revisar.
 
+### Assistente de estudos
+
+Todas as ações do painel “Assistente de estudos” funcionam. Cada uma tem um modo **automático** (sem IA, a partir das anotações ou do livro carregado) e, na página publicada no claude.ai, um modo **com o Claude** (capacidade `sample`, usa a cota do próprio usuário; some quando indisponível):
+
+- **Resumir conteúdo** (`features/assistant/summarize-dialog.tsx`): resumo de revisão em tópicos; o automático lista os tópicos das anotações (`quickSummary`), o Claude reescreve só com o que está no material. Pode substituir ou ser adicionado ao “Meu resumo”.
+- **Criar questões** (`features/assistant/questions-dialog.tsx`, `domain/questions.ts`; botão **Questões** no cabeçalho): o automático gera itens Certo/Errado com as frases das anotações (metade alterada: prazo trocado, sentido invertido, negação), com o gabarito apontando a frase original; o Claude gera Certo/Errado (estilo Cebraspe) ou múltipla escolha A–E, considerando a banca dos editais. A correção é imediata e o placar acumulado do assunto aparece em **Meu progresso → Desempenho em questões**, por disciplina.
+- **Explicar assunto** (`features/assistant/explain-dialog.tsx`): o Claude explica de forma didática (conceito, exemplos, como cai na prova), usando anotações, subitens do edital e o livro; sem o Claude, **O que o livro diz** mostra o trecho do livro. A explicação pode ser salva em Observações.
+- **Criar flashcards** e **Criar mapa mental**: veja as seções próprias.
+
 ### Resumos a partir de um livro (PDF)
 
 No assunto (**Preencher com livro (PDF)**) ou na disciplina (**Enviar livro (PDF)**, vários assuntos de uma vez), o usuário envia um livro/apostila. `domain/book.ts` localiza as páginas de cada assunto (nome + subitens do edital, com radicais para casar singular/plural) e preenche os campos:
@@ -118,7 +127,7 @@ No assunto, o texto vai para o editor para revisão antes de salvar; na discipli
 
 ### Preparado para evoluir
 
-- **IA**: `features/ai/actions.ts` lista as ações (resumir, questões, flashcards, explicar, mapa mental). Basta implementar `AiProvider` e marcar `available: true`. A tabela `ai_generations` guarda os resultados.
+- **IA**: `features/ai/actions.ts` lista as ações (resumir, questões, flashcards, explicar, mapa mental), todas ativas. Para usar outro provedor fora do claude.ai, implemente `AiProvider`. A tabela `ai_generations` guarda os resultados (inclusive as questões, `kind = 'questions'`).
 - **Questões/simulados**: tabelas `questions`, `question_attempts` e `exam_boards` (bancas) já existem, ligadas a assunto, disciplina, edital e banca; `features/questions/types.ts` tem os tipos e o cálculo de desempenho.
 - **Flashcards / revisão espaçada**: tabela `flashcards` com campos SM-2.
 - **PDF**: `contests.source_file_path`/`raw_syllabus`; extraia o texto e reutilize `parseNoticeSyllabus`.

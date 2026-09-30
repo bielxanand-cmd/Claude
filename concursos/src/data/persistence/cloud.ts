@@ -14,6 +14,7 @@ import { emptyCatalog, groupImports, type Change, type ImportRows, type Persiste
  *   data/users/<id>/progress                   status de cada assunto (mesclado assunto a assunto)
  *   data/users/<id>/state/summaries/<assunto>  um resumo por documento
  *   data/users/<id>/state/flashcards/<assunto> os flashcards de um assunto
+ *   data/users/<id>/state/quizzes/<assunto>    as questões e o desempenho de um assunto
  *   data/users/<id>/catalog                    carreiras e cargos criados
  *   data/users/<id>/catalog/imports/<edital>   um edital importado por documento
  *
@@ -107,6 +108,7 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
   const catalogDoc = db.doc(`${base}/catalog`)
   const summaries = stateDoc.collection('summaries')
   const flashcards = stateDoc.collection('flashcards')
+  const quizzes = stateDoc.collection('quizzes')
   const imports = catalogDoc.collection('imports')
 
   /* ------------------------------------------------ diário de gravações pendentes */
@@ -229,10 +231,11 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
       await replayJournal()
       const [state, progress, catalog] = await Promise.all([stateDoc.get(), progressDoc.get(), catalogDoc.get()])
       if (!state.exists && !progress.exists && !catalog.exists) return null
-      const [summaryDocs, importDocs, flashcardDocs] = await Promise.all([
+      const [summaryDocs, importDocs, flashcardDocs, quizDocs] = await Promise.all([
         summaries.limit(1000).get(),
         imports.limit(500).get(),
         flashcards.limit(1000).get(),
+        quizzes.limit(1000).get(),
       ])
 
       const s = (state.data() ?? {}) as Partial<UserState>
@@ -253,6 +256,12 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
                 .map((d) => d.data() as { topicId?: string; cards?: UserState['flashcards'][string] } | undefined)
                 .filter((x): x is { topicId: string; cards: UserState['flashcards'][string] } => !!x?.topicId && Array.isArray(x.cards))
                 .map((x) => [x.topicId, structuredClone(x.cards)]),
+            ),
+            quizzes: Object.fromEntries(
+              quizDocs.docs
+                .map((d) => d.data() as unknown as UserState['quizzes'][string] | undefined)
+                .filter((x): x is UserState['quizzes'][string] => !!x?.topicId && Array.isArray(x.questions))
+                .map((x) => [x.topicId, structuredClone(x)]),
             ),
           }
         : null
@@ -290,6 +299,11 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
           enqueue(flashcards.doc(safeId(change.topicId)), cards?.length ? { kind: 'set', body: { topicId: change.topicId, cards, v: 1 } } : { kind: 'delete' })
           break
         }
+        case 'quiz': {
+          const quiz = snap.user.quizzes[change.topicId]
+          enqueue(quizzes.doc(safeId(change.topicId)), quiz ? { kind: 'set', body: { ...quiz, v: 1 } as unknown as Body } : { kind: 'delete' })
+          break
+        }
         case 'catalog-meta':
           enqueue(catalogDoc, { kind: 'set', body: { careers: snap.catalog.careers, positions: snap.catalog.positions, v: 1 } })
           break
@@ -305,6 +319,7 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
       enqueue(catalogDoc, { kind: 'set', body: { careers: snap.catalog.careers, positions: snap.catalog.positions, v: 1 } })
       for (const topicId of Object.keys(snap.user.summaries)) persistence.save({ type: 'summary', topicId }, snap)
       for (const topicId of Object.keys(snap.user.flashcards)) persistence.save({ type: 'flashcards', topicId }, snap)
+      for (const topicId of Object.keys(snap.user.quizzes ?? {})) persistence.save({ type: 'quiz', topicId }, snap)
       for (const rows of groupImports(snap.catalog)) saveImport(rows)
     },
 
@@ -323,12 +338,14 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
     async clear() {
       pending.clear()
       saveJournal()
-      const [summaryDocs, importDocs, flashcardDocs] = await Promise.all([
+      const [summaryDocs, importDocs, flashcardDocs, quizDocs] = await Promise.all([
         summaries.limit(1000).get(),
         imports.limit(500).get(),
         flashcards.limit(1000).get(),
+        quizzes.limit(1000).get(),
       ])
       await Promise.all([
+        ...quizDocs.docs.map((d) => quizzes.doc(d.id).delete()),
         stateDoc.delete(),
         progressDoc.delete(),
         catalogDoc.delete(),

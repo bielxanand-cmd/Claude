@@ -1,4 +1,5 @@
 import type { Flashcard } from '@/domain/flashcards'
+import type { Quiz } from '@/domain/questions'
 import type {
   Career,
   CatalogSnapshot,
@@ -60,6 +61,9 @@ export interface DataSource {
   listFlashcards(): Promise<Flashcard[]>
   /** Substitui os flashcards de um assunto (inclui o estado de revisão) */
   saveTopicFlashcards(topicId: string, cards: Flashcard[]): Promise<Flashcard[]>
+  listQuizzes(): Promise<Quiz[]>
+  /** Salva (ou remove, com `null`) as questões de um assunto */
+  saveQuiz(topicId: string, quiz: Quiz | null): Promise<Quiz | null>
   resetUserData(): Promise<void>
   /** Avisa quando dados mudam fora desta página (outra aba/aparelho) */
   subscribe?(listener: (what: 'userTopics') => void): () => void

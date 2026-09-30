@@ -11,7 +11,13 @@ export interface SampleError {
   text?: string
 }
 
-type SampleOptions = { modelTier?: 'quick' | 'default' | 'complex'; signal?: AbortSignal; cache?: boolean }
+type SampleOptions = {
+  modelTier?: 'quick' | 'default' | 'complex'
+  signal?: AbortSignal
+  cache?: boolean
+  /** Texto completo até agora, enquanto o Claude escreve */
+  onText?: (update: { text: string; delta: string }) => void
+}
 export interface ClaudeSample {
   (input: string, options?: SampleOptions): Promise<{ text: string; truncated: boolean }>
   json<T = unknown>(input: string, options?: SampleOptions): Promise<T>
@@ -59,7 +65,7 @@ export function sampleErrorMessage(e: unknown): string {
     case 'empty_completion':
       return 'A resposta veio em formato inesperado. Tente de novo.'
     case 'refused':
-      return 'O Claude não gerou cartões para este conteúdo.'
+      return 'O Claude não atendeu a este pedido. Tente reformular o conteúdo.'
     default:
       return 'Não foi possível falar com o Claude agora. Tente de novo.'
   }
