@@ -1,6 +1,7 @@
 import type { Contest, ContestSubject, ContestTopic, Subject, Summary, Topic, UserProfile, UserSelection, UserTopic } from '@/domain/types'
 import type { Flashcard } from '@/domain/flashcards'
 import type { Quiz } from '@/domain/questions'
+import type { Theme } from '@/domain/themes'
 import type { CatalogRows } from '../seed'
 
 /** Tudo o que é do usuário no modo local/nuvem. */
@@ -15,6 +16,8 @@ export interface UserState {
   flashcards: Record<string, Flashcard[]>
   /** Questões e desempenho por assunto */
   quizzes: Record<string, Quiz>
+  /** Temas de cada assunto */
+  themes: Record<string, Theme[]>
 }
 
 /** Catálogo criado pelo usuário (carreiras/cargos manuais e editais importados). */
@@ -46,6 +49,7 @@ export type Change =
   | { type: 'summary'; topicId: string }
   | { type: 'flashcards'; topicId: string }
   | { type: 'quiz'; topicId: string }
+  | { type: 'theme'; topicId: string; themeId: string }
   | { type: 'catalog-meta' } // carreiras e cargos manuais
   | { type: 'import'; rows: ImportRows }
 

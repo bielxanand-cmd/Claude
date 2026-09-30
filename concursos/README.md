@@ -93,6 +93,12 @@ A camada `src/data/persistence` carrega tudo uma vez e grava só o documento afe
 
 Cada assunto tem **Meu resumo**, **Pontos importantes** e **Observações**. O antigo campo *Pegadinhas* foi retirado: ele só aparece em resumos que já têm texto nele (para não esconder conteúdo) e some quando esvaziado. Exceções e armadilhas agora ficam em Pontos importantes.
 
+### Temas do assunto
+
+Abaixo do resumo geral, **Temas do assunto** divide o assunto em temas (ex.: em “Poder constituinte”: Originário, Reformador, Decorrente, Revisor). Os temas aparecem como cartões em lista, um embaixo do outro, com número, nome e prévia do texto; **Adicionar tema** cria um novo. Clicar no cartão abre a caixa do tema com **Resumo do tema** e **Pontos importantes** (editores de texto rico), renomear, mover para cima/baixo e excluir. Tudo é salvo automaticamente (`features/themes/`, `domain/themes.ts`; na nuvem, um documento por tema em `state/themes`; no Supabase, tabela `topic_themes`).
+
+Os temas também entram no mapa mental (um cartão por tema), nos flashcards, nas questões, nos assistentes e na busca global.
+
 ### Mapa mental (infográfico)
 
 **Criar mapa mental** monta um infográfico a partir do resumo (`domain/mind-map.ts`, sem IA): o assunto fica num balão escuro no centro, com a primeira frase do resumo como definição; cada título (ou item com subitens) vira um cartão colorido com ícone pelo tema, e os itens viram tópicos (“Tema: explicação” → tópico em negrito com a explicação embaixo). Pontos importantes viram um cartão de checklist e Observações um cartão próprio. O desenho é um SVG autocontido (`features/mind-map/`) e pode ser baixado em **JPEG** (no claude.ai, pela capacidade `downloads`).

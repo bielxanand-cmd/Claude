@@ -12,9 +12,11 @@ import { FrequencyPill } from '@/components/study/topic-row'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
-import { useFlashcards, useSaveSummary, useStudy, type Study } from '@/data/queries'
+import { useFlashcards, useSaveSummary, useStudy, useThemes, type Study } from '@/data/queries'
 import type { Flashcard } from '@/domain/flashcards'
 import { statusOf } from '@/domain/progress'
+import { sortThemes, themeHasContent, withThemes } from '@/domain/themes'
+import { htmlToText } from '@/lib/text'
 import type { SummaryContent } from '@/domain/types'
 import { AiPanel } from '@/features/ai/ai-panel'
 import { ExplainDialog } from '@/features/assistant/explain-dialog'
@@ -24,6 +26,7 @@ import { FillTopicDialog } from '@/features/book/fill-topic-dialog'
 import { FlashcardsDialog } from '@/features/flashcards/flashcards-dialog'
 import { StudySession } from '@/features/flashcards/study-session'
 import { MindMapDialog } from '@/features/mind-map/mind-map-dialog'
+import { TopicThemes } from '@/features/themes/topic-themes'
 import { useTopicActions } from '@/hooks/use-topic-actions'
 import { cn, formatRelative, formatTime } from '@/lib/utils'
 
@@ -88,9 +91,19 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
   const [studyCards, setStudyCards] = useState<Flashcard[] | null>(null)
   const flashcards = useFlashcards()
   const deckSize = (flashcards.data ?? []).filter((c) => c.topicId === topicId).length
+  // Resumo geral + temas: base do mapa mental, flashcards, questões e assistentes
+  const themes = useThemes()
+  const topicThemes = useMemo(() => (themes.data ?? []).filter((t) => t.topicId === topicId), [themes.data, topicId])
+  const studyContent = useMemo(() => withThemes(draft, topicThemes), [draft, topicThemes])
   const mindMapSections = useMemo(
-    () => visibleSections.map(({ key, title }) => ({ key, label: title, html: draft[key] })),
-    [draft],
+    () => [
+      ...visibleSections.map(({ key, title }) => ({ key, label: title, html: draft[key] })),
+      // Cada tema vira um cartão do mapa
+      ...sortThemes(topicThemes)
+        .filter((t) => t.title.trim() && themeHasContent(t))
+        .map((t) => ({ key: 'theme', label: t.title, html: t.summary + (htmlToText(t.keyPoints) ? `<h3>Pontos importantes</h3>${t.keyPoints}` : '') })),
+    ],
+    [draft, topicThemes],
   )
   const saveSummary = useSaveSummary()
   const { setStatus, touch } = useTopicActions()
@@ -232,6 +245,8 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
             </section>
           ))}
 
+          <TopicThemes topicId={topicId} />
+
           <nav aria-label="Outros assuntos" className="grid gap-3 pt-4 sm:grid-cols-2">
             {prev ? (
               <Link to={`/assunto/${prev.topic.id}`} className="group rounded-2xl border border-border p-4 transition hover:border-primary/40 hover:bg-surface">
@@ -361,7 +376,7 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
         topicName={planTopic.topic.name}
         subjectName={subject.subject.name}
         positionName={plan!.position.name}
-        content={draft}
+        content={studyContent}
         onStudy={(cards) => {
           setFlashcardsOpen(false)
           setStudyCards(cards)
@@ -371,15 +386,15 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
         open={summarizeOpen}
         onOpenChange={setSummarizeOpen}
         topic={topicInfo}
-        content={draft}
+        content={studyContent}
         onInsert={(html, mode) => setDraft((d) => ({ ...d, summary: mode === 'replace' ? html : d.summary + html }))}
       />
-      <QuestionsDialog open={questionsOpen} onOpenChange={setQuestionsOpen} topicId={topicId} topic={topicInfo} content={draft} examBoard={examBoard} />
+      <QuestionsDialog open={questionsOpen} onOpenChange={setQuestionsOpen} topicId={topicId} topic={topicInfo} content={studyContent} examBoard={examBoard} />
       <ExplainDialog
         open={explainOpen}
         onOpenChange={setExplainOpen}
         topic={topicInfo}
-        content={draft}
+        content={studyContent}
         onSaveToNotes={(html) => setDraft((d) => ({ ...d, notes: d.notes + html }))}
       />
       <StudySession

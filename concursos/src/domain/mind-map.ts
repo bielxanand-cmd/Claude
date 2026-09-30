@@ -196,6 +196,11 @@ export function buildMindMap(input: { title: string; subtitle: string; sections:
     if (index === 0 && !description && nodes[0] && nodes[0].children.length === 0 && nodes[0].label.length >= 30) {
       description = nodes.shift()!.label
     }
+    // Tema do assunto: sempre um cartão próprio, com todos os tópicos dele
+    if (section.key === 'theme') {
+      if (nodes.length) cards.push({ title: section.label, kind: 'concept', items: limitItems(nodes.map(toItem)) })
+      return
+    }
     const loose: MindMapItem[] = []
     for (const node of nodes) {
       if (isConcept(node)) cards.push({ title: node.label, kind: kind === 'notes' ? 'concept' : kind, items: limitItems(node.children.map(toItem)) })

@@ -551,3 +551,62 @@ test('assistentes: resumir, criar questões (com placar no progresso) e explicar
   await explain.getByRole('button', { name: 'Salvar em Observações' }).click()
   await expect(page.getByRole('textbox', { name: 'Observações' })).toContainText('Explicação')
 })
+
+test('temas do assunto: cria, escreve com salvamento automático, reordena e exclui', async ({ page }) => {
+  await page.goto('/')
+  await seedUser(page)
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('concursos.user.v1')!)
+    raw.selection = { positionId: 'auditor-fiscal-estadual', sphere: 'estadual', state: 'SP', createdAt: new Date().toISOString() }
+    localStorage.setItem('concursos.user.v1', JSON.stringify(raw))
+  })
+  await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
+  const themes = page.getByRole('region', { name: 'Temas do assunto' })
+  await expect(themes.getByText('Nenhum tema ainda')).toBeVisible()
+
+  // Primeiro tema
+  await themes.getByRole('button', { name: 'Adicionar tema' }).click()
+  await themes.getByLabel('Nome do novo tema').fill('Habeas corpus')
+  await themes.getByRole('button', { name: 'Criar tema' }).click()
+  await themes.getByRole('textbox', { name: 'Resumo do tema Habeas corpus' }).click()
+  await page.keyboard.type('Protege a liberdade de locomoção.')
+  await themes.getByRole('textbox', { name: 'Pontos importantes do tema Habeas corpus' }).click()
+  await page.keyboard.type('Gratuito e dispensa advogado.')
+  await expect(themes.getByText('Salvo automaticamente')).toBeVisible()
+
+  // Segundo tema (Enter cria)
+  await themes.getByRole('button', { name: 'Adicionar tema' }).click()
+  await themes.getByLabel('Nome do novo tema').fill('Mandado de segurança')
+  await page.keyboard.press('Enter')
+  await themes.getByRole('textbox', { name: 'Resumo do tema Mandado de segurança' }).click()
+  await page.keyboard.type('Prazo de 120 dias.')
+  await expect(themes.getByText('Salvo automaticamente')).toBeVisible()
+  await shot(page, 'temas')
+
+  // Persistência: recarrega e confere os cartões na ordem, com a prévia
+  await page.reload()
+  const cards = themes.getByRole('article')
+  await expect(cards).toHaveCount(2)
+  await expect(cards.nth(0)).toContainText('Habeas corpus')
+  await expect(cards.nth(0)).toContainText('Protege a liberdade de locomoção.')
+  await expect(cards.nth(1)).toContainText('Mandado de segurança')
+
+  // Abre o segundo, sobe para o primeiro lugar
+  await cards.nth(1).getByRole('button', { name: /Mandado de segurança/ }).click()
+  await expect(themes.getByRole('textbox', { name: 'Resumo do tema Mandado de segurança' })).toContainText('Prazo de 120 dias.')
+  await themes.getByRole('button', { name: 'Mover tema para cima' }).click()
+  await expect(cards.nth(0)).toContainText('Mandado de segurança')
+
+  // Os temas entram no mapa mental do assunto
+  await page.getByRole('button', { name: 'Criar mapa mental' }).first().click()
+  const map = page.getByRole('img', { name: /Mapa mental:/ })
+  await expect(map.getByText('HABEAS CORPUS', { exact: true })).toHaveCount(1)
+  await page.keyboard.press('Escape')
+
+  // Excluir (com confirmação, pois tem conteúdo)
+  await themes.getByRole('button', { name: 'Excluir tema' }).click()
+  await page.getByRole('dialog', { name: 'Excluir tema?' }).getByRole('button', { name: 'Excluir' }).click()
+  await expect(cards).toHaveCount(1)
+  await page.reload()
+  await expect(themes.getByRole('article')).toHaveCount(1)
+})

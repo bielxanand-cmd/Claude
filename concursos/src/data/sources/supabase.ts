@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Flashcard } from '@/domain/flashcards'
 import type { Quiz } from '@/domain/questions'
+import type { Theme } from '@/domain/themes'
 import { planNoticeImport } from '@/domain/import-notice'
 import type {
   Career,
@@ -356,6 +357,48 @@ export function createSupabaseDataSource(url: string, anonKey: string): DataSour
       must(await client.from('ai_generations').delete().eq('user_id', id).eq('kind', 'questions').eq('topic_id', topicId))
       if (quiz) must(await client.from('ai_generations').insert({ user_id: id, topic_id: topicId, kind: 'questions', output: quiz }))
       return quiz
+    },
+
+    async listThemes() {
+      const id = await userId()
+      const rows = await selectAll(client, 'topic_themes', '*', (q) => q.eq('user_id', id))
+      return rows.map(
+        (r): Theme => ({
+          id: r.id as string,
+          topicId: r.topic_id as string,
+          title: r.title as string,
+          summary: (r.summary_html as string) ?? '',
+          keyPoints: (r.key_points_html as string) ?? '',
+          order: (r.position as number) ?? 0,
+          createdAt: r.created_at as string,
+          updatedAt: r.updated_at as string,
+        }),
+      )
+    },
+
+    async saveTheme(theme) {
+      const id = await userId()
+      const updatedAt = new Date().toISOString()
+      must(
+        await client.from('topic_themes').upsert({
+          id: theme.id,
+          user_id: id,
+          topic_id: theme.topicId,
+          title: theme.title,
+          summary_html: theme.summary,
+          key_points_html: theme.keyPoints,
+          plain_text: `${theme.title}\n${htmlToText(theme.summary)}\n${htmlToText(theme.keyPoints)}`,
+          position: theme.order,
+          created_at: theme.createdAt,
+          updated_at: updatedAt,
+        }),
+      )
+      return { ...theme, updatedAt }
+    },
+
+    async deleteTheme(topicId, themeId) {
+      const id = await userId()
+      must(await client.from('topic_themes').delete().eq('user_id', id).eq('topic_id', topicId).eq('id', themeId))
     },
 
     async resetUserData() {

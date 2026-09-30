@@ -1,5 +1,6 @@
 import type { Flashcard } from '@/domain/flashcards'
 import type { Quiz } from '@/domain/questions'
+import type { Theme } from '@/domain/themes'
 import type {
   Career,
   CatalogSnapshot,
@@ -64,6 +65,10 @@ export interface DataSource {
   listQuizzes(): Promise<Quiz[]>
   /** Salva (ou remove, com `null`) as questões de um assunto */
   saveQuiz(topicId: string, quiz: Quiz | null): Promise<Quiz | null>
+  listThemes(): Promise<Theme[]>
+  /** Cria ou atualiza um tema de um assunto */
+  saveTheme(theme: Theme): Promise<Theme>
+  deleteTheme(topicId: string, themeId: string): Promise<void>
   resetUserData(): Promise<void>
   /** Avisa quando dados mudam fora desta página (outra aba/aparelho) */
   subscribe?(listener: (what: 'userTopics') => void): () => void

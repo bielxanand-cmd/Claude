@@ -3,6 +3,7 @@ import { useEffect, useMemo } from 'react'
 import { consolidateStudyPlan } from '@/domain/consolidate'
 import type { Flashcard } from '@/domain/flashcards'
 import type { Quiz } from '@/domain/questions'
+import type { Theme } from '@/domain/themes'
 import { toStatusMap } from '@/domain/progress'
 import type {
   Contest,
@@ -30,6 +31,7 @@ export const queryKeys = {
   summaries: ['summaries'] as const,
   flashcards: ['flashcards'] as const,
   quizzes: ['quizzes'] as const,
+  themes: ['themes'] as const,
 }
 
 /* ------------------------------------------------------------------ Catálogo */
@@ -196,6 +198,37 @@ export function useSaveQuiz() {
       return { previous }
     },
     onError: (_e, _v, context) => qc.setQueryData(queryKeys.quizzes, context?.previous),
+  })
+}
+
+export const useThemes = () => useQuery({ queryKey: queryKeys.themes, queryFn: () => dataSource.listThemes() })
+
+/** Cria/atualiza um tema (otimista: a lista muda na hora). */
+export function useSaveTheme() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (theme: Theme) => dataSource.saveTheme(theme),
+    onMutate: async (theme) => {
+      await qc.cancelQueries({ queryKey: queryKeys.themes })
+      const previous = qc.getQueryData<Theme[]>(queryKeys.themes)
+      qc.setQueryData<Theme[]>(queryKeys.themes, (list = []) => [...list.filter((t) => t.id !== theme.id), theme])
+      return { previous }
+    },
+    onError: (_e, _v, context) => qc.setQueryData(queryKeys.themes, context?.previous),
+  })
+}
+
+export function useDeleteTheme() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ topicId, themeId }: { topicId: string; themeId: string }) => dataSource.deleteTheme(topicId, themeId),
+    onMutate: async ({ themeId }) => {
+      await qc.cancelQueries({ queryKey: queryKeys.themes })
+      const previous = qc.getQueryData<Theme[]>(queryKeys.themes)
+      qc.setQueryData<Theme[]>(queryKeys.themes, (list = []) => list.filter((t) => t.id !== themeId))
+      return { previous }
+    },
+    onError: (_e, _v, context) => qc.setQueryData(queryKeys.themes, context?.previous),
   })
 }
 

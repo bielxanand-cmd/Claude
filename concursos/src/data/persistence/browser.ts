@@ -17,7 +17,7 @@ export function createBrowserPersistence(): Persistence {
       const catalog = readJSON<Partial<Snapshot['catalog']> | null>(CATALOG_KEY, null)
       if (!user && !catalog) return null
       return {
-        user: user ? { ...user, history: user.history ?? (user.selection ? [user.selection] : []), flashcards: user.flashcards ?? {}, quizzes: user.quizzes ?? {} } : null,
+        user: user ? { ...user, history: user.history ?? (user.selection ? [user.selection] : []), flashcards: user.flashcards ?? {}, quizzes: user.quizzes ?? {}, themes: user.themes ?? {} } : null,
         catalog: { ...emptyCatalog(), ...catalog },
       }
     },

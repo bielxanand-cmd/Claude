@@ -24,6 +24,7 @@ const freshUser = (): UserState => ({
   summaries: {},
   flashcards: {},
   quizzes: {},
+  themes: {},
 })
 
 /**
@@ -295,6 +296,33 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
       else delete u.quizzes[topicId]
       save({ type: 'quiz', topicId })
       return delay(quiz, 0)
+    },
+
+    async listThemes() {
+      return delay(Object.values((await user()).themes ?? {}).flat(), 0)
+    },
+
+    async saveTheme(theme) {
+      const u = await user()
+      u.themes ??= {}
+      const list = (u.themes[theme.topicId] ??= [])
+      const saved = { ...theme, updatedAt: new Date().toISOString() }
+      const i = list.findIndex((t) => t.id === theme.id)
+      if (i >= 0) list[i] = saved
+      else list.push(saved)
+      save({ type: 'theme', topicId: theme.topicId, themeId: theme.id })
+      return delay(saved, 0)
+    },
+
+    async deleteTheme(topicId, themeId) {
+      const u = await user()
+      const list = u.themes?.[topicId]
+      if (list) {
+        u.themes[topicId] = list.filter((t) => t.id !== themeId)
+        if (u.themes[topicId].length === 0) delete u.themes[topicId]
+      }
+      save({ type: 'theme', topicId, themeId })
+      return delay(undefined, 0)
     },
 
     subscribe(listener) {

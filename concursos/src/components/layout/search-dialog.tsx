@@ -3,7 +3,7 @@ import { CornerDownLeft, Search, SearchX } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { IconTile } from '@/components/study/icon-registry'
-import { usePositions, useStudy } from '@/data/queries'
+import { usePositions, useStudy, useThemes } from '@/data/queries'
 import { globalSearch, SEARCH_GROUP_LABEL, type SearchResult } from '@/domain/search'
 import { cn } from '@/lib/utils'
 
@@ -14,10 +14,11 @@ export function SearchDialog({ open, onOpenChange }: { open: boolean; onOpenChan
   const listRef = useRef<HTMLDivElement>(null)
   const { plan, summaries } = useStudy()
   const positions = usePositions({}, open)
+  const themes = useThemes()
 
   const results = useMemo(
-    () => globalSearch(query, { plan, summaries, positions: positions.data ?? [] }),
-    [query, plan, summaries, positions.data],
+    () => globalSearch(query, { plan, summaries, positions: positions.data ?? [], themes: themes.data }),
+    [query, plan, summaries, positions.data, themes.data],
   )
 
   const handleOpenChange = (next: boolean) => {

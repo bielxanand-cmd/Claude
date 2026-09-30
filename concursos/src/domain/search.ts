@@ -1,5 +1,6 @@
 import type { PositionListItem } from '@/data/sources'
-import { normalize } from '@/lib/text'
+import { htmlToText, normalize } from '@/lib/text'
+import type { Theme } from './themes'
 import type { StudyPlan, Summary } from './types'
 
 export type SearchResult =
@@ -25,7 +26,7 @@ function snippet(text: string, query: string, radius = 50): string {
 /** Busca global em disciplinas, assuntos e resumos do cargo atual e em todos os cargos. */
 export function globalSearch(
   rawQuery: string,
-  data: { plan: StudyPlan | null; summaries: Summary[]; positions: PositionListItem[] },
+  data: { plan: StudyPlan | null; summaries: Summary[]; positions: PositionListItem[]; themes?: Theme[] },
   limitPerGroup = 6,
 ): SearchResult[] {
   const query = normalize(rawQuery)
@@ -68,6 +69,22 @@ export function globalSearch(
       subtitle: snippet(summary.plainText, terms[0]),
       icon: info.icon,
       href: `/assunto/${summary.topicId}`,
+    })
+  }
+
+  // Temas dos assuntos (título, resumo e pontos importantes)
+  for (const theme of data.themes ?? []) {
+    const info = topicInfo.get(theme.topicId)
+    if (!info) continue
+    const text = `${theme.title} ${htmlToText(theme.summary)} ${htmlToText(theme.keyPoints)}`
+    if (!matches(text)) continue
+    summaries.push({
+      kind: 'summary',
+      id: `theme:${theme.id}`,
+      title: `${info.name} · ${theme.title}`,
+      subtitle: snippet(text, terms[0]),
+      icon: info.icon,
+      href: `/assunto/${theme.topicId}`,
     })
   }
 
