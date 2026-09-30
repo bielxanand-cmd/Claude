@@ -1,4 +1,4 @@
-import { Cloud, CloudOff, Database, Download, HardDrive, Monitor, Moon, RotateCcw, Sun, User } from 'lucide-react'
+import { Cloud, CloudOff, Database, Download, HardDrive, Monitor, Moon, RefreshCw, RotateCcw, Sun, User } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -43,6 +43,7 @@ export function SettingsPage() {
   }
 
   const canSave = useCanSaveFiles()
+  const [syncing, setSyncing] = useState(false)
   const exportData = () => {
     const blob = new Blob(
       [JSON.stringify({ exportedAt: new Date().toISOString(), profile: profile.data, selection: selection.data, topics: userTopics.data, summaries: summaries.data }, null, 2)],
@@ -115,7 +116,7 @@ export function SettingsPage() {
                 {dataSource.kind === 'supabase'
                   ? 'Seus dados estão sincronizados com o Supabase.'
                   : sync.where === 'cloud'
-                    ? 'Seus concursos, progresso, resumos e editais importados ficam salvos na sua conta do Claude e aparecem em qualquer navegador ou dispositivo em que você abrir esta página.'
+                    ? 'Seus concursos, progresso, resumos, temas, flashcards e editais importados ficam salvos na sua conta do Claude. No celular, abra este mesmo link entrando na mesma conta do claude.ai: tudo aparece lá, e as alterações de um aparelho chegam ao outro quando você volta ao app (ou em até 1 minuto).'
                     : 'Seus dados ficam salvos neste navegador. Limpar os dados do navegador apaga o progresso.'}
                 {sync.where !== 'loading' && dataSource.kind !== 'supabase' && (
                   <span
@@ -139,6 +140,20 @@ export function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 sm:flex-row">
+            {sync.where === 'cloud' && dataSource.refresh && (
+              <Button
+                variant="outline"
+                loading={syncing}
+                onClick={async () => {
+                  setSyncing(true)
+                  const changed = await dataSource.refresh!()
+                  setSyncing(false)
+                  toast.success(changed ? 'Dados atualizados com os outros aparelhos' : 'Tudo em dia com a sua conta')
+                }}
+              >
+                {!syncing && <RefreshCw />} Sincronizar agora
+              </Button>
+            )}
             {canSave && (
               <Button variant="outline" onClick={exportData}>
                 <Download /> Exportar meus dados

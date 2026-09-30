@@ -117,6 +117,15 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
   const completeRef = useRef<HTMLButtonElement>(null)
 
   const dirty = !sameContent(draft, savedContent)
+
+  // Resumo alterado em outro aparelho: atualiza o editor se não há edição pendente aqui
+  const lastSaved = useRef(savedContent)
+  useEffect(() => {
+    if (sameContent(savedContent, lastSaved.current)) return
+    if (sameContent(draft, lastSaved.current)) setDraft(savedContent)
+    lastSaved.current = savedContent
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedContent])
   const hasContent = Object.values(draft).some((v) => !isEmptyHtml(v))
 
   // Registra o acesso (alimenta "Continue de onde parou").

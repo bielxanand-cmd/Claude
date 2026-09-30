@@ -66,6 +66,8 @@ export interface Persistence {
   clear(): Promise<void>
   /** Recebe alterações feitas em outras abas/aparelhos (quando suportado) */
   subscribe?(listener: (change: RemoteChange) => void): () => void
+  /** `true` enquanto há gravações pendentes (não é hora de recarregar da nuvem) */
+  busy?(): boolean
 }
 
 export const emptyCatalog = (): CustomCatalog => ({

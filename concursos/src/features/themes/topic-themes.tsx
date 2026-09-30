@@ -251,6 +251,7 @@ function SubthemeList({
 }
 
 type Draft = Pick<Theme, 'title' | 'summary' | 'keyPoints'>
+const pickDraft = (t: Theme): Draft => ({ title: t.title, summary: t.summary, keyPoints: t.keyPoints })
 const sameDraft = (a: Draft, b: Draft) => a.title === b.title && a.summary === b.summary && a.keyPoints === b.keyPoints
 
 function ThemeCard({
@@ -281,16 +282,27 @@ function ThemeCard({
   canMoveDown: boolean
   onDelete: () => void
 }) {
-  const [draft, setDraft] = useState<Draft>({ title: theme.title, summary: theme.summary, keyPoints: theme.keyPoints })
+  const [draft, setDraft] = useState<Draft>(() => pickDraft(theme))
   const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  // Última versão salva em que o rascunho se baseia (daqui ou de outro aparelho)
+  const base = useRef<Draft>(pickDraft(theme))
   const latest = useRef({ draft, theme, onSave })
   useEffect(() => {
     latest.current = { draft, theme, onSave }
   })
 
+  // Tema alterado em outro aparelho: atualiza a caixa se não há edição pendente aqui
+  useEffect(() => {
+    const remote = pickDraft(theme)
+    if (sameDraft(remote, base.current)) return
+    if (sameDraft(latest.current.draft, base.current)) setDraft(remote)
+    base.current = remote
+  }, [theme])
+
   const flush = () => {
     const { draft: d, theme: t, onSave: save } = latest.current
-    if (sameDraft(d, t) || !d.title.trim()) return
+    if (sameDraft(d, base.current) || !d.title.trim()) return
+    base.current = d
     setState('saving')
     save({ ...t, ...d, title: d.title.trim() })
       .then(() => setState('saved'))
@@ -302,7 +314,7 @@ function ThemeCard({
 
   // Salvamento automático pouco depois de parar de digitar
   useEffect(() => {
-    if (sameDraft(draft, theme)) return
+    if (sameDraft(draft, base.current)) return
     const id = setTimeout(flush, AUTOSAVE_MS)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -320,7 +332,7 @@ function ThemeCard({
 
   const preview = themePreview({ ...theme, ...draft })
   const noun = nested ? 'subtema' : 'tema'
-  const pending = !sameDraft(draft, theme)
+  const pending = !sameDraft(draft, base.current)
 
   return (
     <article

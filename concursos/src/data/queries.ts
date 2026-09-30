@@ -247,9 +247,30 @@ export function useRemoteSync() {
     () =>
       dataSource.subscribe?.((what) => {
         if (what === 'userTopics') void qc.invalidateQueries({ queryKey: queryKeys.userTopics })
+        else void qc.invalidateQueries()
       }),
     [qc],
   )
+
+  // Ao voltar para o app (trocou de aba/aparelho) e a cada minuto com a
+  // página aberta, busca na conta o que foi feito em outro aparelho
+  useEffect(() => {
+    if (!dataSource.refresh) return
+    let last = Date.now()
+    const refresh = () => {
+      if (document.visibilityState !== 'visible' || Date.now() - last < 5_000) return
+      last = Date.now()
+      void dataSource.refresh!()
+    }
+    const timer = window.setInterval(refresh, 60_000)
+    document.addEventListener('visibilitychange', refresh)
+    window.addEventListener('focus', refresh)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', refresh)
+      window.removeEventListener('focus', refresh)
+    }
+  }, [])
 }
 
 /* ------------------------------------------------------------------ Agregado */

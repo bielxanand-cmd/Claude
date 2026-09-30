@@ -98,7 +98,27 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
     if (!cloudPersistence) setSyncStatus({ where: 'browser', state: 'idle' })
   })()
 
-  const remoteListeners = new Set<(what: 'userTopics') => void>()
+  const remoteListeners = new Set<(what: 'userTopics' | 'all') => void>()
+  let refreshing: Promise<boolean> | null = null
+
+  /** Traz da nuvem o que mudou em outro aparelho (sem gravações pendentes aqui). */
+  const refreshFromCloud = async (): Promise<boolean> => {
+    await ready
+    if (persistence === browser || persistence.busy?.()) return false
+    const loaded = await persistence.load()
+    // Uma gravação pode ter começado enquanto carregava: fica para a próxima
+    if (!loaded?.user || persistence.busy?.()) return false
+    const before = JSON.stringify(snapshot)
+    const topics = { ...loaded.user.topics }
+    for (const [id, local] of Object.entries(snapshot.user.topics)) {
+      const winner = newerTopic(local, topics[id])
+      if (winner) topics[id] = winner
+    }
+    snapshot = { user: { ...loaded.user, topics }, catalog: loaded.catalog }
+    const changed = JSON.stringify(snapshot) !== before
+    if (changed) remoteListeners.forEach((l) => l('all'))
+    return changed
+  }
   const save = (change: Change) => persistence.save(change, snapshot)
   const user = async () => {
     await ready
@@ -328,6 +348,18 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
     subscribe(listener) {
       remoteListeners.add(listener)
       return () => remoteListeners.delete(listener)
+    },
+
+    refresh() {
+      refreshing ??= refreshFromCloud()
+        .catch((err) => {
+          console.warn('[dados] não foi possível atualizar da nuvem', err)
+          return false
+        })
+        .finally(() => {
+          refreshing = null
+        })
+      return refreshing
     },
 
     async resetUserData() {

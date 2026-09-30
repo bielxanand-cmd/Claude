@@ -343,6 +343,8 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
       for (const rows of groupImports(snap.catalog)) saveImport(rows)
     },
 
+    busy: () => pending.size + running.size > 0,
+
     subscribe(listener: (change: RemoteChange) => void) {
       // Progresso alterado em outra aba/aparelho chega ao vivo
       if (!progressDoc.onSnapshot) return () => undefined

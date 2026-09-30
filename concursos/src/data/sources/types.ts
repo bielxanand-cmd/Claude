@@ -71,5 +71,10 @@ export interface DataSource {
   deleteTheme(topicId: string, themeId: string): Promise<void>
   resetUserData(): Promise<void>
   /** Avisa quando dados mudam fora desta página (outra aba/aparelho) */
-  subscribe?(listener: (what: 'userTopics') => void): () => void
+  subscribe?(listener: (what: 'userTopics' | 'all') => void): () => void
+  /**
+   * Recarrega os dados salvos na conta (o que foi feito em outro aparelho).
+   * Resolve `true` se algo mudou.
+   */
+  refresh?(): Promise<boolean>
 }
