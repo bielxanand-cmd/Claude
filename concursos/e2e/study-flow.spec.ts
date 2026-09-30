@@ -74,7 +74,9 @@ test('onboarding → cargo → disciplina → assunto → resumo → conclusão 
   // 12. Editar o resumo (após recarregar, o conteúdo persiste)
   await page.reload()
   await expect(page.getByRole('textbox', { name: 'Meu resumo' }).locator('strong')).toHaveText('Art. 142 do CTN.')
-  await page.getByRole('textbox', { name: 'Pegadinhas' }).click()
+  // Sem campo de pegadinhas nos resumos novos
+  await expect(page.getByRole('textbox', { name: 'Pegadinhas' })).toHaveCount(0)
+  await page.getByRole('textbox', { name: 'Observações' }).click()
   await page.keyboard.type('Lançamento não é constitutivo do crédito para todas as bancas.')
   await page.getByRole('button', { name: /^Salvar/ }).click()
   await expect(page.getByText('Resumo salvo!').first()).toBeVisible()
@@ -266,13 +268,13 @@ test('cria mapa mental a partir do resumo do assunto', async ({ page, isMobile }
   // Texto ainda não salvo já entra no mapa
   await page.getByRole('textbox', { name: 'Meu resumo' }).click()
   await page.keyboard.type('Habeas corpus: protege a liberdade de locomoção. Mandado de segurança: direito líquido e certo.')
-  await page.getByRole('textbox', { name: 'Pegadinhas' }).click()
+  await page.getByRole('textbox', { name: 'Pontos importantes' }).click()
   await page.keyboard.type('Pessoa jurídica não propõe ação popular')
 
   await page.getByRole('button', { name: 'Criar mapa mental' }).first().click()
   const map = page.getByRole('img', { name: 'Mapa mental: Remédios constitucionais' })
   await expect(map).toBeVisible()
-  for (const text of ['Meu resumo', 'Habeas corpus', 'Mandado de segurança', 'Pegadinhas'])
+  for (const text of ['Meu resumo', 'Habeas corpus', 'Mandado de segurança', 'Pontos importantes'])
     await expect(map.getByText(text, { exact: true })).toHaveCount(1)
   // textos longos quebram em mais de uma linha dentro do nó
   await expect(map.getByText(/liberdade de/)).toHaveCount(1)
@@ -359,6 +361,8 @@ test('flashcards: gera do resumo, edita, estuda com revisão espaçada e aparece
     )
   })
   await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
+  // Resumo antigo com texto em Pegadinhas: o campo continua visível para não esconder o conteúdo
+  await expect(page.getByRole('textbox', { name: 'Pegadinhas' })).toContainText('Não cabe habeas corpus')
   await page.getByRole('button', { name: /^Flashcards/ }).click()
 
   const dialog = page.getByRole('dialog', { name: 'Flashcards' })
@@ -430,7 +434,8 @@ test('livro em PDF preenche o resumo do assunto e os resumos da disciplina', asy
   await expect(page.getByText('Campos preenchidos')).toBeVisible()
   await expect(page.getByRole('textbox', { name: 'Meu resumo' })).toContainText('habeas corpus protege a liberdade')
   await expect(page.getByRole('textbox', { name: 'Meu resumo' })).not.toContainText('Congresso Nacional')
-  await expect(page.getByRole('textbox', { name: 'Pegadinhas' })).toContainText('Nao cabe habeas corpus')
+  await expect(page.getByRole('textbox', { name: 'Pontos importantes' })).toContainText('Nao cabe habeas corpus')
+  await expect(page.getByRole('textbox', { name: 'Pegadinhas' })).toHaveCount(0)
   await expect(page.getByRole('textbox', { name: 'Pontos importantes' }).locator('strong')).toContainText('120 dias')
   await expect(page.getByRole('textbox', { name: 'Observações' })).toContainText('constitucional')
   await page.getByRole('button', { name: /^Salvar/ }).click()

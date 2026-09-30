@@ -31,8 +31,8 @@ const SECTION_COLORS: Record<keyof SummaryContent, string> = { summary: '#7C3AED
 
 const SECTIONS: { key: keyof SummaryContent; title: string; hint: string; icon: typeof NotebookPen; minHeight: number; placeholder: string }[] = [
   { key: 'summary', title: 'Meu resumo', hint: 'O essencial do assunto com suas palavras.', icon: NotebookPen, minHeight: 240, placeholder: 'Escreva seu resumo… Use títulos, listas e destaques para organizar.' },
-  { key: 'keyPoints', title: 'Pontos importantes', hint: 'O que mais cai e precisa estar na ponta da língua.', icon: Lightbulb, minHeight: 120, placeholder: 'Ex.: prazos, exceções, súmulas, artigos-chave…' },
-  { key: 'pitfalls', title: 'Pegadinhas', hint: 'Armadilhas comuns das bancas.', icon: AlertTriangle, minHeight: 120, placeholder: 'Ex.: “é vedado” × “é facultado”, exceções à regra…' },
+  { key: 'keyPoints', title: 'Pontos importantes', hint: 'O que mais cai, exceções e cuidados.', icon: Lightbulb, minHeight: 120, placeholder: 'Ex.: prazos, exceções, súmulas, artigos-chave…' },
+  { key: 'pitfalls', title: 'Pegadinhas', hint: 'Campo antigo — mova o texto para Pontos importantes e apague aqui para ocultá-lo.', icon: AlertTriangle, minHeight: 120, placeholder: 'Ex.: “é vedado” × “é facultado”, exceções à regra…' },
   { key: 'notes', title: 'Observações', hint: 'Dúvidas, links, referências e lembretes.', icon: StickyNote, minHeight: 100, placeholder: 'Anotações livres…' },
 ]
 
@@ -73,6 +73,8 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
   const status = statusOf(statuses, topicId)
   const saved = summaryIndex.get(topicId)
   const savedContent = saved?.content ?? EMPTY_CONTENT
+  // O campo Pegadinhas foi retirado; só aparece em resumos antigos que já têm texto nele
+  const visibleSections = SECTIONS.filter((s) => s.key !== 'pitfalls' || !isEmptyHtml(savedContent.pitfalls))
 
   const [draft, setDraft] = useState<SummaryContent>(savedContent)
   const [justSaved, setJustSaved] = useState(false)
@@ -83,7 +85,7 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
   const flashcards = useFlashcards()
   const deckSize = (flashcards.data ?? []).filter((c) => c.topicId === topicId).length
   const mindMapSections = useMemo(
-    () => SECTIONS.map(({ key, title }) => ({ key, label: title, color: SECTION_COLORS[key], html: draft[key] })),
+    () => visibleSections.map(({ key, title }) => ({ key, label: title, color: SECTION_COLORS[key], html: draft[key] })),
     [draft],
   )
   const saveSummary = useSaveSummary()
@@ -197,7 +199,7 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_300px]">
         <div className="min-w-0 space-y-5">
-          {SECTIONS.map(({ key, title, hint, icon: Icon, minHeight, placeholder }) => (
+          {visibleSections.map(({ key, title, hint, icon: Icon, minHeight, placeholder }) => (
             <section key={key} aria-labelledby={`section-${key}`}>
               <div className="mb-2 flex items-baseline gap-2">
                 <Icon className="size-4 translate-y-0.5 text-primary dark:text-primary-soft" aria-hidden />

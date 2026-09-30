@@ -50,7 +50,7 @@ export function SummariesPage() {
         <EmptyState
           icon={NotebookPen}
           title="Você ainda não criou resumos"
-          description="Abra um assunto, escreva seu resumo, pontos importantes e pegadinhas — tudo fica salvo aqui."
+          description="Abra um assunto, escreva seu resumo, pontos importantes e observações — tudo fica salvo aqui."
           action={
             <Button asChild>
               <Link to="/disciplinas">

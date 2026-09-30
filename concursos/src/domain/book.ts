@@ -205,8 +205,9 @@ export function extractiveSummary(input: { topicName: string; bookName: string; 
   const range = pageRangeLabel(input.excerpt)
   return {
     summary: core.length ? `<h2>${escapeHtml(input.topicName)}</h2>${core.map((x) => `<p>${emphasize(x.s)}</p>`).join('')}` : '',
-    keyPoints: list(keyPoints),
-    pitfalls: list(pitfalls),
+    // Exceções e cuidados ficam dentro de Pontos importantes (não há campo de pegadinhas)
+    keyPoints: list(keyPoints) + (pitfalls.length ? `<h3>Exceções e cuidados</h3>${list(pitfalls)}` : ''),
+    pitfalls: '',
     notes: `<p>Trechos extraídos de <strong>${escapeHtml(input.bookName)}</strong> (${range}). Revise e reescreva com suas palavras.</p>`,
   }
 }
@@ -244,10 +245,9 @@ Trechos do livro "${input.bookName}":
 Use SOMENTE o conteúdo dos trechos acima; não acrescente leis, prazos, números ou entendimentos que não estejam neles. Escreva em português, de forma objetiva, no estilo de material de revisão para concurso. Destaque com <strong> os termos-chave, prazos e números (eles viram lacunas em flashcards).
 
 Responda apenas com um objeto JSON:
-{"summary": "...", "keyPoints": "...", "pitfalls": "...", "notes": "..."}
+{"summary": "...", "keyPoints": "...", "notes": "..."}
 - summary: resumo organizado, em HTML com <h2>, <h3>, <p>, <ul>/<li>, <strong>
-- keyPoints: o que mais cai em prova, em <ul><li>
-- pitfalls: pegadinhas e exceções das bancas presentes no texto, em <ul><li> (vazio se não houver)
+- keyPoints: o que mais cai em prova, em <ul><li>; inclua ao final, sob <h3>Exceções e cuidados</h3>, as exceções e armadilhas presentes no texto (se houver)
 - notes: fonte com as páginas usadas e o que o livro não cobriu do edital, em <p>`
 }
 
@@ -256,7 +256,14 @@ export function parseAiSummary(value: unknown): SummaryContent | null {
   if (!value || typeof value !== 'object') return null
   const v = value as Record<string, unknown>
   const field = (k: string) => (typeof v[k] === 'string' ? sanitizeSummaryHtml(v[k] as string) : '')
-  const content = { summary: field('summary'), keyPoints: field('keyPoints'), pitfalls: field('pitfalls'), notes: field('notes') }
+  // Se a IA ainda mandar "pitfalls", vai para Pontos importantes
+  const pitfalls = field('pitfalls')
+  const content = {
+    summary: field('summary'),
+    keyPoints: field('keyPoints') + (pitfalls ? `<h3>Exceções e cuidados</h3>${pitfalls}` : ''),
+    pitfalls: '',
+    notes: field('notes'),
+  }
   return Object.values(content).some(Boolean) ? content : null
 }
 

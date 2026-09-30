@@ -10,7 +10,7 @@ const FEATURES = [
     title: 'Baseado em editais anteriores',
     text: 'Disciplinas e assuntos consolidados a partir dos editais do seu cargo, com a fonte de cada item.',
   },
-  { icon: NotebookPen, title: 'Resumos por assunto', text: 'Editor completo para resumo, pontos importantes, pegadinhas e observações.' },
+  { icon: NotebookPen, title: 'Resumos por assunto', text: 'Editor completo para resumo, pontos importantes e observações.' },
   { icon: BarChart3, title: 'Progresso em tempo real', text: 'Saiba exatamente onde você está e o que falta estudar em cada disciplina.' },
 ]
 

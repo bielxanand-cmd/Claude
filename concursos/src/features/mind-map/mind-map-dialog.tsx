@@ -138,7 +138,7 @@ export function MindMapDialog({
             <EmptyState
               icon={Network}
               title="Escreva seu resumo primeiro"
-              description="O mapa mental é montado a partir do que você escreve em Meu resumo, Pontos importantes, Pegadinhas e Observações. Use listas e títulos para um mapa mais organizado."
+              description="O mapa mental é montado a partir do que você escreve em Meu resumo, Pontos importantes e Observações. Use listas e títulos para um mapa mais organizado."
               className="bg-surface"
             />
           ) : (

@@ -37,7 +37,10 @@ describe('extractiveSummary', () => {
   it('monta os campos com trechos do livro e cita a fonte', () => {
     expect(content.summary).toContain('<h2>Poder constituinte</h2>')
     expect(content.summary).toContain('ilimitado e incondicionado')
-    expect(content.pitfalls).toContain('salvo nas hipóteses')
+    // Exceções vão para Pontos importantes (não há mais campo de pegadinhas)
+    expect(content.keyPoints).toContain('<h3>Exceções e cuidados</h3>')
+    expect(content.keyPoints).toContain('salvo nas hipóteses')
+    expect(content.pitfalls).toBe('')
     expect(content.notes).toContain('Direito Constitucional Esquematizado')
     expect(content.notes).toContain('pp. 3–5')
   })
@@ -71,6 +74,9 @@ describe('resposta da IA', () => {
       pitfalls: 42,
       notes: 'Fonte: livro, p. 3',
     })
+    expect(parseAiSummary({ keyPoints: '<ul><li>Um</li></ul>', pitfalls: '<ul><li>Exceção</li></ul>' })?.keyPoints).toBe(
+      '<ul><li>Um</li></ul><h3>Exceções e cuidados</h3><ul><li>Exceção</li></ul>',
+    )
     expect(parsed).toEqual({
       summary: '<h2>Título</h2><p>Texto <strong>forte</strong></p>',
       keyPoints: '<ul><li>Um</li></ul>',

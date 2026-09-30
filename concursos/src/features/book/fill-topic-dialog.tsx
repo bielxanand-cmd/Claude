@@ -103,7 +103,7 @@ export function FillTopicDialog({
           <BookOpenText className="size-5 text-primary" /> Preencher com livro (PDF)
         </DialogTitle>
         <DialogDescription>
-          Envie um livro ou apostila. O app encontra as páginas sobre “{topicName}” e preenche Meu resumo, Pontos importantes, Pegadinhas e Observações.
+          Envie um livro ou apostila. O app encontra as páginas sobre “{topicName}” e preenche Meu resumo, Pontos importantes e Observações.
         </DialogDescription>
 
         <div className="mt-5 space-y-5">
@@ -168,7 +168,7 @@ export function FillTopicDialog({
                 <div role="radiogroup" aria-label="Como preencher" className="grid gap-2 sm:grid-cols-2">
                   {(
                     [
-                      ['ai', 'Resumo com o Claude', 'Escreve resumo, pontos e pegadinhas usando só o trecho do livro. Usa a sua cota do Claude.'],
+                      ['ai', 'Resumo com o Claude', 'Escreve o resumo e os pontos importantes usando só o trecho do livro. Usa a sua cota do Claude.'],
                       ['extract', 'Trechos do livro', 'Copia as frases mais relevantes do livro, sem IA. Prazos e artigos em negrito.'],
                     ] as const
                   ).map(([value, title, hint]) => (

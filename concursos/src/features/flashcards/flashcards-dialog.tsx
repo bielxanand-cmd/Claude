@@ -179,7 +179,7 @@ export function FlashcardsDialog({
             {!hasText ? (
               <p className="rounded-xl border border-dashed border-border-strong px-4 py-5 text-sm text-muted">
                 Escreva seu resumo primeiro. Os cartões são criados a partir de títulos com listas, trechos em <strong>negrito</strong> ou destacados (viram
-                lacunas), itens no formato “Tema: explicação” e frases de Pontos importantes e Pegadinhas.
+                lacunas), itens no formato “Tema: explicação” e frases de Pontos importantes.
               </p>
             ) : suggestions.length === 0 ? (
               <p className="rounded-xl bg-foreground/[0.03] px-4 py-4 text-sm text-muted">

@@ -89,10 +89,14 @@ Os testes usam um trecho real do Edital nº 1 – PRF/2021 (`src/domain/__fixtur
 
 A camada `src/data/persistence` carrega tudo uma vez e grava só o documento afetado por cada alteração (perfil/histórico, progresso, um documento por resumo e um por edital importado — cada documento tem limite de 256 KB). Na primeira abertura na conta, o que estava salvo no navegador é migrado automaticamente. **Meus concursos** guarda os concursos já abertos (até 20) para voltar a eles com um clique, sem refazer o cadastro nem reimportar editais.
 
+### Campos do resumo
+
+Cada assunto tem **Meu resumo**, **Pontos importantes** e **Observações**. O antigo campo *Pegadinhas* foi retirado: ele só aparece em resumos que já têm texto nele (para não esconder conteúdo) e some quando esvaziado. Exceções e armadilhas agora ficam em Pontos importantes.
+
 ### Flashcards
 
 Em cada assunto, **Flashcards** (ou “✨ Criar flashcards” no assistente) sugere cartões a partir do resumo (`domain/flashcards.ts`, sem IA):
-trechos em negrito/destaque viram lacunas, “Tema: explicação” vira pergunta, título + lista vira “liste”, e frases de Pontos importantes/Pegadinhas viram verdadeiro ou falso. O usuário escolhe quais adicionar, edita, exclui e cria cartões à mão. Na página publicada, **Gerar com o Claude** (capacidade `sample`, usa a cota do próprio usuário) sugere cartões usando apenas o texto do resumo.
+trechos em negrito/destaque viram lacunas, “Tema: explicação” vira pergunta, título + lista vira “liste”, e frases de Pontos importantes viram verdadeiro ou falso. O usuário escolhe quais adicionar, edita, exclui e cria cartões à mão. Na página publicada, **Gerar com o Claude** (capacidade `sample`, usa a cota do próprio usuário) sugere cartões usando apenas o texto do resumo.
 
 A revisão usa um SM-2 simplificado (Errei 10 min · Difícil 1 h/×1,2 · Acertei 1 → 3 → ×facilidade dias · Fácil). A página da disciplina reúne os cartões de todos os assuntos e mostra quantos estão para revisar.
 
@@ -100,7 +104,7 @@ A revisão usa um SM-2 simplificado (Errei 10 min · Difícil 1 h/×1,2 · Acert
 
 No assunto (**Preencher com livro (PDF)**) ou na disciplina (**Enviar livro (PDF)**, vários assuntos de uma vez), o usuário envia um livro/apostila. `domain/book.ts` localiza as páginas de cada assunto (nome + subitens do edital, com radicais para casar singular/plural) e preenche os campos:
 
-- **Trechos do livro** (sem IA): lê o trecho em ordem, mantém as frases que continuam o assunto e para no próximo capítulo; exceções (“salvo”, “exceto”, “não cabe”…) vão para Pegadinhas, prazos/artigos para Pontos importantes (em negrito — viram lacunas nos flashcards) e a fonte com as páginas vai para Observações.
+- **Trechos do livro** (sem IA): lê o trecho em ordem, mantém as frases que continuam o assunto e para no próximo capítulo; prazos/artigos vão para Pontos importantes (em negrito — viram lacunas nos flashcards), com as exceções (“salvo”, “exceto”, “não cabe”…) em “Exceções e cuidados” e a fonte com as páginas vai para Observações.
 - **Resumo com o Claude** (página publicada, capacidade `sample`): o Claude escreve os quatro campos usando só o trecho enviado; o HTML de resposta é higienizado (`domain/sanitize-html.ts`).
 
 No assunto, o texto vai para o editor para revisão antes de salvar; na disciplina, assuntos sem resumo são preenchidos e salvos (os que já têm resumo recebem o conteúdo ao final, se marcados). O livro fica só na memória da sessão.
