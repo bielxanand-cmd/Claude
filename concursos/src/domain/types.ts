@@ -122,6 +122,8 @@ export interface PlanTopic {
   contestIds: string[]
   /** Subitens citados pelos editais (sem repetição) */
   details: string[]
+  /** Criado pelo estudante (não veio de edital) */
+  manual?: boolean
 }
 
 export interface PlanSubject {

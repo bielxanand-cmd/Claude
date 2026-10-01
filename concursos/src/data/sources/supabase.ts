@@ -4,6 +4,7 @@ import type { Quiz } from '@/domain/questions'
 import type { Theme } from '@/domain/themes'
 import type { Attachment } from '@/domain/attachments'
 import type { QuestionNote } from '@/domain/question-notes'
+import type { ManualTopic } from '@/domain/manual-topics'
 import { planNoticeImport } from '@/domain/import-notice'
 import type {
   Career,
@@ -403,6 +404,41 @@ export function createSupabaseDataSource(url: string, anonKey: string): DataSour
         }),
       )
       return { ...theme, updatedAt }
+    },
+
+    async listManualTopics() {
+      const id = await userId()
+      const rows = await selectAll(client, 'user_manual_topics', '*', (q) => q.eq('user_id', id))
+      return rows.map(
+        (r): ManualTopic => ({
+          id: r.id as string,
+          positionId: r.position_id as string,
+          subjectId: r.subject_id as string,
+          name: r.name as string,
+          details: (r.details as string[]) ?? [],
+          createdAt: r.created_at as string,
+        }),
+      )
+    },
+
+    async createManualTopic(input) {
+      const topic: ManualTopic = { ...input, id: `manual-${uuid()}`, createdAt: new Date().toISOString() }
+      must(
+        await client.from('user_manual_topics').insert({
+          id: topic.id,
+          user_id: await userId(),
+          position_id: topic.positionId,
+          subject_id: topic.subjectId,
+          name: topic.name,
+          details: topic.details,
+          created_at: topic.createdAt,
+        }),
+      )
+      return topic
+    },
+
+    async deleteManualTopic(topicId) {
+      must(await client.from('user_manual_topics').delete().eq('user_id', await userId()).eq('id', topicId))
     },
 
     async listQuestionNotes() {

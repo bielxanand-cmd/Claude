@@ -93,6 +93,10 @@ A camada `src/data/persistence` carrega tudo uma vez e grava só o documento afe
 
 A página do assunto é organizada em **Temas do assunto** (com subtemas), **Questões** e, na coluna lateral, **Anexos**. Os campos gerais **Meu resumo**, **Pontos importantes** e **Observações** (e o antigo *Pegadinhas*) foram retirados da página: quem já tinha texto neles continua vendo e editando em **Resumo geral anterior** (recolhido), que some quando esvaziado e salvo. **Preencher com livro (PDF)** e **Explicar assunto → Salvar como tema** criam temas; o preenchimento em lote da disciplina cria um tema “Do livro: …” em cada assunto; **Resumir conteúdo** mostra o resumo (dos temas e subtemas) para ler e copiar.
 
+### Assuntos criados manualmente
+
+Na página da disciplina, **Adicionar assunto** cria um assunto que não está nos editais (nome e, opcionalmente, “O que estudar”, um item por linha). Ele entra no fim da lista com o selo **Criado por você**, funciona como qualquer assunto (temas, questões, anexos, status) e conta no progresso, mas não na frequência dos editais. Na página do assunto, **Excluir assunto** o remove do plano (o conteúdo do usuário fica guardado). Fica ligado ao cargo (`domain/manual-topics.ts`, `withManualTopics` aplicado ao plano consolidado; na nuvem em `state/manual-topics`; no Supabase, tabela `user_manual_topics`).
+
 ### Questões (caderno de erros)
 
 **Questões** é um campo aberto para anotar as questões que você errou (enunciado, o que marcou, a resposta certa e por que errou). Cada anotação tem **Tema** e **Subtema** (listas com os temas do assunto) e a lista pode ser **filtrada** por tema (com todos os subtemas), por subtema ou “Sem tema”; uma questão nova já vem marcada com o tema/subtema do filtro ativo. Salva automaticamente (`features/question-notes/`, `domain/question-notes.ts`; na nuvem em `state/question-notes`; no Supabase, tabela `topic_question_notes`). O botão do topo que gera questões para treinar passou a se chamar **Treinar questões**.

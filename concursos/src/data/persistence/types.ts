@@ -4,6 +4,7 @@ import type { Quiz } from '@/domain/questions'
 import type { Theme } from '@/domain/themes'
 import type { Attachment } from '@/domain/attachments'
 import type { QuestionNote } from '@/domain/question-notes'
+import type { ManualTopic } from '@/domain/manual-topics'
 import type { CatalogRows } from '../seed'
 
 /** Tudo o que é do usuário no modo local/nuvem. */
@@ -24,6 +25,8 @@ export interface UserState {
   attachments: Record<string, Attachment[]>
   /** Anotações de questões (caderno de erros) de cada assunto */
   questionNotes: Record<string, QuestionNote[]>
+  /** Assuntos criados pelo usuário, por id */
+  manualTopics: Record<string, ManualTopic>
 }
 
 /** Catálogo criado pelo usuário (carreiras/cargos manuais e editais importados). */
@@ -58,6 +61,7 @@ export type Change =
   | { type: 'theme'; topicId: string; themeId: string }
   | { type: 'attachment'; topicId: string; attachmentId: string }
   | { type: 'question-note'; topicId: string; noteId: string }
+  | { type: 'manual-topic'; topicId: string }
   | { type: 'catalog-meta' } // carreiras e cargos manuais
   | { type: 'import'; rows: ImportRows }
   | { type: 'import-delete'; contestId: string }

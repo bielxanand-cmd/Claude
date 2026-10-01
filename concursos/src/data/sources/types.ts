@@ -3,6 +3,7 @@ import type { Quiz } from '@/domain/questions'
 import type { Theme } from '@/domain/themes'
 import type { Attachment } from '@/domain/attachments'
 import type { QuestionNote } from '@/domain/question-notes'
+import type { ManualTopic } from '@/domain/manual-topics'
 import type {
   Career,
   CatalogSnapshot,
@@ -73,6 +74,9 @@ export interface DataSource {
   /** Cria ou atualiza um tema de um assunto */
   saveTheme(theme: Theme): Promise<Theme>
   deleteTheme(topicId: string, themeId: string): Promise<void>
+  listManualTopics(): Promise<ManualTopic[]>
+  createManualTopic(input: Omit<ManualTopic, 'id' | 'createdAt'>): Promise<ManualTopic>
+  deleteManualTopic(topicId: string): Promise<void>
   listQuestionNotes(): Promise<QuestionNote[]>
   saveQuestionNote(note: QuestionNote): Promise<QuestionNote>
   deleteQuestionNote(topicId: string, noteId: string): Promise<void>

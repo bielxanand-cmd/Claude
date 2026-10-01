@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, BookOpenText, Filter, SearchX } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpenText, Filter, Plus, SearchX } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { EmptyState, ErrorState, PageSkeleton } from '@/components/study/feedback'
@@ -14,6 +14,7 @@ import { useStudy } from '@/data/queries'
 import { statusOf, subjectProgress } from '@/domain/progress'
 import type { TopicStatus } from '@/domain/types'
 import { FillSubjectDialog } from '@/features/book/fill-subject-dialog'
+import { AddTopicDialog } from '@/features/manual-topics/add-topic-dialog'
 import { SubjectFlashcards } from '@/features/flashcards/subject-flashcards'
 import { useTopicActions } from '@/hooks/use-topic-actions'
 import { percent } from '@/lib/text'
@@ -26,6 +27,7 @@ export function SubjectPage() {
   const study = useStudy()
   const { plan, statuses, subjectIndex, summaryIndex, contestIndex, isLoading, error, refetch } = study
   const [bookOpen, setBookOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
   const { setStatus } = useTopicActions()
   const [filter, setFilter] = useState<FilterValue>('all')
 
@@ -115,12 +117,22 @@ export function SubjectPage() {
         </Card>
         <SubjectFlashcards subject={subject} />
       </div>
+      <AddTopicDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        positionId={plan!.position.id}
+        subjectId={subject.subject.id}
+        subjectName={subject.subject.name}
+        existingNames={subject.topics.map((t) => t.topic.name)}
+      />
       <FillSubjectDialog open={bookOpen} onOpenChange={setBookOpen} subject={subject} study={study} />
 
       <section className="mt-8" aria-label="Assuntos">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="text-lg font-bold tracking-tight">Assuntos</h2>
-          <Filter className="size-4 text-subtle sm:hidden" aria-hidden />
+          <Button size="sm" variant="secondary" onClick={() => setAddOpen(true)}>
+            <Plus /> Adicionar assunto
+          </Button>
         </div>
         <div role="tablist" aria-label="Filtrar por status" className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0">
           {FILTERS.map(({ value, label }) => (

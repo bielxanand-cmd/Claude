@@ -896,3 +896,48 @@ test('questões: anota as que errou, marca tema e subtema e filtra', async ({ pa
   await expect(section.getByRole('article')).toHaveCount(2)
   await expect(section.getByLabel('Subtema da questão').first()).toHaveValue('col')
 })
+
+test('assunto criado manualmente na disciplina: aparece na lista, abre, conta no progresso e pode ser excluído', async ({ page }) => {
+  await page.goto('/')
+  await seedUser(page)
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('concursos.user.v1')!)
+    raw.selection = { positionId: 'auditor-fiscal-estadual', sphere: 'estadual', state: 'SP', createdAt: new Date().toISOString() }
+    localStorage.setItem('concursos.user.v1', JSON.stringify(raw))
+  })
+  await page.goto('/disciplina/direito-constitucional')
+  const list = page.getByRole('region', { name: 'Assuntos' })
+  await expect(list.getByRole('listitem').first()).toBeVisible()
+  const before = await list.getByRole('listitem').count()
+
+  await page.getByRole('button', { name: 'Adicionar assunto' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Adicionar assunto' })
+  // Nome repetido é recusado
+  await dialog.getByLabel('Nome do assunto').fill('Remédios constitucionais')
+  await expect(dialog.getByText('Já existe um assunto com esse nome')).toBeVisible()
+  await dialog.getByLabel('Nome do assunto').fill('Poder constituinte')
+  await dialog.getByLabel('O que estudar').fill('- Poder originário\n- Poder derivado reformador')
+  await dialog.getByRole('button', { name: 'Criar', exact: true }).click()
+  await expect(page.getByText('Assunto criado')).toBeVisible()
+  await expect(list.getByRole('listitem')).toHaveCount(before + 1)
+  const row = list.getByRole('listitem').filter({ hasText: 'Poder constituinte' })
+  await expect(row.getByText('Criado por você')).toBeVisible()
+
+  // Persiste e abre como um assunto normal
+  await page.reload()
+  await row.getByRole('link', { name: /Poder constituinte/ }).first().click()
+  await expect(page.getByRole('heading', { name: 'Poder constituinte', level: 1 })).toBeVisible()
+  await expect(page.getByText('O que estudar')).toBeVisible()
+  await expect(page.getByText('Poder derivado reformador')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Temas do assunto' })).toBeVisible()
+
+  // Conta no progresso da disciplina
+  await page.getByRole('button', { name: /Marcar como concluído|Concluir/ }).click()
+  await expect(page.getByText('Assunto concluído!')).toBeVisible()
+
+  // Excluir
+  await page.getByRole('button', { name: 'Excluir assunto' }).click()
+  await page.getByRole('dialog', { name: 'Excluir assunto?' }).getByRole('button', { name: 'Excluir assunto' }).click()
+  await expect(page).toHaveURL(/\/disciplina\/direito-constitucional$/)
+  await expect(list.getByRole('listitem')).toHaveCount(before)
+})

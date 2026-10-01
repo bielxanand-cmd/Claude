@@ -1,7 +1,7 @@
-import { AlertTriangle, ArrowLeft, ArrowRight, BookOpenText, Check, CheckCircle2, FileQuestion, Layers3, Lightbulb, Network, NotebookPen, Save, SearchX, StickyNote, ChevronDown } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, BookOpenText, Check, CheckCircle2, FileQuestion, Layers3, Lightbulb, Network, NotebookPen, Save, SearchX, StickyNote, ChevronDown, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Link, useBlocker, useParams } from 'react-router-dom'
+import { Link, useBlocker, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { isEmptyHtml, RichEditor } from '@/components/editor/rich-editor'
 import { EmptyState, ErrorState, PageSkeleton } from '@/components/study/feedback'
@@ -12,7 +12,7 @@ import { FrequencyPill } from '@/components/study/topic-row'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
-import { useFlashcards, useSaveSummary, useSaveTheme, useStudy, useThemes, type Study } from '@/data/queries'
+import { useDeleteManualTopic, useFlashcards, useSaveSummary, useSaveTheme, useStudy, useThemes, type Study } from '@/data/queries'
 import type { Flashcard } from '@/domain/flashcards'
 import { statusOf } from '@/domain/progress'
 import { rootThemes, themeTreeHtml, treeHasContent, withThemes } from '@/domain/themes'
@@ -91,6 +91,9 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
   const [summarizeOpen, setSummarizeOpen] = useState(false)
   const [questionsOpen, setQuestionsOpen] = useState(false)
   const [explainOpen, setExplainOpen] = useState(false)
+  const [deleteTopicOpen, setDeleteTopicOpen] = useState(false)
+  const deleteManualTopic = useDeleteManualTopic()
+  const navigate = useNavigate()
   const [studyCards, setStudyCards] = useState<Flashcard[] | null>(null)
   const flashcards = useFlashcards()
   const deckSize = (flashcards.data ?? []).filter((c) => c.topicId === topicId).length
@@ -246,7 +249,7 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
             <Button variant="secondary" size="sm" onClick={() => setBookOpen(true)}>
               <BookOpenText /> Preencher com livro (PDF)
             </Button>
-            <FrequencyPill frequency={planTopic.frequency} total={plan!.contests.length} />
+            <FrequencyPill frequency={planTopic.frequency} total={plan!.contests.length} manual={planTopic.manual} />
             <SourceChips contests={sources} max={3} />
           </div>
         </div>
@@ -317,8 +320,8 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
           <TopicAttachments topicId={topicId} />
           {planTopic.details.length > 0 && (
             <Card className="p-5">
-              <h2 className="text-sm font-bold">O que o edital cobra</h2>
-              <p className="mt-1 text-xs text-muted">Subitens listados no conteúdo programático.</p>
+              <h2 className="text-sm font-bold">{planTopic.manual ? 'O que estudar' : 'O que o edital cobra'}</h2>
+              <p className="mt-1 text-xs text-muted">{planTopic.manual ? 'Itens que você listou ao criar o assunto.' : 'Subitens listados no conteúdo programático.'}</p>
               <ul className="mt-3 space-y-2">
                 {planTopic.details.map((d) => (
                   <li key={d} className="flex gap-2 text-sm leading-snug">
@@ -329,23 +332,33 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
               </ul>
             </Card>
           )}
-          <Card className="p-5">
-            <h2 className="text-sm font-bold">Onde este assunto foi cobrado</h2>
-            <p className="mt-1 text-xs text-muted">
-              Presente em {planTopic.contestIds.length} de {plan!.contests.length} editais analisados para {plan!.position.name}.
-            </p>
-            <ul className="mt-3 space-y-1.5">
-              {sources.map((c) => (
-                <li key={c.id} className="flex items-center gap-2 text-sm">
-                  <Check className="size-3.5 text-success" aria-hidden />
-                  <span className="truncate">
-                    {c.organizationShort} {c.year && <span className="text-muted">· {c.year}</span>}
-                  </span>
-                  {c.origin === 'demo' && <span className="ml-auto text-[10px] font-semibold uppercase text-[#b45309] dark:text-warning">demo</span>}
-                </li>
-              ))}
-            </ul>
-          </Card>
+          {planTopic.manual ? (
+            <Card className="p-5">
+              <h2 className="text-sm font-bold">Assunto criado por você</h2>
+              <p className="mt-1 text-xs text-muted">Não veio de um edital: não conta na frequência nem nos editais do cargo, mas entra no seu progresso.</p>
+              <Button variant="ghost" size="sm" className="mt-3 -ml-2 text-danger hover:bg-danger-tint hover:text-danger" onClick={() => setDeleteTopicOpen(true)}>
+                <Trash2 /> Excluir assunto
+              </Button>
+            </Card>
+          ) : (
+            <Card className="p-5">
+              <h2 className="text-sm font-bold">Onde este assunto foi cobrado</h2>
+              <p className="mt-1 text-xs text-muted">
+                Presente em {planTopic.contestIds.length} de {plan!.contests.length} editais analisados para {plan!.position.name}.
+              </p>
+              <ul className="mt-3 space-y-1.5">
+                {sources.map((c) => (
+                  <li key={c.id} className="flex items-center gap-2 text-sm">
+                    <Check className="size-3.5 text-success" aria-hidden />
+                    <span className="truncate">
+                      {c.organizationShort} {c.year && <span className="text-muted">· {c.year}</span>}
+                    </span>
+                    {c.origin === 'demo' && <span className="ml-auto text-[10px] font-semibold uppercase text-[#b45309] dark:text-warning">demo</span>}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
           <AiPanel
             onAction={{
               summarize: () => setSummarizeOpen(true),
@@ -467,6 +480,38 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
         subtitle={`${subject.subject.name} · ${plan!.position.name}`}
         sections={mindMapSections}
       />
+
+      <Dialog open={deleteTopicOpen} onOpenChange={setDeleteTopicOpen}>
+        <DialogContent className="max-w-md">
+          <DialogTitle>Excluir assunto?</DialogTitle>
+          <DialogDescription>
+            “{planTopic.topic.name}” sai de {subject.subject.name}. Temas, questões e anexos dele ficam guardados, mas deixam de aparecer.
+          </DialogDescription>
+          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="ghost" onClick={() => setDeleteTopicOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              loading={deleteManualTopic.isPending}
+              onClick={() =>
+                deleteManualTopic.mutate(
+                  { topicId, positionId: plan!.position.id },
+                  {
+                    onSuccess: () => {
+                      toast('Assunto excluído', { description: planTopic.topic.name })
+                      navigate(`/disciplina/${subject.subject.id}`)
+                    },
+                    onError: () => toast.error('Não foi possível excluir o assunto.'),
+                  },
+                )
+              }
+            >
+              <Trash2 /> Excluir assunto
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={blocker.state === 'blocked'} onOpenChange={(open) => !open && blocker.state === 'blocked' && blocker.reset()}>
         <DialogContent className="max-w-md">

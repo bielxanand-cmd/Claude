@@ -6,6 +6,7 @@ import type { Quiz } from '@/domain/questions'
 import type { Theme } from '@/domain/themes'
 import type { Attachment } from '@/domain/attachments'
 import type { QuestionNote } from '@/domain/question-notes'
+import { withManualTopics, type ManualTopic } from '@/domain/manual-topics'
 import { toStatusMap } from '@/domain/progress'
 import type {
   Contest,
@@ -50,8 +51,8 @@ export const usePlan = (positionId: string | undefined) =>
     queryKey: queryKeys.plan(positionId ?? ''),
     enabled: !!positionId,
     queryFn: async (): Promise<StudyPlan | null> => {
-      const snapshot = await dataSource.getCatalogSnapshot(positionId!)
-      return snapshot ? consolidateStudyPlan(snapshot) : null
+      const [snapshot, manual] = await Promise.all([dataSource.getCatalogSnapshot(positionId!), dataSource.listManualTopics()])
+      return snapshot ? withManualTopics(consolidateStudyPlan(snapshot), manual) : null
     },
   })
 
@@ -74,6 +75,23 @@ export function useDeleteContest() {
       qc.invalidateQueries({ queryKey: queryKeys.plan(positionId) })
       qc.invalidateQueries({ queryKey: ['positions'] })
     },
+  })
+}
+
+/** Cria um assunto manual numa disciplina do plano. */
+export function useCreateManualTopic() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: Omit<ManualTopic, 'id' | 'createdAt'>) => dataSource.createManualTopic(input),
+    onSuccess: (topic) => qc.invalidateQueries({ queryKey: queryKeys.plan(topic.positionId) }),
+  })
+}
+
+export function useDeleteManualTopic() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ topicId }: { topicId: string; positionId: string }) => dataSource.deleteManualTopic(topicId),
+    onSuccess: (_r, { positionId }) => qc.invalidateQueries({ queryKey: queryKeys.plan(positionId) }),
   })
 }
 

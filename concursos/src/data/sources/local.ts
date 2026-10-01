@@ -1,3 +1,4 @@
+import type { ManualTopic } from '@/domain/manual-topics'
 import { planNoticeImport } from '@/domain/import-notice'
 import type { Career, CatalogSnapshot, Position, Summary, UserSelection, UserTopic } from '@/domain/types'
 import { uuid } from '@/lib/storage'
@@ -27,6 +28,7 @@ const freshUser = (): UserState => ({
   themes: {},
   attachments: {},
   questionNotes: {},
+  manualTopics: {},
 })
 
 /**
@@ -347,6 +349,26 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
       else list.push(saved)
       save({ type: 'theme', topicId: theme.topicId, themeId: theme.id })
       return delay(saved, 0)
+    },
+
+    async listManualTopics() {
+      return delay(Object.values((await user()).manualTopics ?? {}), 0)
+    },
+
+    async createManualTopic(input) {
+      const u = await user()
+      u.manualTopics ??= {}
+      const topic: ManualTopic = { ...input, id: `manual-${uuid()}`, createdAt: new Date().toISOString() }
+      u.manualTopics[topic.id] = topic
+      save({ type: 'manual-topic', topicId: topic.id })
+      return delay(topic, 0)
+    },
+
+    async deleteManualTopic(topicId) {
+      const u = await user()
+      delete u.manualTopics?.[topicId]
+      save({ type: 'manual-topic', topicId })
+      return delay(undefined, 0)
     },
 
     async listQuestionNotes() {

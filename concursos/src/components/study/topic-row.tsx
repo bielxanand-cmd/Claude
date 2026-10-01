@@ -1,11 +1,17 @@
-import { ArrowRight, NotebookPen, Sparkle } from 'lucide-react'
+import { ArrowRight, NotebookPen, Sparkle, UserPen } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import type { PlanTopic, TopicStatus } from '@/domain/types'
 import { cn } from '@/lib/utils'
 import { StatusBadge, StatusToggle } from './status'
 
-export function FrequencyPill({ frequency, total }: { frequency: number; total: number }) {
+export function FrequencyPill({ frequency, total, manual }: { frequency: number; total: number; manual?: boolean }) {
+  if (manual)
+    return (
+      <span title="Assunto criado por você (não veio de edital)" className="inline-flex items-center gap-1 rounded-full bg-primary-tint px-2 py-0.5 text-[11px] font-semibold text-primary dark:text-primary-soft">
+        <UserPen className="size-3" aria-hidden /> Criado por você
+      </span>
+    )
   const count = Math.round(frequency * total)
   const hot = frequency >= 0.8 && total > 1
   return (
@@ -55,7 +61,7 @@ export function TopicRow({
         <p className={cn('font-semibold leading-snug', status === 'completed' && 'text-muted')}>{topic.name}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           <StatusBadge status={status} />
-          <FrequencyPill frequency={planTopic.frequency} total={totalContests} />
+          <FrequencyPill frequency={planTopic.frequency} total={totalContests} manual={planTopic.manual} />
           {hasSummary && (
             <span className="inline-flex items-center gap-1 rounded-full bg-foreground/[0.05] px-2 py-0.5 text-[11px] font-semibold text-muted">
               <NotebookPen className="size-3" aria-hidden /> Resumo
