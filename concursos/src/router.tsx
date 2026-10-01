@@ -47,6 +47,7 @@ export const router = createRouter([
           { path: '/assunto/:id', lazy: page(() => import('@/pages/topic-page'), 'TopicPage') },
           { path: '/resumos', lazy: page(() => import('@/pages/summaries-page'), 'SummariesPage') },
           { path: '/progresso', lazy: page(() => import('@/pages/progress-page'), 'ProgressPage') },
+          { path: '/mais-cobrados', lazy: page(() => import('@/pages/exams-page'), 'ExamsPage') },
           { path: '/concursos', lazy: page(() => import('@/pages/contests-page'), 'ContestsPage') },
         ],
       },

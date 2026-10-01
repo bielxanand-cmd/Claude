@@ -5,6 +5,7 @@ import type { Theme } from '@/domain/themes'
 import type { Attachment } from '@/domain/attachments'
 import type { QuestionNote } from '@/domain/question-notes'
 import type { ManualTopic } from '@/domain/manual-topics'
+import type { ExamAnalysis } from '@/domain/exam-analysis'
 import { planNoticeImport } from '@/domain/import-notice'
 import type {
   Career,
@@ -404,6 +405,21 @@ export function createSupabaseDataSource(url: string, anonKey: string): DataSour
         }),
       )
       return { ...theme, updatedAt }
+    },
+
+    async listExamAnalyses() {
+      const id = await userId()
+      const rows = await selectAll(client, 'user_exam_analyses', '*', (q) => q.eq('user_id', id))
+      return rows.map((r) => r.result as ExamAnalysis).filter((e) => e?.id)
+    },
+
+    async saveExamAnalysis(exam) {
+      must(await client.from('user_exam_analyses').upsert({ id: exam.id, user_id: await userId(), position_id: exam.positionId, result: exam, created_at: exam.createdAt }))
+      return exam
+    },
+
+    async deleteExamAnalysis(examId) {
+      must(await client.from('user_exam_analyses').delete().eq('user_id', await userId()).eq('id', examId))
     },
 
     async listManualTopics() {

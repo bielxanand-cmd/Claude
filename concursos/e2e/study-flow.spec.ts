@@ -941,3 +941,68 @@ test('assunto criado manualmente na disciplina: aparece na lista, abre, conta no
   await expect(page).toHaveURL(/\/disciplina\/direito-constitucional$/)
   await expect(list.getByRole('listitem')).toHaveCount(before)
 })
+
+test('mais cobrados: envia provas em PDF, conta questões por disciplina e mostra os assuntos mais pedidos', async ({ page, isMobile }) => {
+  await page.goto('/')
+  await seedUser(page)
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('concursos.user.v1')!)
+    raw.selection = { positionId: 'auditor-fiscal-estadual', sphere: 'estadual', state: 'SP', createdAt: new Date().toISOString() }
+    localStorage.setItem('concursos.user.v1', JSON.stringify(raw))
+  })
+  await page.goto('/dashboard')
+  if (isMobile) await page.goto('/mais-cobrados')
+  else await page.getByRole('link', { name: 'Mais cobrados' }).first().click()
+  await expect(page.getByRole('heading', { name: 'Assuntos que mais caem' })).toBeVisible()
+  await expect(page.getByText('Nenhuma prova analisada para Auditor Fiscal')).toBeVisible()
+
+  // Prova fictícia: 4 questões de Português e 2 de Constitucional (texto ASCII para a fonte do PDF)
+  const prova2022 = makePdf([
+    'LINGUA PORTUGUESA',
+    '1 Assinale a alternativa em que o acento grave indicativo de crase esta correto.',
+    '2 Em relacao a concordancia verbal, assinale a frase correta.',
+    '3 O emprego do acento grave indicativo de crase e obrigatorio no trecho.',
+    '4 A virgula foi empregada corretamente em qual alternativa de pontuacao.',
+    'DIREITO CONSTITUCIONAL',
+    '5 O habeas corpus e cabivel contra ato que ameace a liberdade de locomocao.',
+    '6 O mandado de seguranca protege direito liquido e certo.',
+  ])
+  const prova2023 = makePdf([
+    'DIREITO CONSTITUCIONAL',
+    '1 O habeas data assegura o acesso a informacoes pessoais.',
+    '2 O mandado de seguranca coletivo pode ser impetrado por partido politico.',
+  ])
+  await page.getByLabel('Enviar provas anteriores em PDF').setInputFiles([
+    { name: 'SEFAZ 2022.pdf', mimeType: 'application/pdf', buffer: prova2022 },
+    { name: 'SEFAZ 2023.pdf', mimeType: 'application/pdf', buffer: prova2023 },
+  ])
+  await expect(page.getByText('6 questões em 2 disciplinas')).toBeVisible()
+  await expect(page.getByText('2 questões em 1 disciplina', { exact: true })).toBeVisible()
+
+  // Todas as provas: 8 questões; Constitucional 4 (50%), Português 4 (50%)
+  await expect(page.getByText(/^8$/).first()).toBeVisible()
+  const table = page.getByRole('table')
+  await expect(table.getByRole('row', { name: /Direito Constitucional/ })).toContainText('50%')
+  await expect(table.getByRole('row', { name: /Língua Portuguesa/ })).toContainText('4')
+
+  // Assuntos mais pedidos: Remédios constitucionais 4 de 4; Crase 2 de 4
+  const top = page.getByRole('region', { name: 'Assuntos mais pedidos por disciplina' })
+  await expect(top.getByRole('link', { name: 'Remédios constitucionais' })).toBeVisible()
+  await expect(top.getByText('(100%)')).toBeVisible()
+  await expect(top.getByRole('listitem').filter({ hasText: 'Crase' })).toContainText('2')
+  await shot(page, 'mais-cobrados')
+
+  // Filtrar uma prova
+  await page.getByLabel('Escolher prova').selectOption({ label: 'SEFAZ 2023' })
+  await expect(table.getByRole('row')).toHaveCount(2)
+  await expect(table.getByRole('row', { name: /Direito Constitucional/ })).toContainText('100%')
+
+  // Salvo por cargo: continua depois de recarregar
+  await page.reload()
+  await expect(page.getByText(/com base em 2 provas anteriores/)).toBeVisible()
+
+  // Excluir uma prova
+  await page.getByRole('button', { name: 'Excluir SEFAZ 2023' }).click()
+  await page.getByRole('dialog', { name: 'Excluir prova?' }).getByRole('button', { name: 'Excluir' }).click()
+  await expect(page.getByText(/com base em 1 prova anterior/)).toBeVisible()
+})

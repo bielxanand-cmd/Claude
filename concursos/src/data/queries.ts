@@ -7,6 +7,7 @@ import type { Theme } from '@/domain/themes'
 import type { Attachment } from '@/domain/attachments'
 import type { QuestionNote } from '@/domain/question-notes'
 import { withManualTopics, type ManualTopic } from '@/domain/manual-topics'
+import type { ExamAnalysis } from '@/domain/exam-analysis'
 import { toStatusMap } from '@/domain/progress'
 import type {
   Contest,
@@ -37,6 +38,7 @@ export const queryKeys = {
   themes: ['themes'] as const,
   attachments: ['attachments'] as const,
   questionNotes: ['question-notes'] as const,
+  examAnalyses: ['exam-analyses'] as const,
 }
 
 /* ------------------------------------------------------------------ Catálogo */
@@ -75,6 +77,29 @@ export function useDeleteContest() {
       qc.invalidateQueries({ queryKey: queryKeys.plan(positionId) })
       qc.invalidateQueries({ queryKey: ['positions'] })
     },
+  })
+}
+
+export const useExamAnalyses = () => useQuery({ queryKey: queryKeys.examAnalyses, queryFn: () => dataSource.listExamAnalyses() })
+
+export function useSaveExamAnalysis() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (exam: ExamAnalysis) => dataSource.saveExamAnalysis(exam),
+    onSuccess: (exam) => qc.setQueryData<ExamAnalysis[]>(queryKeys.examAnalyses, (list = []) => [...list.filter((e) => e.id !== exam.id), exam]),
+  })
+}
+
+export function useDeleteExamAnalysis() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => dataSource.deleteExamAnalysis(id),
+    onMutate: (id) => {
+      const previous = qc.getQueryData<ExamAnalysis[]>(queryKeys.examAnalyses)
+      qc.setQueryData<ExamAnalysis[]>(queryKeys.examAnalyses, (list = []) => list.filter((e) => e.id !== id))
+      return { previous }
+    },
+    onError: (_e, _v, context) => qc.setQueryData(queryKeys.examAnalyses, context?.previous),
   })
 }
 

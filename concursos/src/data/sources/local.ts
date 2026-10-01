@@ -33,6 +33,7 @@ const freshUser = (): UserState => ({
   attachments: {},
   questionNotes: {},
   manualTopics: {},
+  examAnalyses: {},
 })
 
 /**
@@ -369,6 +370,25 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
       else list.push(saved)
       save({ type: 'theme', topicId: theme.topicId, themeId: theme.id })
       return delay(saved, 0)
+    },
+
+    async listExamAnalyses() {
+      return delay(Object.values((await user()).examAnalyses ?? {}), 0)
+    },
+
+    async saveExamAnalysis(exam) {
+      const u = await user()
+      u.examAnalyses ??= {}
+      u.examAnalyses[exam.id] = exam
+      save({ type: 'exam-analysis', id: exam.id })
+      return delay(exam, 0)
+    },
+
+    async deleteExamAnalysis(id) {
+      const u = await user()
+      delete u.examAnalyses?.[id]
+      save({ type: 'exam-analysis', id })
+      return delay(undefined, 0)
     },
 
     async listManualTopics() {

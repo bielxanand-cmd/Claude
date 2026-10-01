@@ -5,6 +5,7 @@ import type { Theme } from '@/domain/themes'
 import type { Attachment } from '@/domain/attachments'
 import type { QuestionNote } from '@/domain/question-notes'
 import type { ManualTopic } from '@/domain/manual-topics'
+import type { ExamAnalysis } from '@/domain/exam-analysis'
 import type { CatalogRows } from '../seed'
 
 /** Tudo o que é do usuário no modo local/nuvem. */
@@ -27,6 +28,8 @@ export interface UserState {
   questionNotes: Record<string, QuestionNote[]>
   /** Assuntos criados pelo usuário, por id */
   manualTopics: Record<string, ManualTopic>
+  /** Provas anteriores analisadas (por id; cada uma ligada a um cargo) */
+  examAnalyses: Record<string, ExamAnalysis>
 }
 
 /** Catálogo criado pelo usuário (carreiras/cargos manuais e editais importados). */
@@ -62,6 +65,7 @@ export type Change =
   | { type: 'attachment'; topicId: string; attachmentId: string }
   | { type: 'question-note'; topicId: string; noteId: string }
   | { type: 'manual-topic'; topicId: string }
+  | { type: 'exam-analysis'; id: string }
   | { type: 'catalog-meta' } // carreiras e cargos manuais
   | { type: 'import'; rows: ImportRows }
   | { type: 'import-delete'; contestId: string }

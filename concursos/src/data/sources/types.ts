@@ -4,6 +4,7 @@ import type { Theme } from '@/domain/themes'
 import type { Attachment } from '@/domain/attachments'
 import type { QuestionNote } from '@/domain/question-notes'
 import type { ManualTopic } from '@/domain/manual-topics'
+import type { ExamAnalysis } from '@/domain/exam-analysis'
 import type {
   Career,
   CatalogSnapshot,
@@ -74,6 +75,9 @@ export interface DataSource {
   /** Cria ou atualiza um tema de um assunto */
   saveTheme(theme: Theme): Promise<Theme>
   deleteTheme(topicId: string, themeId: string): Promise<void>
+  listExamAnalyses(): Promise<ExamAnalysis[]>
+  saveExamAnalysis(exam: ExamAnalysis): Promise<ExamAnalysis>
+  deleteExamAnalysis(id: string): Promise<void>
   listManualTopics(): Promise<ManualTopic[]>
   createManualTopic(input: Omit<ManualTopic, 'id' | 'createdAt'>): Promise<ManualTopic>
   deleteManualTopic(topicId: string): Promise<void>

@@ -21,6 +21,7 @@ export function latestChange(user: UserState | null | undefined): string {
     ...Object.values(user.questionNotes ?? {}).flat().map((n) => n.updatedAt),
     ...Object.values(user.attachments ?? {}).flat().map((a) => a.createdAt),
     ...Object.values(user.manualTopics ?? {}).map((m) => m.createdAt),
+    ...Object.values(user.examAnalyses ?? {}).map((e) => e.createdAt),
     ...Object.values(user.quizzes ?? {}).map((q) => q.generatedAt),
   ])
 }
@@ -67,6 +68,7 @@ export function mergeUser(cloud: UserState, local: UserState): UserState {
     attachments: mergeRecordOfLists(cloud.attachments, local.attachments, (a) => a.createdAt),
     questionNotes: mergeRecordOfLists(cloud.questionNotes, local.questionNotes, (n) => n.updatedAt),
     manualTopics: { ...cloud.manualTopics, ...local.manualTopics },
+    examAnalyses: { ...cloud.examAnalyses, ...local.examAnalyses },
   }
 }
 

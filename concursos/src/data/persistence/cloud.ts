@@ -1,6 +1,7 @@
 import type { Attachment } from '@/domain/attachments'
 import type { QuestionNote } from '@/domain/question-notes'
 import type { ManualTopic } from '@/domain/manual-topics'
+import type { ExamAnalysis } from '@/domain/exam-analysis'
 import type { Theme } from '@/domain/themes'
 import type { Subject, Topic, UserTopic } from '@/domain/types'
 import { readJSON, removeKey, writeJSON } from '@/lib/storage'
@@ -23,6 +24,7 @@ import { emptyCatalog, groupImports, type Change, type ImportRows, type Persiste
  *   data/users/<id>/state/attachments/<assunto~anexo> ficha de um anexo (o arquivo fica nos assets da página)
  *   data/users/<id>/state/question-notes/<assunto~nota> anotação de uma questão errada
  *   data/users/<id>/state/manual-topics/<assunto> assunto criado pelo usuário
+ *   data/users/<id>/state/exam-analyses/<id>  resultado de uma prova anterior analisada
  *   data/users/<id>/catalog                    carreiras e cargos criados
  *   data/users/<id>/catalog/imports/<edital>   um edital importado por documento
  *
@@ -150,6 +152,7 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
   const attachments = stateDoc.collection('attachments')
   const questionNotes = stateDoc.collection('question-notes')
   const manualTopics = stateDoc.collection('manual-topics')
+  const examAnalyses = stateDoc.collection('exam-analyses')
   const themeDocId = (topicId: string, themeId: string) => safeId(`${topicId}~${themeId}`)
   const imports = catalogDoc.collection('imports')
 
@@ -287,7 +290,7 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
       await replayJournal()
       const [state, progress, catalog] = await Promise.all([stateDoc.get(), progressDoc.get(), catalogDoc.get()])
       if (!state.exists && !progress.exists && !catalog.exists) return null
-      const [summaryDocs, importDocs, flashcardDocs, quizDocs, themeDocs, attachmentDocs, noteDocs, manualDocs] = await Promise.all([
+      const [summaryDocs, importDocs, flashcardDocs, quizDocs, themeDocs, attachmentDocs, noteDocs, manualDocs, examDocs] = await Promise.all([
         readAll(summaries, 'topicId'),
         imports.limit(PAGE).get(),
         readAll(flashcards, 'topicId'),
@@ -296,7 +299,14 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
         readAll(attachments, 'id'),
         readAll(questionNotes, 'id'),
         readAll(manualTopics, 'id'),
+        readAll(examAnalyses, 'id'),
       ])
+
+      const examsById: UserState['examAnalyses'] = {}
+      for (const d of examDocs.docs) {
+        const e = d.data() as unknown as ExamAnalysis | undefined
+        if (e?.id && e.positionId && Array.isArray(e.subjects)) examsById[e.id] = structuredClone(e)
+      }
 
       const manualById: UserState['manualTopics'] = {}
       for (const d of manualDocs.docs) {
@@ -354,6 +364,7 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
             attachments: attachmentsByTopic,
             questionNotes: notesByTopic,
             manualTopics: manualById,
+            examAnalyses: examsById,
           }
         : null
 
@@ -426,6 +437,11 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
           enqueue(manualTopics.doc(safeId(change.topicId)), m ? { kind: 'set', body: { ...m, v: 1 } as unknown as Body } : { kind: 'delete' })
           break
         }
+        case 'exam-analysis': {
+          const e = snap.user.examAnalyses?.[change.id]
+          enqueue(examAnalyses.doc(safeId(change.id)), e ? { kind: 'set', body: { ...e, v: 1 } as unknown as Body } : { kind: 'delete' })
+          break
+        }
         case 'catalog-meta':
           enqueue(catalogDoc, { kind: 'set', body: catalogBody(snap) })
           break
@@ -453,6 +469,7 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
       for (const [topicId, list] of Object.entries(snap.user.attachments ?? {}))
         for (const a of list) persistence.save({ type: 'attachment', topicId, attachmentId: a.id }, snap)
       for (const topicId of Object.keys(snap.user.manualTopics ?? {})) persistence.save({ type: 'manual-topic', topicId }, snap)
+      for (const id of Object.keys(snap.user.examAnalyses ?? {})) persistence.save({ type: 'exam-analysis', id }, snap)
       for (const [topicId, list] of Object.entries(snap.user.questionNotes ?? {}))
         for (const n of list) persistence.save({ type: 'question-note', topicId, noteId: n.id }, snap)
       for (const rows of groupImports(snap.catalog)) saveImport(rows)
@@ -475,7 +492,7 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
     async clear() {
       pending.clear()
       saveJournal()
-      const [summaryDocs, importDocs, flashcardDocs, quizDocs, themeDocs, attachmentDocs, noteDocs, manualDocs] = await Promise.all([
+      const [summaryDocs, importDocs, flashcardDocs, quizDocs, themeDocs, attachmentDocs, noteDocs, manualDocs, examDocs] = await Promise.all([
         readAll(summaries, 'topicId'),
         imports.limit(PAGE).get(),
         readAll(flashcards, 'topicId'),
@@ -484,8 +501,10 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
         readAll(attachments, 'id'),
         readAll(questionNotes, 'id'),
         readAll(manualTopics, 'id'),
+        readAll(examAnalyses, 'id'),
       ])
       await Promise.all([
+        ...examDocs.docs.map((d) => examAnalyses.doc(d.id).delete()),
         ...manualDocs.docs.map((d) => manualTopics.doc(d.id).delete()),
         ...noteDocs.docs.map((d) => questionNotes.doc(d.id).delete()),
         ...attachmentDocs.docs.map((d) => attachments.doc(d.id).delete()),
