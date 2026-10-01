@@ -23,12 +23,16 @@ export function ExplainDialog({
   topic,
   content,
   onSaveToNotes,
+  saveLabel = 'Salvar em Observações',
+  savedMessage = 'Explicação adicionada às Observações',
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   topic: TopicInfo
   content: SummaryContent
   onSaveToNotes: (html: string) => void
+  saveLabel?: string
+  savedMessage?: string
 }) {
   const { sample, disable } = useClaudeSample()
   const book = useLoadedBook()
@@ -74,7 +78,7 @@ export function ExplainDialog({
 
   const save = () => {
     onSaveToNotes(`<h3>Explicação</h3>${result}`)
-    toast.success('Explicação adicionada às Observações', { description: 'Revise e clique em Salvar.' })
+    toast.success(savedMessage)
     onOpenChange(false)
   }
 
@@ -121,7 +125,7 @@ export function ExplainDialog({
               Parar
             </Button>
           )}
-          {result && !busy && <Button variant="outline" onClick={save}>Salvar em Observações</Button>}
+          {result && !busy && <Button variant="outline" onClick={save}>{saveLabel}</Button>}
           {!busy && fromBook && (
             <Button variant={sample ? 'ghost' : 'primary'} onClick={showBook}>
               <BookOpenText /> O que o livro diz

@@ -110,8 +110,8 @@ export function MindMapDialog({
           {!map || !layout ? (
             <EmptyState
               icon={Network}
-              title="Escreva seu resumo primeiro"
-              description="O mapa mental é montado a partir do que você escreve em Meu resumo, Pontos importantes e Observações. Use títulos e listas: cada título vira um cartão, e os itens viram os tópicos dele."
+              title="Escreva os temas primeiro"
+              description="O mapa mental é montado a partir dos temas e subtemas do assunto. Use listas e “Tema: explicação” no resumo de cada tema: cada tema vira um cartão, e os itens viram os tópicos dele."
               className="bg-surface"
             />
           ) : (

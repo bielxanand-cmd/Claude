@@ -3,6 +3,7 @@ import type { Flashcard } from '@/domain/flashcards'
 import type { Quiz } from '@/domain/questions'
 import type { Theme } from '@/domain/themes'
 import type { Attachment } from '@/domain/attachments'
+import type { QuestionNote } from '@/domain/question-notes'
 import { planNoticeImport } from '@/domain/import-notice'
 import type {
   Career,
@@ -397,6 +398,46 @@ export function createSupabaseDataSource(url: string, anonKey: string): DataSour
         }),
       )
       return { ...theme, updatedAt }
+    },
+
+    async listQuestionNotes() {
+      const id = await userId()
+      const rows = await selectAll(client, 'topic_question_notes', '*', (q) => q.eq('user_id', id))
+      return rows.map(
+        (r): QuestionNote => ({
+          id: r.id as string,
+          topicId: r.topic_id as string,
+          themeId: (r.theme_id as string | null) ?? null,
+          subthemeId: (r.subtheme_id as string | null) ?? null,
+          html: (r.content_html as string) ?? '',
+          createdAt: r.created_at as string,
+          updatedAt: r.updated_at as string,
+        }),
+      )
+    },
+
+    async saveQuestionNote(note) {
+      const id = await userId()
+      const updatedAt = new Date().toISOString()
+      must(
+        await client.from('topic_question_notes').upsert({
+          id: note.id,
+          user_id: id,
+          topic_id: note.topicId,
+          theme_id: note.themeId,
+          subtheme_id: note.subthemeId,
+          content_html: note.html,
+          plain_text: htmlToText(note.html),
+          created_at: note.createdAt,
+          updated_at: updatedAt,
+        }),
+      )
+      return { ...note, updatedAt }
+    },
+
+    async deleteQuestionNote(topicId, noteId) {
+      const id = await userId()
+      must(await client.from('topic_question_notes').delete().eq('user_id', id).eq('topic_id', topicId).eq('id', noteId))
     },
 
     // Fichas dos anexos; os arquivos ficam no navegador (IndexedDB) neste modo

@@ -1,4 +1,4 @@
-import { Loader2, Wand2 } from 'lucide-react'
+import { Copy, Loader2, Wand2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { aiSummarizePrompt, aiThemesSummaryPrompt, cleanAiHtml, filledThemes, hasNotes, notesAsText, quickSummary, themesAsText, themesQuickSummary } from '@/domain/assistant'
 import { extractiveSummary } from '@/domain/book'
 import type { Theme } from '@/domain/themes'
+import { htmlToText } from '@/lib/text'
 import type { SummaryContent } from '@/domain/types'
 import { HIDE_CODES, sampleErrorMessage, useClaudeSample } from '@/features/ai/claude-sample'
 import { useLoadedBook } from '@/features/book/book-store'
@@ -37,7 +38,8 @@ export function SummarizeDialog({
   content: SummaryContent
   /** Temas e subtemas do assunto */
   themes?: Theme[]
-  onInsert: (html: string, mode: 'append' | 'replace') => void
+  /** Sem esta função, o resultado só pode ser copiado */
+  onInsert?: (html: string, mode: 'append' | 'replace') => void
 }) {
   const { sample, disable } = useClaudeSample()
   const book = useLoadedBook()
@@ -93,7 +95,22 @@ export function SummarizeDialog({
     }
   }
 
+  const copy = async () => {
+    try {
+      const text = htmlToText(result)
+      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([result], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) })])
+      } else {
+        await navigator.clipboard.writeText(text)
+      }
+      toast.success('Resumo copiado')
+    } catch {
+      toast.error('Não foi possível copiar. Selecione o texto e copie manualmente.')
+    }
+  }
+
   const insert = (m: 'append' | 'replace') => {
+    if (!onInsert) return
     onInsert(result, m)
     toast.success('Resumo inserido em Meu resumo', { description: 'Revise e clique em Salvar.' })
     onOpenChange(false)
@@ -114,7 +131,7 @@ export function SummarizeDialog({
         </DialogTitle>
         <DialogDescription>
           {byThemes
-            ? `O resumo geral de “${topic.topicName}”, feito a partir dos temas e subtemas — organizado por tema, para Meu resumo.`
+            ? `O resumo geral de “${topic.topicName}”, feito a partir dos temas e subtemas — organizado por tema.`
             : `Um resumo de revisão enxuto de “${topic.topicName}”, para ler antes da prova.`}
         </DialogDescription>
 
@@ -160,13 +177,20 @@ export function SummarizeDialog({
               <Button variant="ghost" onClick={generate}>
                 Gerar de novo
               </Button>
-              {/* Com temas, o resumo geral substitui Meu resumo (ele é o resumo dos temas) */}
-              <Button variant={byThemes ? 'outline' : 'primary'} className={byThemes ? '' : 'order-last'} onClick={() => insert('append')}>
-                Adicionar ao Meu resumo
+              <Button variant={onInsert ? 'outline' : 'primary'} onClick={copy}>
+                <Copy /> Copiar
               </Button>
-              <Button variant={byThemes ? 'primary' : 'outline'} onClick={() => insert('replace')}>
-                {byThemes ? 'Usar como Meu resumo' : 'Substituir Meu resumo'}
-              </Button>
+              {onInsert && (
+                <>
+                  {/* Com temas, o resumo geral substitui Meu resumo (ele é o resumo dos temas) */}
+                  <Button variant={byThemes ? 'outline' : 'primary'} className={byThemes ? '' : 'order-last'} onClick={() => insert('append')}>
+                    Adicionar ao Meu resumo
+                  </Button>
+                  <Button variant={byThemes ? 'primary' : 'outline'} onClick={() => insert('replace')}>
+                    {byThemes ? 'Usar como Meu resumo' : 'Substituir Meu resumo'}
+                  </Button>
+                </>
+              )}
             </>
           ) : (
             <Button onClick={generate} disabled={!source || busy}>

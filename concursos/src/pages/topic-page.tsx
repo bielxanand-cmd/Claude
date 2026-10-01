@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, ArrowRight, BookOpenText, Check, CheckCircle2, FileQuestion, Layers3, Lightbulb, Network, NotebookPen, Save, SearchX, StickyNote, Wand2 } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, BookOpenText, Check, CheckCircle2, FileQuestion, Layers3, Lightbulb, Network, NotebookPen, Save, SearchX, StickyNote, ChevronDown } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useBlocker, useParams } from 'react-router-dom'
@@ -12,10 +12,9 @@ import { FrequencyPill } from '@/components/study/topic-row'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
-import { useFlashcards, useSaveSummary, useStudy, useThemes, type Study } from '@/data/queries'
+import { useFlashcards, useSaveSummary, useSaveTheme, useStudy, useThemes, type Study } from '@/data/queries'
 import type { Flashcard } from '@/domain/flashcards'
 import { statusOf } from '@/domain/progress'
-import { filledThemes } from '@/domain/assistant'
 import { rootThemes, themeTreeHtml, treeHasContent, withThemes } from '@/domain/themes'
 import { htmlToText } from '@/lib/text'
 import type { SummaryContent } from '@/domain/types'
@@ -29,6 +28,8 @@ import { StudySession } from '@/features/flashcards/study-session'
 import { MindMapDialog } from '@/features/mind-map/mind-map-dialog'
 import { TopicThemes } from '@/features/themes/topic-themes'
 import { TopicAttachments } from '@/features/attachments/topic-attachments'
+import { QuestionNotes } from '@/features/question-notes/question-notes'
+import { uuid } from '@/lib/storage'
 import { useTopicActions } from '@/hooks/use-topic-actions'
 import { cn, formatRelative, formatTime } from '@/lib/utils'
 
@@ -96,7 +97,6 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
   // Resumo geral + temas: base do mapa mental, flashcards, questões e assistentes
   const themes = useThemes()
   const topicThemes = useMemo(() => (themes.data ?? []).filter((t) => t.topicId === topicId), [themes.data, topicId])
-  const themesFilled = filledThemes(topicThemes).length > 0
   const studyContent = useMemo(() => withThemes(draft, topicThemes), [draft, topicThemes])
   const mindMapSections = useMemo(
     () => [
@@ -128,6 +128,17 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedContent])
   const hasContent = Object.values(draft).some((v) => !isEmptyHtml(v))
+  const showLegacy = hasContent || Object.values(savedContent).some((v) => !isEmptyHtml(v))
+  const saveTheme = useSaveTheme()
+  // Cria um tema no fim da lista (livro em PDF, explicação do assistente)
+  const addTheme = (title: string, summary: string, keyPoints = '') => {
+    const now = new Date().toISOString()
+    const order = Math.max(-1, ...topicThemes.filter((t) => !t.parentId).map((t) => t.order)) + 1
+    saveTheme.mutate(
+      { id: uuid(), topicId, parentId: null, title, summary, keyPoints, order, createdAt: now, updatedAt: now },
+      { onError: () => toast.error('Não foi possível criar o tema.') },
+    )
+  }
 
   // Registra o acesso (alimenta "Continue de onde parou").
   useEffect(() => {
@@ -230,7 +241,7 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
               {deckSize > 0 && <span className="rounded-full bg-primary px-1.5 text-[11px] font-bold text-white tabular-nums">{deckSize}</span>}
             </Button>
             <Button variant="secondary" size="sm" onClick={() => setQuestionsOpen(true)}>
-              <FileQuestion /> Questões
+              <FileQuestion /> Treinar questões
             </Button>
             <Button variant="secondary" size="sm" onClick={() => setBookOpen(true)}>
               <BookOpenText /> Preencher com livro (PDF)
@@ -245,31 +256,40 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
         <div className="min-w-0 space-y-5">
           <TopicThemes topicId={topicId} topicName={planTopic.topic.name} />
 
-          {visibleSections.map(({ key, title, hint, icon: Icon, minHeight, placeholder }) => (
-            <section key={key} aria-labelledby={`section-${key}`}>
-              <div className="mb-2 flex items-baseline gap-2">
-                <Icon className="size-4 translate-y-0.5 text-primary dark:text-primary-soft" aria-hidden />
-                <h2 id={`section-${key}`} className="font-bold tracking-tight">
-                  {title}
-                </h2>
-                <p className="hidden min-w-0 truncate text-xs text-muted sm:block">
-                  {key === 'summary' && themesFilled ? 'O resumo geral do assunto, a partir dos temas e subtemas.' : hint}
-                </p>
-                {key === 'summary' && themesFilled && (
-                  <Button variant="secondary" size="sm" className="ml-auto shrink-0 self-center" onClick={() => setSummarizeOpen(true)}>
-                    <Wand2 /> Resumir temas
-                  </Button>
-                )}
+          <QuestionNotes topicId={topicId} themes={topicThemes} />
+
+          {/* Os campos Meu resumo, Pontos importantes e Observações foram retirados;
+              quem já tinha texto neles continua vendo (e pode editar) aqui */}
+          {showLegacy && (
+            <details className="group rounded-2xl border border-border bg-surface">
+              <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3.5 text-sm sm:px-5 [&::-webkit-details-marker]:hidden">
+                <NotebookPen className="size-4 text-muted" aria-hidden />
+                <span className="font-bold">Resumo geral anterior</span>
+                <span className="hidden min-w-0 flex-1 truncate text-xs text-muted sm:block">Texto salvo nos campos antigos (Meu resumo, Pontos importantes e Observações).</span>
+                <ChevronDown className="ml-auto size-4 shrink-0 text-muted transition group-open:rotate-180" aria-hidden />
+              </summary>
+              <div className="space-y-5 border-t border-border px-4 py-4 sm:px-5">
+                {visibleSections.map(({ key, title, hint, icon: Icon, minHeight, placeholder }) => (
+                  <section key={key} aria-labelledby={`section-${key}`}>
+                    <div className="mb-2 flex items-baseline gap-2">
+                      <Icon className="size-4 translate-y-0.5 text-primary dark:text-primary-soft" aria-hidden />
+                      <h2 id={`section-${key}`} className="font-bold tracking-tight">
+                        {title}
+                      </h2>
+                      <p className="hidden min-w-0 truncate text-xs text-muted sm:block">{hint}</p>
+                    </div>
+                    <RichEditor
+                      value={draft[key]}
+                      onChange={(html) => setDraft((d) => ({ ...d, [key]: html }))}
+                      placeholder={placeholder}
+                      ariaLabel={title}
+                      minHeight={Math.min(minHeight, 160)}
+                    />
+                  </section>
+                ))}
               </div>
-              <RichEditor
-                value={draft[key]}
-                onChange={(html) => setDraft((d) => ({ ...d, [key]: html }))}
-                placeholder={placeholder}
-                ariaLabel={title}
-                minHeight={minHeight}
-              />
-            </section>
-          ))}
+            </details>
+          )}
 
           <nav aria-label="Outros assuntos" className="grid gap-3 pt-4 sm:grid-cols-2">
             {prev ? (
@@ -354,8 +374,9 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
           </Button>
           <p aria-live="polite" className={cn('min-w-0 flex-1 truncate text-xs font-medium', dirty ? 'text-warning' : 'text-muted')}>
             {dirty && <span className="mr-1.5 inline-block size-1.5 rounded-full bg-warning align-middle" />}
-            {saveLabel}
+            {showLegacy ? saveLabel : 'Temas, questões e anexos são salvos automaticamente'}
           </p>
+          {showLegacy && (
           <Button
             variant={justSaved ? 'success' : 'outline'}
             size="sm"
@@ -368,6 +389,7 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
             <span className="hidden sm:inline">{justSaved ? 'Salvo' : hasContent || dirty ? 'Salvar' : 'Salvar resumo'}</span>
             <span className="sm:hidden">{justSaved ? 'Salvo' : 'Salvar'}</span>
           </Button>
+          )}
           {status === 'completed' ? (
             <Button ref={completeRef} variant="secondary" size="sm" className="h-10 sm:h-9" onClick={() => setStatus(topicId, 'in_progress')}>
               <CheckCircle2 className="text-success" /> <span className="hidden sm:inline">Concluído</span>
@@ -391,8 +413,15 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
         subjectName={subject.subject.name}
         positionName={plan!.position.name}
         details={planTopic.details}
-        current={draft}
-        onFill={setDraft}
+        current={EMPTY_CONTENT}
+        asTheme
+        onFill={(content, bookName) =>
+          addTheme(
+            `Do livro: ${bookName.replace(/\.pdf$/i, '')}`,
+            content.summary + content.notes,
+            content.keyPoints + content.pitfalls,
+          )
+        }
       />
       <FlashcardsDialog
         open={flashcardsOpen}
@@ -413,7 +442,6 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
         topic={topicInfo}
         content={draft}
         themes={topicThemes}
-        onInsert={(html, mode) => setDraft((d) => ({ ...d, summary: mode === 'replace' ? html : d.summary + html }))}
       />
       <QuestionsDialog open={questionsOpen} onOpenChange={setQuestionsOpen} topicId={topicId} topic={topicInfo} content={studyContent} examBoard={examBoard} />
       <ExplainDialog
@@ -421,7 +449,9 @@ function TopicStudy({ topicId, study }: { topicId: string; study: Study }) {
         onOpenChange={setExplainOpen}
         topic={topicInfo}
         content={studyContent}
-        onSaveToNotes={(html) => setDraft((d) => ({ ...d, notes: d.notes + html }))}
+        onSaveToNotes={(html) => addTheme('Explicação', html)}
+        saveLabel="Salvar como tema"
+        savedMessage="Explicação salva como tema “Explicação”"
       />
       <StudySession
         open={!!studyCards}

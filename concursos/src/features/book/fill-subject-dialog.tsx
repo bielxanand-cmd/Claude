@@ -4,10 +4,12 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { ProgressBar } from '@/components/ui/progress-bar'
-import { useSaveSummary, type Study } from '@/data/queries'
-import { findRelevantPages, mergeSummary, pageRangeLabel } from '@/domain/book'
+import { useSaveTheme, useThemes, type Study } from '@/data/queries'
+import { findRelevantPages, pageRangeLabel } from '@/domain/book'
+import { themeHasContent } from '@/domain/themes'
 import type { PlanSubject } from '@/domain/types'
 import { HIDE_CODES, sampleErrorMessage, useClaudeSample } from '@/features/ai/claude-sample'
+import { uuid } from '@/lib/storage'
 import { htmlToText } from '@/lib/text'
 import { cn } from '@/lib/utils'
 import { useLoadedBook } from './book-store'
@@ -15,8 +17,6 @@ import { BookUpload } from './book-upload'
 import { contentFromBook, type FillMode } from './generate'
 
 type RowState = 'idle' | 'running' | 'done' | 'error' | 'skipped'
-
-const EMPTY = { summary: '', keyPoints: '', pitfalls: '', notes: '' }
 
 /**
  * Preenche os resumos de vários assuntos de uma disciplina a partir de um
@@ -26,7 +26,8 @@ const EMPTY = { summary: '', keyPoints: '', pitfalls: '', notes: '' }
 export function FillSubjectDialog({ open, onOpenChange, subject, study }: { open: boolean; onOpenChange: (open: boolean) => void; subject: PlanSubject; study: Study }) {
   const book = useLoadedBook()
   const { sample, disable } = useClaudeSample()
-  const saveSummary = useSaveSummary()
+  const saveTheme = useSaveTheme()
+  const themes = useThemes()
   const [mode, setMode] = useState<FillMode>('ai')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [states, setStates] = useState<Record<string, RowState>>({})
@@ -39,11 +40,13 @@ export function FillSubjectDialog({ open, onOpenChange, subject, study }: { open
         const summary = study.summaryIndex.get(pt.topic.id)
         return {
           planTopic: pt,
-          hasSummary: !!summary && Object.values(summary.content).some((h) => htmlToText(h).length > 0),
+          hasSummary:
+            (!!summary && Object.values(summary.content).some((h) => htmlToText(h).length > 0)) ||
+            (themes.data ?? []).some((t) => t.topicId === pt.topic.id && themeHasContent(t)),
           excerpt: book ? findRelevantPages(book.pages, pt.topic.name, pt.details) : null,
         }
       }),
-    [book, subject, study.summaryIndex],
+    [book, subject, study.summaryIndex, themes.data],
   )
 
   // Seleção padrão: assuntos encontrados no livro e ainda sem resumo
@@ -78,8 +81,20 @@ export function FillSubjectDialog({ open, onOpenChange, subject, study }: { open
           sample,
           signal: abortRef.current.signal,
         })
-        const current = study.summaryIndex.get(id)?.content ?? EMPTY
-        await saveSummary.mutateAsync({ topicId: id, content: mergeSummary(current, content, 'append') })
+        // Cada assunto ganha um tema com o conteúdo do livro (no fim da lista de temas)
+        const now = new Date().toISOString()
+        const order = Math.max(-1, ...(themes.data ?? []).filter((t) => t.topicId === id && !t.parentId).map((t) => t.order)) + 1
+        await saveTheme.mutateAsync({
+          id: uuid(),
+          topicId: id,
+          parentId: null,
+          title: `Do livro: ${book.name.replace(/\.pdf$/i, '')}`,
+          summary: content.summary + content.notes,
+          keyPoints: content.keyPoints + content.pitfalls,
+          order,
+          createdAt: now,
+          updatedAt: now,
+        })
         setStates((s) => ({ ...s, [id]: 'done' }))
         ok++
       } catch (e) {
@@ -99,7 +114,7 @@ export function FillSubjectDialog({ open, onOpenChange, subject, study }: { open
     }
     setRunning(false)
     abortRef.current = null
-    if (ok > 0) toast.success(`${ok} ${ok === 1 ? 'resumo preenchido' : 'resumos preenchidos'}`, { description: 'Revise cada assunto e ajuste com suas palavras.' })
+    if (ok > 0) toast.success(`${ok} ${ok === 1 ? 'tema criado' : 'temas criados'} com o livro`, { description: 'Revise cada assunto e ajuste com suas palavras.' })
   }
 
   const toggle = (id: string, checked: boolean) =>
@@ -126,7 +141,7 @@ export function FillSubjectDialog({ open, onOpenChange, subject, study }: { open
             <BookOpenText className="size-5 text-primary" /> Preencher resumos com livro (PDF)
           </DialogTitle>
           <DialogDescription>
-            {subject.subject.name}: envie o livro da disciplina e escolha os assuntos. O app encontra as páginas de cada um e preenche os campos do resumo.
+            {subject.subject.name}: envie o livro da disciplina e escolha os assuntos. O app encontra as páginas de cada um e cria, em cada assunto, um tema com o resumo e os pontos importantes do livro.
           </DialogDescription>
         </div>
 
@@ -186,7 +201,7 @@ export function FillSubjectDialog({ open, onOpenChange, subject, study }: { open
                           <span className="block truncate text-sm font-semibold">{planTopic.topic.name}</span>
                           <span className="block text-xs text-muted">
                             {excerpt ? pageRangeLabel(excerpt) : 'não encontrado no livro'}
-                            {hasSummary && ' · já tem resumo (o conteúdo do livro vai para o final)'}
+                            {hasSummary && ' · já tem conteúdo (o livro vira um tema a mais)'}
                           </span>
                         </span>
                         <span className="shrink-0" aria-live="polite">

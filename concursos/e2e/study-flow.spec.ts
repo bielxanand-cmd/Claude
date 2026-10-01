@@ -60,26 +60,24 @@ test('onboarding → cargo → disciplina → assunto → resumo → conclusão 
   await page.getByRole('link', { name: /Crédito tributário: constituição e lançamento/ }).first().click()
   await expect(page.getByRole('heading', { name: 'Crédito tributário: constituição e lançamento', level: 1 })).toBeVisible()
 
-  // 10–11. Criar e salvar resumo
-  const editor = page.getByRole('textbox', { name: 'Meu resumo' })
-  await editor.click()
+  // 10–11. Sem os campos antigos: o resumo é escrito em temas (salvos automaticamente)
+  await expect(page.getByRole('textbox', { name: 'Meu resumo' })).toHaveCount(0)
+  await expect(page.getByRole('textbox', { name: 'Observações' })).toHaveCount(0)
+  const themes = page.getByRole('region', { name: 'Temas do assunto' })
+  await themes.getByRole('button', { name: 'Adicionar tema' }).click()
+  await themes.getByLabel('Nome do novo tema').fill('Lançamento')
+  await page.keyboard.press('Enter')
+  await themes.getByRole('textbox', { name: 'Resumo do tema Lançamento' }).click()
   await page.keyboard.type('Lançamento é ato privativo da autoridade administrativa. ')
   await page.keyboard.press('ControlOrMeta+b')
   await page.keyboard.type('Art. 142 do CTN.')
-  await expect(page.getByText('Alterações não salvas')).toBeVisible()
-  await page.getByRole('button', { name: /^Salvar/ }).click()
-  await expect(page.getByText('Resumo salvo!')).toBeVisible()
+  await expect(themes.getByText('Salvo automaticamente')).toBeVisible()
   await shot(page, '09-assunto-resumo')
 
-  // 12. Editar o resumo (após recarregar, o conteúdo persiste)
+  // 12. Após recarregar, o conteúdo persiste
   await page.reload()
-  await expect(page.getByRole('textbox', { name: 'Meu resumo' }).locator('strong')).toHaveText('Art. 142 do CTN.')
-  // Sem campo de pegadinhas nos resumos novos
-  await expect(page.getByRole('textbox', { name: 'Pegadinhas' })).toHaveCount(0)
-  await page.getByRole('textbox', { name: 'Observações' }).click()
-  await page.keyboard.type('Lançamento não é constitutivo do crédito para todas as bancas.')
-  await page.getByRole('button', { name: /^Salvar/ }).click()
-  await expect(page.getByText('Resumo salvo!').first()).toBeVisible()
+  await themes.getByRole('button', { name: /Lançamento/ }).click()
+  await expect(themes.getByRole('textbox', { name: 'Resumo do tema Lançamento' }).locator('strong')).toHaveText('Art. 142 do CTN.')
 
   // 13. Marcar como concluído
   await page.getByRole('button', { name: /Marcar como concluído|Concluir/ }).click()
@@ -120,7 +118,7 @@ test('onboarding → cargo → disciplina → assunto → resumo → conclusão 
   // 18. Visualizar os próprios resumos
   await page.goto('/resumos')
   await expect(page.getByRole('link', { name: 'Crédito tributário: constituição e lançamento' })).toBeVisible()
-  await expect(page.getByText(/Lançamento é ato privativo/)).toBeVisible()
+  await expect(page.getByText('Temas: Lançamento')).toBeVisible()
   await shot(page, '13-resumos')
 
   // Dashboard reflete tudo
@@ -262,39 +260,38 @@ test('cria mapa mental a partir do resumo do assunto', async ({ page, isMobile }
 
   // Sem texto: orienta a escrever primeiro
   await page.getByRole('button', { name: 'Criar mapa mental' }).first().click()
-  await expect(page.getByText('Escreva seu resumo primeiro')).toBeVisible()
+  await expect(page.getByText('Escreva os temas primeiro')).toBeVisible()
   await page.keyboard.press('Escape')
 
-  // Texto ainda não salvo já entra no mapa
-  const summary = page.getByRole('textbox', { name: 'Meu resumo' })
-  await summary.click()
-  await page.keyboard.type('Remédios constitucionais são ações que protegem direitos fundamentais.')
-  await page.keyboard.press('Enter')
-  await page.keyboard.type('## Habeas corpus')
-  await page.keyboard.press('Enter')
-  await page.keyboard.type('- O que é: protege a liberdade de locomoção')
-  await page.keyboard.press('Enter')
-  await page.keyboard.type('Gratuito e dispensa advogado')
-  await page.keyboard.press('Enter')
-  await page.keyboard.press('Enter')
-  await page.keyboard.type('## Mandado de segurança')
-  await page.keyboard.press('Enter')
-  await page.keyboard.type('- Prazo: 120 dias')
-  await page.keyboard.press('Enter')
-  await page.keyboard.type('Direito líquido e certo')
-  await page.getByRole('textbox', { name: 'Pontos importantes' }).click()
-  await page.keyboard.type('Pessoa jurídica não propõe ação popular')
+  // Temas do assunto viram os cartões do mapa
+  const themes = page.getByRole('region', { name: 'Temas do assunto' })
+  for (const [name, lines, keyPoint] of [
+    ['Habeas corpus', ['- O que é: protege a liberdade de locomoção', 'Gratuito e dispensa advogado'], ''],
+    ['Mandado de segurança', ['- Prazo: 120 dias', 'Direito líquido e certo'], 'Pessoa jurídica não propõe ação popular'],
+  ] as const) {
+    await themes.getByRole('button', { name: 'Adicionar tema' }).click()
+    await themes.getByLabel('Nome do novo tema').fill(name)
+    await page.keyboard.press('Enter')
+    await themes.getByRole('textbox', { name: `Resumo do tema ${name}` }).click()
+    for (const [i, line] of lines.entries()) {
+      if (i) await page.keyboard.press('Enter')
+      await page.keyboard.type(line)
+    }
+    if (keyPoint) {
+      await themes.getByRole('textbox', { name: `Pontos importantes do tema ${name}` }).click()
+      await page.keyboard.type(keyPoint)
+    }
+  }
+  await expect(themes.getByText('Salvando…')).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Criar mapa mental' }).first().click()
   const dialog = page.getByRole('dialog', { name: 'Mapa mental' })
   const map = dialog.getByRole('img', { name: 'Mapa mental: Remédios constitucionais' })
   await expect(map).toBeVisible()
-  // Um cartão por título, com os tópicos; a primeira frase vira a definição no centro
-  for (const text of ['HABEAS CORPUS', 'O que é', 'Prazo', 'Gratuito e dispensa advogado'])
+  // Um cartão por tema, com os tópicos
+  for (const text of ['HABEAS CORPUS', 'O que é', 'Prazo', 'Gratuito e dispensa advogado', 'Pontos importantes'])
     await expect(map.getByText(text, { exact: true })).toHaveCount(1)
   await expect(map.getByText(/^MANDADO DE/)).toHaveCount(1)
-  await expect(map.getByText(/^PONTOS/)).toHaveCount(1)
-  await expect(map.getByText(/protegem direitos/)).toHaveCount(1)
   await expect(map.getByText(/Pessoa jurídica/)).toHaveCount(1)
   await shot(page, 'mapa-mental')
 
@@ -379,7 +376,9 @@ test('flashcards: gera do resumo, edita, estuda com revisão espaçada e aparece
     )
   })
   await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
-  // Resumo antigo com texto em Pegadinhas: o campo continua visível para não esconder o conteúdo
+  // Resumo salvo nos campos antigos: continua acessível em "Resumo geral anterior"
+  await expect(page.getByRole('textbox', { name: 'Pegadinhas' })).toBeHidden()
+  await page.getByText('Resumo geral anterior').click()
   await expect(page.getByRole('textbox', { name: 'Pegadinhas' })).toContainText('Não cabe habeas corpus')
   await page.getByRole('button', { name: /^Flashcards/ }).click()
 
@@ -448,16 +447,18 @@ test('livro em PDF preenche o resumo do assunto e os resumos da disciplina', asy
   const dialog = page.getByRole('dialog', { name: /Preencher com livro/ })
   await dialog.locator('#topic-book-file').setInputFiles({ name: 'constitucional.pdf', mimeType: 'application/pdf', buffer: book })
   await expect(dialog.getByText(/Encontrado: p\. 1/)).toBeVisible()
-  await dialog.getByRole('button', { name: 'Preencher campos' }).click()
-  await expect(page.getByText('Campos preenchidos')).toBeVisible()
-  await expect(page.getByRole('textbox', { name: 'Meu resumo' })).toContainText('habeas corpus protege a liberdade')
-  await expect(page.getByRole('textbox', { name: 'Meu resumo' })).not.toContainText('Congresso Nacional')
-  await expect(page.getByRole('textbox', { name: 'Pontos importantes' })).toContainText('Nao cabe habeas corpus')
-  await expect(page.getByRole('textbox', { name: 'Pegadinhas' })).toHaveCount(0)
-  await expect(page.getByRole('textbox', { name: 'Pontos importantes' }).locator('strong')).toContainText('120 dias')
-  await expect(page.getByRole('textbox', { name: 'Observações' })).toContainText('constitucional')
-  await page.getByRole('button', { name: /^Salvar/ }).click()
-  await expect(page.getByText('Resumo salvo!')).toBeVisible()
+  await dialog.getByRole('button', { name: 'Criar tema' }).click()
+  await expect(page.getByText('Tema criado a partir do livro')).toBeVisible()
+  // O conteúdo do livro vira um tema do assunto
+  const themes = page.getByRole('region', { name: 'Temas do assunto' })
+  await themes.getByRole('button', { name: /Do livro: constitucional/ }).click()
+  const themeSummary = themes.getByRole('textbox', { name: 'Resumo do tema Do livro: constitucional' })
+  await expect(themeSummary).toContainText('habeas corpus protege a liberdade')
+  await expect(themeSummary).not.toContainText('Congresso Nacional')
+  const themeKeyPoints = themes.getByRole('textbox', { name: 'Pontos importantes do tema Do livro: constitucional' })
+  await expect(themeKeyPoints).toContainText('Nao cabe habeas corpus')
+  await expect(themeKeyPoints.locator('strong')).toContainText('120 dias')
+  await expect(page.getByRole('textbox', { name: 'Meu resumo' })).toHaveCount(0)
 
   // 2. Disciplina: preenche vários assuntos de uma vez (o livro continua carregado)
   await page.getByRole('link', { name: 'Voltar para disciplina' }).first().click()
@@ -465,10 +466,10 @@ test('livro em PDF preenche o resumo do assunto e os resumos da disciplina', asy
   const batch = page.getByRole('dialog', { name: /Preencher resumos com livro/ })
   await expect(batch.getByText('constitucional', { exact: true })).toBeVisible()
   await expect(batch.getByRole('checkbox', { name: 'Preencher Poder Legislativo' })).toBeChecked()
-  // Já tem resumo: fica desmarcado por padrão
+  // Já tem conteúdo (o tema do livro): fica desmarcado por padrão
   await expect(batch.getByRole('checkbox', { name: 'Preencher Remédios constitucionais' })).not.toBeChecked()
   await batch.getByRole('button', { name: /Preencher \d+ assunto/ }).click()
-  await expect(page.getByText(/resumos? preenchidos?/)).toBeVisible()
+  await expect(page.getByText(/temas? criados? com o livro/)).toBeVisible()
 
   await page.goto('/resumos')
   await expect(page.getByRole('link', { name: 'Poder Legislativo' })).toBeVisible()
@@ -506,16 +507,19 @@ test('assistentes: resumir, criar questões (com placar no progresso) e explicar
   await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
   await expect(page.getByText('em breve')).toHaveCount(0)
 
-  // 1. Resumir conteúdo → adiciona ao "Meu resumo"
+  // 1. Resumir conteúdo → resumo para ler e copiar (os campos de resumo foram retirados)
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
   await page.getByRole('button', { name: /Resumir conteúdo/ }).click()
   const summarize = page.getByRole('dialog', { name: /Resumir conteúdo/ })
   await summarize.getByRole('button', { name: 'Resumir' }).click()
   await expect(summarize.getByText('Resumo rápido — Remédios constitucionais')).toBeVisible()
-  await summarize.getByRole('button', { name: 'Adicionar ao Meu resumo' }).click()
-  await expect(page.getByRole('textbox', { name: 'Meu resumo' })).toContainText('Resumo rápido')
+  await expect(summarize.getByRole('button', { name: 'Adicionar ao Meu resumo' })).toHaveCount(0)
+  await summarize.getByRole('button', { name: 'Copiar' }).click()
+  await expect(page.getByText('Resumo copiado')).toBeVisible()
+  await page.keyboard.press('Escape')
 
   // 2. Criar questões: Certo/Errado gerado das anotações, corrigido na hora
-  await page.getByRole('button', { name: /^Questões$/ }).click()
+  await page.getByRole('button', { name: 'Treinar questões' }).click()
   const quiz = page.getByRole('dialog', { name: 'Questões' })
   await quiz.getByRole('button', { name: 'Gerar questões' }).click()
   const items = quiz.getByRole('listitem')
@@ -548,8 +552,10 @@ test('assistentes: resumir, criar questões (com placar no progresso) e explicar
   await explain.locator('#explain-book-file').setInputFiles({ name: 'constitucional.pdf', mimeType: 'application/pdf', buffer: book })
   await explain.getByRole('button', { name: /O que o livro diz/ }).click()
   await expect(explain.getByText(/habeas corpus protege a liberdade/)).toBeVisible()
-  await explain.getByRole('button', { name: 'Salvar em Observações' }).click()
-  await expect(page.getByRole('textbox', { name: 'Observações' })).toContainText('Explicação')
+  await explain.getByRole('button', { name: 'Salvar como tema' }).click()
+  const themes = page.getByRole('region', { name: 'Temas do assunto' })
+  await themes.getByRole('button', { name: /Explicação/ }).click()
+  await expect(themes.getByRole('textbox', { name: 'Resumo do tema Explicação' })).toContainText('habeas corpus protege a liberdade')
 })
 
 test('temas do assunto: cria, escreve com salvamento automático, reordena e exclui', async ({ page }) => {
@@ -665,7 +671,7 @@ test('subtemas: criados dentro do tema, salvos e excluídos junto com ele', asyn
   await expect(themes.getByText('Nenhum tema ainda')).toBeVisible()
 })
 
-test('resumir conteúdo reconhece temas e subtemas e gera o resumo geral em Meu resumo', async ({ page }) => {
+test('resumir conteúdo reconhece temas e subtemas e gera o resumo geral por tema', async ({ page }) => {
   await page.goto('/')
   await page.evaluate(() => {
     const topicId = 'direito-constitucional__remedios-constitucionais'
@@ -691,19 +697,15 @@ test('resumir conteúdo reconhece temas e subtemas e gera o resumo geral em Meu 
     )
   })
   await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
-  await page.getByRole('button', { name: 'Resumir temas' }).click()
+  await page.getByRole('button', { name: /Resumir conteúdo/ }).click()
   const dialog = page.getByRole('dialog', { name: /Resumir conteúdo/ })
   await expect(dialog.getByText('2 temas e 1 subtema')).toBeVisible()
   await dialog.getByRole('button', { name: 'Resumir' }).click()
+  await expect(dialog.getByRole('heading', { name: 'Habeas corpus' })).toBeVisible()
   await expect(dialog.getByRole('heading', { name: 'Mandado de segurança' })).toBeVisible()
+  await expect(dialog.getByText('Atenção: Não cabe em punição disciplinar militar')).toBeVisible()
   await expect(dialog.getByText('Coletivo', { exact: true })).toBeVisible()
-  await dialog.getByRole('button', { name: 'Usar como Meu resumo' }).click()
-  const summary = page.getByRole('textbox', { name: 'Meu resumo' })
-  await expect(summary.getByRole('heading', { name: 'Habeas corpus' })).toBeVisible()
-  await expect(summary).toContainText('Atenção: Não cabe em punição disciplinar militar')
-  await expect(summary).toContainText('Coletivo: Partido político com representação no Congresso')
-  await page.getByRole('button', { name: /^Salvar/ }).click()
-  await expect(page.getByText('Resumo salvo!')).toBeVisible()
+  await expect(dialog.getByText(/Partido político com representação no Congresso/)).toBeVisible()
 })
 
 test('anexos do assunto: envia PDF e imagem, visualiza, baixa e exclui', async ({ page, isMobile }) => {
@@ -798,4 +800,71 @@ test('mapa mental de um tema e de um subtema', async ({ page }) => {
   map = page.getByRole('img', { name: 'Mapa mental: Coletivo' })
   await expect(map.getByText('Partido político', { exact: true })).toHaveCount(1)
   await expect(map.getByText(/Remédios constitucionais · Mandado de segurança/).first()).toBeVisible()
+})
+
+test('questões: anota as que errou, marca tema e subtema e filtra', async ({ page }) => {
+  await page.goto('/')
+  await page.evaluate(() => {
+    const topicId = 'direito-constitucional__remedios-constitucionais'
+    const now = new Date().toISOString()
+    const t = (id: string, title: string, order: number, extra: Record<string, unknown> = {}) => ({
+      id, topicId, title, summary: '', keyPoints: '', order, createdAt: now, updatedAt: now, ...extra,
+    })
+    localStorage.setItem(
+      'concursos.user.v1',
+      JSON.stringify({
+        profile: { id: 'e2e', name: 'Ana', email: null, createdAt: now },
+        selection: { positionId: 'auditor-fiscal-estadual', sphere: 'estadual', state: 'SP', createdAt: now },
+        history: [], topics: {}, flashcards: {}, quizzes: {}, summaries: {},
+        themes: {
+          [topicId]: [t('hc', 'Habeas corpus', 0), t('ms', 'Mandado de segurança', 1), t('col', 'Coletivo', 0, { parentId: 'ms' })],
+        },
+      }),
+    )
+  })
+  await page.goto('/assunto/direito-constitucional__remedios-constitucionais')
+  // Os campos antigos não aparecem mais
+  await expect(page.getByRole('textbox', { name: 'Meu resumo' })).toHaveCount(0)
+  await expect(page.getByText('Resumo geral anterior')).toHaveCount(0)
+
+  const section = page.getByRole('region', { name: 'Questões' })
+  await expect(section.getByText('Nenhuma questão anotada')).toBeVisible()
+
+  // 1ª questão: tema Habeas corpus
+  await section.getByRole('button', { name: 'Adicionar questão' }).click()
+  await section.getByLabel('Tema da questão', { exact: true }).selectOption({ label: 'Habeas corpus' })
+  await expect(section.getByLabel('Subtema da questão')).toBeDisabled()
+  await section.getByRole('textbox', { name: 'Anotação da questão' }).click()
+  await page.keyboard.type('Marquei que HC cabe em punição militar. Errado: não cabe (art. 142, §2º).')
+
+  // 2ª questão: tema Mandado de segurança › subtema Coletivo
+  await section.getByRole('button', { name: 'Adicionar questão' }).click()
+  const second = section.getByRole('article').first()
+  await second.getByLabel('Tema da questão', { exact: true }).selectOption({ label: 'Mandado de segurança' })
+  await second.getByLabel('Subtema da questão').selectOption({ label: 'Coletivo' })
+  await second.getByRole('textbox', { name: 'Anotação da questão' }).click()
+  await page.keyboard.type('Sindicato precisa de 1 ano de funcionamento; associação também.')
+  await expect(section.getByText('Salvando…')).toHaveCount(0)
+  await shot(page, 'questoes')
+
+  // Persistência
+  await page.reload()
+  await expect(section.getByRole('article')).toHaveCount(2)
+  await expect(section.getByText('Mandado de segurança › Coletivo')).toBeVisible()
+
+  // Filtros por tema e subtema
+  const filter = section.getByLabel('Filtrar questões por tema e subtema')
+  await filter.selectOption({ label: 'Habeas corpus — todo o tema (1)' })
+  await expect(section.getByRole('article')).toHaveCount(1)
+  await expect(section.getByRole('article')).toContainText('HC cabe em punição militar')
+  await filter.selectOption({ label: '↳ Coletivo (1)' })
+  await expect(section.getByRole('article')).toContainText('Sindicato precisa de 1 ano')
+  await filter.selectOption({ label: 'Mandado de segurança — todo o tema (1)' })
+  await expect(section.getByRole('article')).toHaveCount(1)
+
+  // Nova questão com filtro ativo já vem marcada com o tema/subtema
+  await filter.selectOption({ label: '↳ Coletivo (1)' })
+  await section.getByRole('button', { name: 'Adicionar questão' }).click()
+  await expect(section.getByRole('article')).toHaveCount(2)
+  await expect(section.getByLabel('Subtema da questão').first()).toHaveValue('col')
 })

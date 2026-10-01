@@ -5,6 +5,7 @@ import type { Flashcard } from '@/domain/flashcards'
 import type { Quiz } from '@/domain/questions'
 import type { Theme } from '@/domain/themes'
 import type { Attachment } from '@/domain/attachments'
+import type { QuestionNote } from '@/domain/question-notes'
 import { toStatusMap } from '@/domain/progress'
 import type {
   Contest,
@@ -34,6 +35,7 @@ export const queryKeys = {
   quizzes: ['quizzes'] as const,
   themes: ['themes'] as const,
   attachments: ['attachments'] as const,
+  questionNotes: ['question-notes'] as const,
 }
 
 /* ------------------------------------------------------------------ Catálogo */
@@ -231,6 +233,36 @@ export function useDeleteTheme() {
       return { previous }
     },
     onError: (_e, _v, context) => qc.setQueryData(queryKeys.themes, context?.previous),
+  })
+}
+
+export const useQuestionNotes = () => useQuery({ queryKey: queryKeys.questionNotes, queryFn: () => dataSource.listQuestionNotes() })
+
+export function useSaveQuestionNote() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (note: QuestionNote) => dataSource.saveQuestionNote(note),
+    onMutate: async (note) => {
+      await qc.cancelQueries({ queryKey: queryKeys.questionNotes })
+      const previous = qc.getQueryData<QuestionNote[]>(queryKeys.questionNotes)
+      qc.setQueryData<QuestionNote[]>(queryKeys.questionNotes, (list = []) => [...list.filter((n) => n.id !== note.id), note])
+      return { previous }
+    },
+    onError: (_e, _v, context) => qc.setQueryData(queryKeys.questionNotes, context?.previous),
+  })
+}
+
+export function useDeleteQuestionNote() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ topicId, noteId }: { topicId: string; noteId: string }) => dataSource.deleteQuestionNote(topicId, noteId),
+    onMutate: async ({ noteId }) => {
+      await qc.cancelQueries({ queryKey: queryKeys.questionNotes })
+      const previous = qc.getQueryData<QuestionNote[]>(queryKeys.questionNotes)
+      qc.setQueryData<QuestionNote[]>(queryKeys.questionNotes, (list = []) => list.filter((n) => n.id !== noteId))
+      return { previous }
+    },
+    onError: (_e, _v, context) => qc.setQueryData(queryKeys.questionNotes, context?.previous),
   })
 }
 

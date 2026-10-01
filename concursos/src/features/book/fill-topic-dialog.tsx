@@ -26,6 +26,7 @@ export function FillTopicDialog({
   details,
   current,
   onFill,
+  asTheme = false,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -34,7 +35,10 @@ export function FillTopicDialog({
   positionName: string
   details: string[]
   current: SummaryContent
-  onFill: (content: SummaryContent) => void
+  /** Recebe o conteúdo gerado e o nome do livro */
+  onFill: (content: SummaryContent, bookName: string) => void
+  /** Cria um tema com o conteúdo, em vez de preencher os campos do resumo */
+  asTheme?: boolean
 }) {
   const book = useLoadedBook()
   const { sample, disable } = useClaudeSample()
@@ -76,8 +80,9 @@ export function FillTopicDialog({
         sample,
         signal: abortRef.current.signal,
       })
-      onFill(mergeSummary(current, content, hasContent ? merge : 'replace'))
-      toast.success('Campos preenchidos', { description: 'Revise o texto e clique em Salvar.' })
+      onFill(asTheme ? content : mergeSummary(current, content, hasContent ? merge : 'replace'), book.name)
+      if (asTheme) toast.success('Tema criado a partir do livro', { description: 'Abra o tema para revisar o texto.' })
+      else toast.success('Campos preenchidos', { description: 'Revise o texto e clique em Salvar.' })
       onOpenChange(false)
     } catch (e) {
       const code = (e as { code?: string })?.code
@@ -103,7 +108,8 @@ export function FillTopicDialog({
           <BookOpenText className="size-5 text-primary" /> Preencher com livro (PDF)
         </DialogTitle>
         <DialogDescription>
-          Envie um livro ou apostila. O app encontra as páginas sobre “{topicName}” e preenche Meu resumo, Pontos importantes e Observações.
+          Envie um livro ou apostila. O app encontra as páginas sobre “{topicName}” e{' '}
+          {asTheme ? 'cria um tema com o resumo e os pontos importantes.' : 'preenche Meu resumo, Pontos importantes e Observações.'}
         </DialogDescription>
 
         <div className="mt-5 space-y-5">
@@ -217,7 +223,7 @@ export function FillTopicDialog({
           )}
           <Button onClick={run} disabled={!book || !excerpt || busy}>
             {busy ? <Loader2 className="animate-spin" /> : effectiveMode === 'ai' ? <Sparkles /> : <BookOpenText />}
-            {busy ? (effectiveMode === 'ai' ? 'Claude escrevendo…' : 'Preenchendo…') : 'Preencher campos'}
+            {busy ? (effectiveMode === 'ai' ? 'Claude escrevendo…' : 'Preenchendo…') : asTheme ? 'Criar tema' : 'Preencher campos'}
           </Button>
         </div>
       </DialogContent>

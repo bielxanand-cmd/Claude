@@ -26,6 +26,7 @@ const freshUser = (): UserState => ({
   quizzes: {},
   themes: {},
   attachments: {},
+  questionNotes: {},
 })
 
 /**
@@ -333,6 +334,33 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
       else list.push(saved)
       save({ type: 'theme', topicId: theme.topicId, themeId: theme.id })
       return delay(saved, 0)
+    },
+
+    async listQuestionNotes() {
+      return delay(Object.values((await user()).questionNotes ?? {}).flat(), 0)
+    },
+
+    async saveQuestionNote(note) {
+      const u = await user()
+      u.questionNotes ??= {}
+      const list = (u.questionNotes[note.topicId] ??= [])
+      const saved = { ...note, updatedAt: new Date().toISOString() }
+      const i = list.findIndex((n) => n.id === note.id)
+      if (i >= 0) list[i] = saved
+      else list.push(saved)
+      save({ type: 'question-note', topicId: note.topicId, noteId: note.id })
+      return delay(saved, 0)
+    },
+
+    async deleteQuestionNote(topicId, noteId) {
+      const u = await user()
+      const list = u.questionNotes?.[topicId]
+      if (list) {
+        u.questionNotes[topicId] = list.filter((n) => n.id !== noteId)
+        if (u.questionNotes[topicId].length === 0) delete u.questionNotes[topicId]
+      }
+      save({ type: 'question-note', topicId, noteId })
+      return delay(undefined, 0)
     },
 
     async listAttachments() {

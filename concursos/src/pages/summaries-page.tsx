@@ -10,7 +10,10 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { useDeleteSummary, useStudy } from '@/data/queries'
+import { useDeleteSummary, useQuestionNotes, useStudy, useThemes } from '@/data/queries'
+import type { QuestionNote } from '@/domain/question-notes'
+import { rootThemes, type Theme } from '@/domain/themes'
+import type { Summary } from '@/domain/types'
 import { statusOf } from '@/domain/progress'
 import { htmlToText, normalize, pluralize } from '@/lib/text'
 import { formatRelative } from '@/lib/utils'
@@ -22,14 +25,38 @@ export function SummariesPage() {
   const [toDelete, setToDelete] = useState<string | null>(null)
   const remove = useDeleteSummary()
 
-  const items = useMemo(
-    () =>
-      summaries
-        .filter((s) => topicIndex.has(s.topicId))
-        .map((s) => ({ summary: s, ref: topicIndex.get(s.topicId)! }))
-        .sort((a, b) => b.summary.updatedAt.localeCompare(a.summary.updatedAt)),
-    [summaries, topicIndex],
-  )
+  const themes = useThemes()
+  const notes = useQuestionNotes()
+
+  // Um item por assunto com resumo geral, temas ou questões anotadas
+  const items = useMemo(() => {
+    const byTopic = new Map<string, { topicId: string; summary?: Summary; themes: Theme[]; notes: QuestionNote[] }>()
+    const entry = (topicId: string) => {
+      if (!byTopic.has(topicId)) byTopic.set(topicId, { topicId, themes: [], notes: [] })
+      return byTopic.get(topicId)!
+    }
+    for (const s of summaries) if (htmlToText(Object.values(s.content).join(' '))) entry(s.topicId).summary = s
+    for (const t of themes.data ?? []) entry(t.topicId).themes.push(t)
+    for (const n of notes.data ?? []) entry(n.topicId).notes.push(n)
+    return [...byTopic.values()]
+      .filter((i) => topicIndex.has(i.topicId))
+      .map((i) => {
+        const roots = rootThemes(i.themes)
+        const updatedAt = [i.summary?.updatedAt, ...i.themes.map((t) => t.updatedAt), ...i.notes.map((n) => n.updatedAt)].filter(Boolean).sort().at(-1) ?? ''
+        const text = [
+          i.summary?.plainText ?? '',
+          ...i.themes.map((t) => `${t.title} ${htmlToText(t.summary)} ${htmlToText(t.keyPoints)}`),
+          ...i.notes.map((n) => htmlToText(n.html)),
+        ].join(' ')
+        const preview =
+          (i.summary && htmlToText(i.summary.content.summary)) ||
+          (roots.length ? `Temas: ${roots.map((t) => t.title).join(' · ')}` : '') ||
+          i.summary?.plainText ||
+          (i.notes[0] ? htmlToText(i.notes[0].html) : '')
+        return { ...i, ref: topicIndex.get(i.topicId)!, roots, updatedAt, text, preview }
+      })
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  }, [summaries, themes.data, notes.data, topicIndex])
 
   if (error) return <ErrorState error={error} onRetry={refetch} />
   if (isLoading || !plan) return <PageSkeleton />
@@ -37,9 +64,9 @@ export function SummariesPage() {
   const subjectsWithSummaries = plan.subjects.filter((s) => items.some((i) => i.ref.subject.subject.id === s.subject.id))
   const q = normalize(query)
   const filtered = items.filter(
-    ({ summary, ref }) =>
+    ({ text, ref }) =>
       (subjectFilter === 'all' || ref.subject.subject.id === subjectFilter) &&
-      (!q || normalize(`${ref.planTopic.topic.name} ${ref.subject.subject.name} ${summary.plainText}`).includes(q)),
+      (!q || normalize(`${ref.planTopic.topic.name} ${ref.subject.subject.name} ${text}`).includes(q)),
   )
 
   return (
@@ -50,7 +77,7 @@ export function SummariesPage() {
         <EmptyState
           icon={NotebookPen}
           title="Você ainda não criou resumos"
-          description="Abra um assunto, escreva seu resumo, pontos importantes e observações — tudo fica salvo aqui."
+          description="Abra um assunto, crie temas e subtemas e anote as questões que errou — tudo aparece aqui."
           action={
             <Button asChild>
               <Link to="/disciplinas">
@@ -85,31 +112,38 @@ export function SummariesPage() {
             <EmptyState icon={Search} title="Nenhum resumo encontrado" description="Tente outro termo ou disciplina." />
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
-              {filtered.map(({ summary, ref }) => {
-                const preview = htmlToText(summary.content.summary) || summary.plainText
+              {filtered.map(({ topicId, summary, roots, notes: topicNotes, ref, preview, updatedAt }) => {
                 return (
-                  <Card key={summary.topicId} interactive className="group relative flex flex-col p-5">
+                  <Card key={topicId} interactive className="group relative flex flex-col p-5">
                     <div className="flex items-start gap-3">
                       <IconTile icon={ref.subject.subject.icon} size="sm" />
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-semibold text-muted">{ref.subject.subject.name}</p>
-                        <Link to={`/assunto/${summary.topicId}`} className="font-bold leading-snug after:absolute after:inset-0 after:rounded-2xl">
+                        <Link to={`/assunto/${topicId}`} className="font-bold leading-snug after:absolute after:inset-0 after:rounded-2xl">
                           {ref.planTopic.topic.name}
                         </Link>
                       </div>
+                      {summary && (
                       <button
                         type="button"
-                        onClick={() => setToDelete(summary.topicId)}
+                        onClick={() => setToDelete(topicId)}
                         className="relative z-10 grid size-8 place-items-center rounded-lg text-subtle opacity-100 transition hover:bg-danger-tint hover:text-danger sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
                         aria-label={`Excluir resumo de ${ref.planTopic.topic.name}`}
                       >
                         <Trash2 className="size-4" />
                       </button>
+                      )}
                     </div>
-                    <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-muted">{preview || 'Resumo sem texto.'}</p>
+                    <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-muted">{preview || 'Sem texto ainda.'}</p>
+                    {(roots.length > 0 || topicNotes.length > 0) && (
+                      <p className="mt-3 flex flex-wrap gap-1.5 text-xs font-semibold">
+                        {roots.length > 0 && <span className="rounded-full bg-primary-tint px-2 py-0.5 text-primary dark:text-primary-soft">{pluralize(roots.length, 'tema', 'temas')}</span>}
+                        {topicNotes.length > 0 && <span className="rounded-full bg-danger-tint px-2 py-0.5 text-danger">{pluralize(topicNotes.length, 'questão anotada', 'questões anotadas')}</span>}
+                      </p>
+                    )}
                     <div className="mt-4 flex items-center justify-between gap-2">
-                      <StatusBadge status={statusOf(statuses, summary.topicId)} />
-                      <span className="text-xs text-subtle">Editado {formatRelative(summary.updatedAt)}</span>
+                      <StatusBadge status={statusOf(statuses, topicId)} />
+                      <span className="text-xs text-subtle">Editado {formatRelative(updatedAt)}</span>
                     </div>
                   </Card>
                 )
