@@ -60,9 +60,13 @@ function fakeRuntime(uid: string | null = 'viewer-1', shared?: Map<string, Recor
   })
   const collRef = (path: string) => ({
     doc: (id: string) => docRef(`${path}/${id}`),
-    limit: () => ({
-      get: async () => ({ docs: [...docs.keys()].filter((k) => k.startsWith(`${path}/`) && k.split('/').length === path.split('/').length + 1).map(snap) }),
-    }),
+    limit: (n: number) => {
+      // Como no claude.ai: no máximo 1000 documentos por consulta
+      if (n < 1 || n > 1000) throw { code: 'invalid_argument', message: 'limit must be 1-1000' }
+      return {
+        get: async () => ({ docs: [...docs.keys()].filter((k) => k.startsWith(`${path}/`) && k.split('/').length === path.split('/').length + 1).map(snap) }),
+      }
+    },
   })
   const runtime = {
     use: async (name: string) => (name === 'db' ? { doc: docRef } : name === 'user' ? { id: async () => uid } : null),
@@ -152,6 +156,53 @@ describe('dados salvos na conta (página publicada)', () => {
     await flush()
     expect(fake.docs.get('data/users/viewer-1/state')).toMatchObject({ selection: { positionId: 'analista-ti' } })
     expect(fake.docs.get('data/users/viewer-1/progress')).toMatchObject({ topics: { 'lingua-portuguesa__crase': { status: 'in_progress' } } })
+  })
+
+  it('conta que não carregou: o que ficou só no navegador é juntado à conta na volta (e a exclusão de edital vale)', { timeout: 20_000 }, async () => {
+    // 1. Dados antigos na conta
+    const before = createLocalDataSource(createCloudPersistence)
+    await before.setSelection({ positionId: 'analista-ti', sphere: 'federal', state: null })
+    await before.updateUserTopic('lingua-portuguesa__crase', { status: 'completed', completedAt: '2026-09-30T10:00:00Z' })
+    await flush()
+
+    // 2. A conta falha ao carregar: o app segue no navegador
+    const realRuntime = (globalThis as Record<string, unknown>).claude
+    ;(globalThis as Record<string, unknown>).claude = {
+      use: async (name: string) => (name === 'db' ? { doc: () => ({ get: async () => { throw { code: 'unavailable', message: 'x' } }, collection: () => ({}) }) } : name === 'user' ? { id: async () => 'viewer-1' } : null),
+    }
+    const offline = createLocalDataSource(createCloudPersistence)
+    const position = await offline.createPosition({ careerId: 'policial', name: 'Agente de polícia', spheres: ['federal'] })
+    const notice = (short: string) => ({
+      positionId: position.id,
+      contest: { name: short, organization: short, organizationShort: short, sphere: 'federal' as const, state: null, city: null, year: 2021, examBoard: null, noticeUrl: null, noticeDate: null, origin: 'pdf' as const },
+      subjects: parseNoticeSyllabus(`NOÇÕES ${short}: 1 Assunto de ${short}.`),
+    })
+    await offline.importNotice(notice('PRF'))
+    const abin = await offline.importNotice(notice('ABIN'))
+    await offline.setSelection({ positionId: position.id, sphere: 'federal', state: null })
+    await offline.saveTheme({ id: 't1', topicId: 'lingua-portuguesa__crase', title: 'Crase', summary: '<p>a + a</p>', keyPoints: '', order: 0, createdAt: '2026-10-01T10:00:00Z', updatedAt: '2026-10-01T10:00:00Z' })
+    await offline.deleteContest(abin.id)
+
+    // A exclusão fica salva no navegador
+    const sameBrowser = createLocalDataSource(createCloudPersistence)
+    const snap = await sameBrowser.getCatalogSnapshot(position.id)
+    expect(snap?.contests.map((c) => c.organizationShort)).toEqual(['PRF'])
+
+    // 3. A conta volta: junta tudo e grava lá; o navegador é limpo
+    ;(globalThis as Record<string, unknown>).claude = realRuntime
+    const online = createLocalDataSource(createCloudPersistence)
+    expect(await online.getSelection()).toMatchObject({ positionId: position.id })
+    expect((await online.listUserTopics()).find((t) => t.topicId === 'lingua-portuguesa__crase')?.status).toBe('completed')
+    expect((await online.listThemes()).map((t) => t.title)).toEqual(['Crase'])
+    await flush()
+    expect(localStorage.getItem('concursos.user.v1')).toBeNull()
+
+    // 4. Outro aparelho: tudo vem da conta, sem o edital excluído
+    ;(globalThis as Record<string, unknown>).localStorage = fakeLocalStorage()
+    const phone = createLocalDataSource(createCloudPersistence)
+    expect(await phone.getSelection()).toMatchObject({ positionId: position.id })
+    expect((await phone.getCatalogSnapshot(position.id))?.contests.map((c) => c.organizationShort)).toEqual(['PRF'])
+    expect((await phone.listThemes()).map((t) => t.title)).toEqual(['Crase'])
   })
 
   it('agrupa gravações em sequência no mesmo documento', { timeout: 15_000 }, async () => {

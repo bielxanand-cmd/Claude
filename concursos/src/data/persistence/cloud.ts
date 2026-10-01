@@ -54,9 +54,38 @@ interface DocRef {
   onSnapshot?(next: (snap: DocSnap) => void, error?: (e: DbError) => void): () => void
   collection(path: string): CollRef
 }
-interface CollRef {
+interface Query {
+  limit(n: number): Query
+  orderBy?(field: string, dir?: 'asc' | 'desc'): Query
+  where?(field: string, op: string, value: unknown): Query
+  get(): Promise<{ docs: DocSnap[] }>
+}
+interface CollRef extends Query {
   doc(id: string): DocRef
-  limit(n: number): { get(): Promise<{ docs: DocSnap[] }> }
+}
+
+/** O banco do claude.ai devolve no máximo 1000 documentos por consulta. */
+const PAGE = 1000
+
+/**
+ * Lê todos os documentos de uma coleção. Até 1000, uma consulta simples;
+ * acima disso, pagina ordenando pelo campo indicado.
+ */
+async function readAll(coll: CollRef, field: string): Promise<{ docs: DocSnap[] }> {
+  const first = (await coll.limit(PAGE).get()).docs
+  if (first.length < PAGE || !coll.orderBy) return { docs: first }
+  const out: DocSnap[] = []
+  let last: unknown = null
+  for (let page = 0; page < 100; page++) {
+    let q: Query = coll.orderBy(field)
+    if (last !== null) q = q.where!(field, '>', last)
+    const docs = (await q.limit(PAGE).get()).docs
+    out.push(...docs)
+    if (docs.length < PAGE) break
+    last = (docs.at(-1)!.data() as Record<string, unknown> | undefined)?.[field] ?? null
+    if (last === null) break
+  }
+  return { docs: out }
 }
 interface Db {
   doc(path: string): DocRef
@@ -259,14 +288,14 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
       const [state, progress, catalog] = await Promise.all([stateDoc.get(), progressDoc.get(), catalogDoc.get()])
       if (!state.exists && !progress.exists && !catalog.exists) return null
       const [summaryDocs, importDocs, flashcardDocs, quizDocs, themeDocs, attachmentDocs, noteDocs, manualDocs] = await Promise.all([
-        summaries.limit(1000).get(),
-        imports.limit(500).get(),
-        flashcards.limit(1000).get(),
-        quizzes.limit(1000).get(),
-        themes.limit(5000).get(),
-        attachments.limit(5000).get(),
-        questionNotes.limit(5000).get(),
-        manualTopics.limit(5000).get(),
+        readAll(summaries, 'topicId'),
+        imports.limit(PAGE).get(),
+        readAll(flashcards, 'topicId'),
+        readAll(quizzes, 'topicId'),
+        readAll(themes, 'id'),
+        readAll(attachments, 'id'),
+        readAll(questionNotes, 'id'),
+        readAll(manualTopics, 'id'),
       ])
 
       const manualById: UserState['manualTopics'] = {}
@@ -447,14 +476,14 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
       pending.clear()
       saveJournal()
       const [summaryDocs, importDocs, flashcardDocs, quizDocs, themeDocs, attachmentDocs, noteDocs, manualDocs] = await Promise.all([
-        summaries.limit(1000).get(),
-        imports.limit(500).get(),
-        flashcards.limit(1000).get(),
-        quizzes.limit(1000).get(),
-        themes.limit(5000).get(),
-        attachments.limit(5000).get(),
-        questionNotes.limit(5000).get(),
-        manualTopics.limit(5000).get(),
+        readAll(summaries, 'topicId'),
+        imports.limit(PAGE).get(),
+        readAll(flashcards, 'topicId'),
+        readAll(quizzes, 'topicId'),
+        readAll(themes, 'id'),
+        readAll(attachments, 'id'),
+        readAll(questionNotes, 'id'),
+        readAll(manualTopics, 'id'),
       ])
       await Promise.all([
         ...manualDocs.docs.map((d) => manualTopics.doc(d.id).delete()),

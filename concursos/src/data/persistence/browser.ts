@@ -22,7 +22,7 @@ export function createBrowserPersistence(): Persistence {
       }
     },
     save(change, snapshot) {
-      if (change.type === 'catalog-meta' || change.type === 'import') writeJSON(CATALOG_KEY, snapshot.catalog)
+      if (change.type === 'catalog-meta' || change.type === 'import' || change.type === 'import-delete') writeJSON(CATALOG_KEY, snapshot.catalog)
       else writeJSON(USER_KEY, snapshot.user)
     },
     async saveAll(snapshot) {

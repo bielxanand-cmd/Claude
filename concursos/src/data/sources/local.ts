@@ -1,10 +1,11 @@
 import type { ManualTopic } from '@/domain/manual-topics'
 import { planNoticeImport } from '@/domain/import-notice'
 import type { Career, CatalogSnapshot, Position, Summary, UserSelection, UserTopic } from '@/domain/types'
-import { uuid } from '@/lib/storage'
+import { readJSON, removeKey, uuid, writeJSON } from '@/lib/storage'
 import { htmlToText, slugify } from '@/lib/text'
 import { createBrowserPersistence } from '../persistence/browser'
 import { newerTopic } from '../persistence/cloud'
+import { latestChange, mergeCatalog, mergeSnapshots } from '../persistence/merge'
 import { setSyncStatus } from '../persistence/status'
 import { emptyCatalog, type Change, type Persistence, type Snapshot, type UserState } from '../persistence/types'
 import { buildSeedRows, type CatalogRows } from '../seed'
@@ -13,6 +14,9 @@ import type { DataSource } from './types'
 /** Latência artificial pequena para que estados de carregamento sejam perceptíveis e realistas. */
 const LATENCY = 120
 const delay = <T>(value: T, ms = LATENCY) => new Promise<T>((resolve) => setTimeout(() => resolve(value), ms))
+
+/** Marca: a conta falhou e as alterações ficaram só neste navegador. */
+const FALLBACK_KEY = 'concursos.cloud-fallback'
 
 /** Quantos concursos o histórico guarda. */
 const HISTORY_LIMIT = 20
@@ -66,6 +70,20 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
             loaded = local
             await cloudPersistence.saveAll({ user: local.user, catalog: local.catalog })
           }
+        } else {
+          // Alterações feitas só neste navegador quando a conta não pôde ser carregada:
+          // junta com a conta (vence o mais recente) e grava tudo lá
+          const local = await browser.load()
+          const fellBack = readJSON<string | null>(FALLBACK_KEY, null)
+          if (local?.user && (fellBack || !loaded.user || latestChange(local.user) > latestChange(loaded.user))) {
+            const merged = loaded.user
+              ? mergeSnapshots({ user: loaded.user, catalog: loaded.catalog }, { user: local.user, catalog: local.catalog })
+              : { user: local.user, catalog: mergeCatalog(loaded.catalog, local.catalog) }
+            loaded = merged
+            await cloudPersistence.saveAll(merged)
+            await browser.clear()
+          }
+          removeKey(FALLBACK_KEY)
         }
         persistence = cloudPersistence
         snapshot = { user: loaded?.user ?? freshUser(), catalog: loaded?.catalog ?? emptyCatalog() }
@@ -88,6 +106,8 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
       } catch (err) {
         // Não sobrescreve a nuvem com um estado vazio: segue só neste navegador
         console.error('[dados] falha ao carregar da nuvem', err)
+        // Marca que houve alterações só no navegador, para juntar com a conta na próxima vez
+        writeJSON(FALLBACK_KEY, new Date().toISOString())
         setSyncStatus({
           where: 'browser',
           state: 'error',
