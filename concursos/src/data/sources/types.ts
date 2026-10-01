@@ -46,6 +46,8 @@ export interface DataSource {
   createCareer(input: { name: string; description?: string }): Promise<Career>
   createPosition(input: { careerId: string; name: string; description?: string; spheres: Sphere[] }): Promise<Position>
   importNotice(input: NoticeImport): Promise<Contest>
+  /** Exclui um edital importado pelo usuário */
+  deleteContest(contestId: string): Promise<void>
 
   // Usuário
   getProfile(): Promise<UserProfile>

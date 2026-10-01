@@ -60,6 +60,7 @@ export type Change =
   | { type: 'question-note'; topicId: string; noteId: string }
   | { type: 'catalog-meta' } // carreiras e cargos manuais
   | { type: 'import'; rows: ImportRows }
+  | { type: 'import-delete'; contestId: string }
 
 /** Alteração vinda de outra aba/aparelho. */
 export type RemoteChange = { type: 'topics'; topics: UserState['topics'] }

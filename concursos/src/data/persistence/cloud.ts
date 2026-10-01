@@ -1,7 +1,7 @@
 import type { Attachment } from '@/domain/attachments'
 import type { QuestionNote } from '@/domain/question-notes'
 import type { Theme } from '@/domain/themes'
-import type { UserTopic } from '@/domain/types'
+import type { Subject, Topic, UserTopic } from '@/domain/types'
 import { readJSON, removeKey, writeJSON } from '@/lib/storage'
 import { setSyncStatus } from './status'
 import { emptyCatalog, groupImports, type Change, type ImportRows, type Persistence, type RemoteChange, type Snapshot, type UserState } from './types'
@@ -232,6 +232,20 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
   })
 
   const stateBody = (u: UserState) => ({ profile: u.profile, selection: u.selection, history: u.history, v: 1 })
+  /** Carreiras/cargos manuais e disciplinas/assuntos que nenhum edital importado cita mais */
+  const catalogBody = (snap: Snapshot): Body => {
+    const groups = groupImports(snap.catalog)
+    const ownedTopics = new Set(groups.flatMap((g) => g.topics.map((t) => t.id)))
+    const ownedSubjects = new Set(groups.flatMap((g) => g.subjects.map((x) => x.id)))
+    return {
+      careers: snap.catalog.careers,
+      positions: snap.catalog.positions,
+      orphanSubjects: snap.catalog.subjects.filter((x) => !ownedSubjects.has(x.id)),
+      orphanTopics: snap.catalog.topics.filter((t) => !ownedTopics.has(t.id)),
+      v: 1,
+    } as unknown as Body
+  }
+
   const saveImport = (rows: ImportRows) => enqueue(imports.doc(safeId(rows.contest.id)), { kind: 'set', body: { ...rows, v: 1 } as unknown as Body })
 
   const persistence: Persistence = {
@@ -303,8 +317,15 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
           }
         : null
 
-      const c = (catalog.data() ?? {}) as Partial<Snapshot['catalog']>
-      const merged = { ...emptyCatalog(), careers: [...(c.careers ?? [])], positions: [...(c.positions ?? [])] }
+      const c = (catalog.data() ?? {}) as Partial<Snapshot['catalog']> & { orphanSubjects?: Subject[]; orphanTopics?: Topic[] }
+      const merged = {
+        ...emptyCatalog(),
+        careers: [...(c.careers ?? [])],
+        positions: [...(c.positions ?? [])],
+        // Disciplinas/assuntos de editais excluídos (voltam a ser usados se o edital for reimportado)
+        subjects: structuredClone(c.orphanSubjects ?? []),
+        topics: structuredClone(c.orphanTopics ?? []),
+      }
       for (const d of importDocs.docs) {
         const rows = d.data() as unknown as ImportRows | undefined
         if (!rows?.contest) continue
@@ -314,6 +335,10 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
         merged.contestSubjects.push(...structuredClone(rows.contestSubjects))
         merged.contestTopics.push(...structuredClone(rows.contestTopics))
       }
+      // Um assunto guardado de edital excluído pode ter voltado com uma reimportação
+      const byId = <T extends { id: string }>(rows: T[]) => [...new Map(rows.map((r) => [r.id, r])).values()]
+      merged.subjects = byId(merged.subjects)
+      merged.topics = byId(merged.topics)
       return { user: userState, catalog: merged }
     },
 
@@ -357,10 +382,16 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
           break
         }
         case 'catalog-meta':
-          enqueue(catalogDoc, { kind: 'set', body: { careers: snap.catalog.careers, positions: snap.catalog.positions, v: 1 } })
+          enqueue(catalogDoc, { kind: 'set', body: catalogBody(snap) })
           break
         case 'import':
           saveImport(change.rows)
+          break
+        case 'import-delete':
+          enqueue(imports.doc(safeId(change.contestId)), { kind: 'delete' })
+          // Disciplinas/assuntos criados por este edital e usados por outros mudam de "dono": regrava os demais
+          for (const rows of groupImports(snap.catalog)) saveImport(rows)
+          enqueue(catalogDoc, { kind: 'set', body: catalogBody(snap) })
           break
       }
     },
@@ -368,7 +399,7 @@ export async function createCloudPersistence(): Promise<Persistence | null> {
     async saveAll(snap) {
       enqueue(stateDoc, { kind: 'set', body: stateBody(snap.user) })
       enqueue(progressDoc, { kind: 'merge', body: { topics: snap.user.topics, v: 1 } })
-      enqueue(catalogDoc, { kind: 'set', body: { careers: snap.catalog.careers, positions: snap.catalog.positions, v: 1 } })
+      enqueue(catalogDoc, { kind: 'set', body: catalogBody(snap) })
       for (const topicId of Object.keys(snap.user.summaries)) persistence.save({ type: 'summary', topicId }, snap)
       for (const topicId of Object.keys(snap.user.flashcards)) persistence.save({ type: 'flashcards', topicId }, snap)
       for (const topicId of Object.keys(snap.user.quizzes ?? {})) persistence.save({ type: 'quiz', topicId }, snap)

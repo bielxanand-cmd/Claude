@@ -29,6 +29,9 @@ export type NoticeOrigin =
   | 'api' // integração com fonte externa (futuro)
   | 'manual' // cadastro manual pelo usuário
 
+/** Editais que o próprio usuário trouxe (e pode excluir) */
+export const isUserContest = (origin: NoticeOrigin) => origin !== 'demo' && origin !== 'curated'
+
 export interface Career {
   id: string
   slug: string

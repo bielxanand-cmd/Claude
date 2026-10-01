@@ -1,4 +1,4 @@
-import { FileSearch, FileUp, GitMerge, Plus, Upload } from 'lucide-react'
+import { FileSearch, FileUp, GitMerge, Plus, Trash2, Upload } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { DemoNotice, ErrorState, PageSkeleton } from '@/components/study/feedback'
@@ -8,7 +8,10 @@ import { PageHeader, SectionTitle } from '@/components/study/page-header'
 import { ContestRow } from '@/components/study/sources'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { useStudy } from '@/data/queries'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import { useDeleteContest, useStudy } from '@/data/queries'
+import { isUserContest, type Contest } from '@/domain/types'
+import { toast } from 'sonner'
 import { dataSource } from '@/data/sources'
 import { referenceOrganization } from '@/domain/labels'
 import { planProgress } from '@/domain/progress'
@@ -26,6 +29,8 @@ export function ContestsPage() {
   const { plan, selection, statuses, isLoading, error, refetch } = useStudy()
   const [params, setParams] = useSearchParams()
   const [importOpen, setImportOpen] = useState(params.get('importar') === '1')
+  const [toDelete, setToDelete] = useState<Contest | null>(null)
+  const deleteContest = useDeleteContest()
 
   if (error) return <ErrorState error={error} onRetry={refetch} />
   if (isLoading || !plan || !selection) return <PageSkeleton />
@@ -100,7 +105,12 @@ export function ContestsPage() {
               <Card className="p-2">
                 <ul>
                   {plan.contests.map((c) => (
-                    <ContestRow key={c.id} contest={c} highlight={!!selection.state && c.state === selection.state} />
+                    <ContestRow
+                      key={c.id}
+                      contest={c}
+                      highlight={!!selection.state && c.state === selection.state}
+                      onDelete={isUserContest(c.origin) ? () => setToDelete(c) : undefined}
+                    />
                   ))}
                 </ul>
               </Card>
@@ -133,6 +143,41 @@ export function ContestsPage() {
           </Card>
         </aside>
       </div>
+
+      <Dialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
+        <DialogContent className="max-w-md">
+          <DialogTitle>Excluir edital?</DialogTitle>
+          <DialogDescription>
+            O edital {toDelete?.organizationShort}
+            {toDelete?.year ? ` ${toDelete.year}` : ''} sai do plano de {plan.position.name}. Disciplinas e assuntos que só ele cobrava deixam de aparecer; seus
+            temas, questões e anexos desses assuntos ficam guardados e voltam se você importar o edital de novo.
+          </DialogDescription>
+          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="ghost" onClick={() => setToDelete(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              loading={deleteContest.isPending}
+              onClick={() =>
+                toDelete &&
+                deleteContest.mutate(
+                  { contestId: toDelete.id, positionId: plan.position.id },
+                  {
+                    onSuccess: () => {
+                      toast('Edital excluído', { description: `${toDelete.organizationShort}${toDelete.year ? ` · ${toDelete.year}` : ''}` })
+                      setToDelete(null)
+                    },
+                    onError: (e) => toast.error(e instanceof Error ? e.message : 'Não foi possível excluir o edital.'),
+                  },
+                )
+              }
+            >
+              <Trash2 /> Excluir edital
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ImportNoticeDialog open={importOpen} onOpenChange={setImport} positionId={plan.position.id} defaultSphere={selection.sphere} defaultState={selection.state} />
     </div>

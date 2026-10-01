@@ -243,6 +243,34 @@ test('importar edital colando o texto', async ({ page }) => {
   await expect(page.getByText('Mínimos quadrados')).toBeVisible()
 })
 
+test('excluir um edital importado (os demonstrativos não podem ser excluídos)', async ({ page }) => {
+  await page.goto('/')
+  await seedUser(page)
+  await page.goto('/concursos?importar=1')
+  await page.getByRole('tab', { name: /Colar texto/ }).click()
+  await page.getByLabel('Texto do edital ou do conteúdo programático').fill('CIÊNCIA DE DADOS (peso 2): 1 Estatística descritiva. 2 Regressão linear.')
+  await page.getByRole('button', { name: /Identificar disciplinas/ }).click()
+  await page.locator('#org-short').fill('TCU')
+  await page.getByRole('button', { name: 'Importar para meu plano' }).click()
+  await expect(page.getByText('Edital importado!')).toBeVisible()
+
+  // Só o edital importado tem o botão de excluir (os demonstrativos, não)
+  await expect(page.getByText(/^TCU · \d{4}$/)).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Excluir edital/ })).toHaveCount(1)
+  await page.getByRole('button', { name: /^Excluir edital TCU/ }).click()
+  const confirm = page.getByRole('dialog', { name: 'Excluir edital?' })
+  await expect(confirm).toContainText('ficam guardados')
+  await confirm.getByRole('button', { name: 'Excluir edital' }).click()
+  await expect(page.getByText('Edital excluído')).toBeVisible()
+  await expect(page.getByText(/^TCU · \d{4}$/)).toHaveCount(0)
+
+  // A disciplina que só ele cobrava sai do plano, também depois de recarregar
+  await page.reload()
+  await expect(page.getByText(/^TCU · \d{4}$/)).toHaveCount(0)
+  await page.goto('/disciplinas')
+  await expect(page.getByRole('link', { name: /Ciência de Dados/ })).toHaveCount(0)
+})
+
 test('cria mapa mental a partir do resumo do assunto', async ({ page, isMobile }) => {
   await page.goto('/')
   await page.evaluate(() => {

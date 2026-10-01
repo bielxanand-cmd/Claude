@@ -218,6 +218,19 @@ export function createLocalDataSource(cloud?: () => Promise<Persistence | null>)
       return delay(result.contest)
     },
 
+    async deleteContest(contestId) {
+      await ready
+      const c = snapshot.catalog
+      if (!c.contests.some((x) => x.id === contestId)) throw new Error('Só é possível excluir editais importados por você.')
+      c.contests = c.contests.filter((x) => x.id !== contestId)
+      c.contestSubjects = c.contestSubjects.filter((x) => x.contestId !== contestId)
+      c.contestTopics = c.contestTopics.filter((x) => x.contestId !== contestId)
+      // Disciplinas e assuntos continuam no catálogo (sem aparecer no plano): se o edital
+      // for reimportado, os mesmos ids são reaproveitados e temas/questões do usuário voltam
+      save({ type: 'import-delete', contestId })
+      return delay(undefined, 0)
+    },
+
     async getProfile() {
       return delay((await user()).profile, 0)
     },

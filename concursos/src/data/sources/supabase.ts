@@ -177,6 +177,11 @@ export function createSupabaseDataSource(url: string, anonKey: string): DataSour
       return toPosition(row)
     },
 
+    async deleteContest(contestId) {
+      // contest_subjects/contest_topics saem em cascata; disciplinas e assuntos ficam (podem ser de outros editais)
+      must(await client.from('contests').delete().eq('id', contestId).eq('created_by', await userId()))
+    },
+
     async importNotice(input) {
       const [subjects, topics] = await Promise.all([
         selectAll(client, 'subjects').then((rows) => rows.map(toSubject)),

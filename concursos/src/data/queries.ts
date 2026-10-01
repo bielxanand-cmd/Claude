@@ -66,6 +66,17 @@ export function useImportNotice() {
   })
 }
 
+export function useDeleteContest() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ contestId }: { contestId: string; positionId: string }) => dataSource.deleteContest(contestId),
+    onSuccess: (_r, { positionId }) => {
+      qc.invalidateQueries({ queryKey: queryKeys.plan(positionId) })
+      qc.invalidateQueries({ queryKey: ['positions'] })
+    },
+  })
+}
+
 export function useCreateCustomPosition() {
   const qc = useQueryClient()
   return useMutation({

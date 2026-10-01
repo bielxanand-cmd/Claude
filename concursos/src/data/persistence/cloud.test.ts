@@ -202,6 +202,55 @@ describe('dados salvos na conta (página publicada)', () => {
     expect((fake.docs.get('data/users/viewer-1/progress') as { topics: Record<string, { status: string }> }).topics['auditoria__controle-interno'].status).toBe('completed')
   })
 
+  it('excluir um edital importado: o outro mantém os assuntos em comum e a reimportação reaproveita os ids', { timeout: 15_000 }, async () => {
+    const first = createLocalDataSource(createCloudPersistence)
+    const position = await first.createPosition({ careerId: 'policial', name: 'Policial Rodoviário Federal', spheres: ['federal'] })
+    const notice = (short: string, year: number, text: string) => ({
+      positionId: position.id,
+      contest: {
+        name: `Concurso ${short} ${year}`,
+        organization: short,
+        organizationShort: short,
+        sphere: 'federal' as const,
+        state: null,
+        city: null,
+        year,
+        examBoard: 'Cebraspe',
+        noticeUrl: null,
+        noticeDate: null,
+        origin: 'pdf' as const,
+      },
+      subjects: parseNoticeSyllabus(text),
+    })
+    await first.setSelection({ positionId: position.id, sphere: 'federal', state: null })
+    const prf = await first.importNotice(notice('PRF', 2021, 'NOÇÕES DE ESTUDO: 1 Assunto compartilhado. 2 Assunto só do PRF.'))
+    await first.importNotice(notice('ABIN', 2018, 'NOÇÕES DE ESTUDO: 1 Assunto compartilhado. 2 Assunto só da ABIN.'))
+    const before = await first.getCatalogSnapshot(position.id)
+    const remedios = before!.topics.find((t) => t.name === 'Assunto só do PRF')!
+    await first.saveTheme({ id: 't1', topicId: remedios.id, title: 'HC', summary: '<p>x</p>', keyPoints: '', order: 0, createdAt: 'a', updatedAt: 'a' })
+
+    // PRF foi o primeiro a citar o assunto compartilhado; ao excluí-lo, ABIN continua com ele
+    await first.deleteContest(prf.id)
+    await flush()
+    ;(globalThis as Record<string, unknown>).localStorage = fakeLocalStorage()
+    const second = createLocalDataSource(createCloudPersistence)
+    const after = await second.getCatalogSnapshot(position.id)
+    expect(after?.contests.map((c) => c.organizationShort)).toEqual(['ABIN'])
+    const names = after!.contestTopics.map((ct) => after!.topics.find((t) => t.id === ct.topicId)?.name)
+    expect(names.sort()).toEqual(['Assunto compartilhado', 'Assunto só da ABIN'])
+
+    // Reimportar o PRF reaproveita o assunto (e o tema do usuário volta a aparecer)
+    await second.importNotice(notice('PRF', 2021, 'NOÇÕES DE ESTUDO: 1 Assunto compartilhado. 2 Assunto só do PRF.'))
+    const again = await second.getCatalogSnapshot(position.id)
+    expect(again!.contestTopics.some((ct) => ct.topicId === remedios.id)).toBe(true)
+    expect((await second.listThemes()).map((t) => t.topicId)).toEqual([remedios.id])
+    await flush()
+    ;(globalThis as Record<string, unknown>).localStorage = fakeLocalStorage()
+    const third = createLocalDataSource(createCloudPersistence)
+    const reloaded = await third.getCatalogSnapshot(position.id)
+    expect(reloaded!.topics.filter((t) => t.id === remedios.id)).toHaveLength(1)
+  })
+
   it('sem identidade do usuário, usa o navegador', async () => {
     ;(globalThis as Record<string, unknown>).claude = fakeRuntime(null).runtime
     expect(await createCloudPersistence()).toBeNull()

@@ -1,4 +1,4 @@
-import { ExternalLink, FileText } from 'lucide-react'
+import { ExternalLink, FileText , Trash2 } from 'lucide-react'
 import { contestLabel, contestLocation } from '@/domain/labels'
 import type { Contest } from '@/domain/types'
 import { cn } from '@/lib/utils'
@@ -32,7 +32,7 @@ export function SourceChips({ contests, className, max = 4 }: { contests: Contes
   )
 }
 
-export function ContestRow({ contest, highlight }: { contest: Contest; highlight?: boolean }) {
+export function ContestRow({ contest, highlight, onDelete }: { contest: Contest; highlight?: boolean; onDelete?: () => void }) {
   return (
     <li className={cn('flex items-center gap-3 rounded-xl px-3 py-3', highlight && 'bg-primary-tint/60')}>
       <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-foreground/[0.05] text-muted">
@@ -59,6 +59,17 @@ export function ContestRow({ contest, highlight }: { contest: Contest; highlight
         <a href={contest.noticeUrl} target="_blank" rel="noreferrer" className="text-muted hover:text-primary" aria-label="Abrir edital">
           <ExternalLink className="size-4" />
         </a>
+      )}
+      {onDelete && (
+        <button
+          type="button"
+          onClick={onDelete}
+          className="grid size-8 shrink-0 place-items-center rounded-lg text-subtle transition hover:bg-danger-tint hover:text-danger"
+          aria-label={`Excluir edital ${contest.organizationShort}${contest.year ? ` ${contest.year}` : ''}`}
+          title="Excluir edital"
+        >
+          <Trash2 className="size-4" />
+        </button>
       )}
     </li>
   )
