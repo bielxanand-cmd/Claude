@@ -141,7 +141,7 @@ export function resumirMes(
     const agendamentos = agendamentosPorDia.get(dia) ?? 0;
     const atingida = temMeta && metaAtingida(meta, agendamentos);
     let situacao: SituacaoDia;
-    if (!temMeta || meta === 0) situacao = dia > hojeDia ? "futuro" : "sem-meta";
+    if (!temMeta || meta === 0) situacao = "sem-meta";
     else if (atingida) situacao = "atingida";
     else if (dia > hojeDia) situacao = "futuro";
     else if (dia === hojeDia) situacao = "em-andamento";
