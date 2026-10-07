@@ -18,6 +18,13 @@ export const rotuloStatusLead: Record<StatusLead, string> = {
   PERDIDO: "Perdido",
 };
 
+export const tomStatusLead: Record<StatusLead, "neutro" | "primario" | "ok" | "ruim"> = {
+  NOVO: "neutro",
+  EM_CONTATO: "primario",
+  AGENDADO: "ok",
+  PERDIDO: "ruim",
+};
+
 export const RESULTADOS = ["ATENDEU", "NAO_ATENDEU", "CAIXA_POSTAL", "RETORNAR"] as const;
 export type Resultado = (typeof RESULTADOS)[number];
 export const rotuloResultado: Record<Resultado, string> = {
