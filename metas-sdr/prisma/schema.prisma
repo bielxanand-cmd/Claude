@@ -1,0 +1,163 @@
+// Banco local em SQLite. Para migrar para Postgres, troque o provider para
+// "postgresql", ajuste DATABASE_URL no .env e gere novas migrations.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Uso individual por enquanto: existe um usuário padrão, mas todas as tabelas
+// já são ligadas a um usuário para facilitar a inclusão de login no futuro.
+model User {
+  id           String        @id @default(cuid())
+  nome         String
+  createdAt    DateTime      @default(now())
+  config       Config?
+  leads        Lead[]
+  ligacoes     Ligacao[]
+  agendamentos Agendamento[]
+  metas        Meta[]
+  diasSemMeta  DiaSemMeta[]
+  jornadas     JornadaDia[]
+}
+
+enum OrigemLead {
+  INBOUND
+  OUTBOUND
+  INDICACAO
+  OUTRO
+}
+
+enum StatusLead {
+  NOVO
+  EM_CONTATO
+  AGENDADO
+  PERDIDO
+}
+
+enum ResultadoLigacao {
+  ATENDEU
+  NAO_ATENDEU
+  CAIXA_POSTAL
+  RETORNAR
+}
+
+enum StatusAgendamento {
+  MARCADO
+  REALIZADO
+  NO_SHOW
+  CANCELADO
+}
+
+enum TipoMeta {
+  DIARIA
+  MENSAL
+}
+
+enum MotivoDiaSemMeta {
+  FERIADO
+  FOLGA
+  FERIAS
+  OUTRO
+}
+
+model Lead {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nome         String
+  empresa      String?
+  telefone     String?
+  email        String?
+  origem       OrigemLead    @default(OUTBOUND)
+  entradaEm    DateTime      @default(now())
+  status       StatusLead    @default(NOVO)
+  observacoes  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  ligacoes     Ligacao[]
+  agendamentos Agendamento[]
+
+  @@index([userId, entradaEm])
+}
+
+model Ligacao {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leadId      String?
+  lead        Lead?            @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  realizadaEm DateTime         @default(now())
+  resultado   ResultadoLigacao
+  duracaoSeg  Int?
+  observacao  String?
+  createdAt   DateTime         @default(now())
+
+  @@index([userId, realizadaEm])
+}
+
+model Agendamento {
+  id         String            @id @default(cuid())
+  userId     String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leadId     String
+  lead       Lead              @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  // Momento em que o agendamento foi feito: é o que conta para a meta.
+  feitoEm    DateTime          @default(now())
+  // Data/hora da reunião marcada com o lead.
+  reuniaoEm  DateTime
+  status     StatusAgendamento @default(MARCADO)
+  observacao String?
+  createdAt  DateTime          @default(now())
+
+  @@index([userId, feitoEm])
+}
+
+// Histórico de metas: a meta vigente numa data é a de maior vigenteDesde <= data.
+// Datas de calendário são guardadas como texto "aaaa-mm-dd" (fuso America/Sao_Paulo).
+model Meta {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tipo         TipoMeta
+  // Para MENSAL, null significa "calcular: meta diária x dias úteis do mês".
+  valor        Int?
+  vigenteDesde String
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, tipo, vigenteDesde])
+}
+
+model DiaSemMeta {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data      String
+  motivo    MotivoDiaSemMeta
+  descricao String?
+  createdAt DateTime         @default(now())
+
+  @@unique([userId, data])
+}
+
+// Jornada específica de um dia (sobrescreve a jornada padrão da Config).
+model JornadaDia {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data   String
+  inicio String // "HH:mm"
+  fim    String // "HH:mm"
+
+  @@unique([userId, data])
+}
+
+model Config {
+  userId        String @id
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jornadaInicio String @default("08:00")
+  jornadaFim    String @default("18:00")
+}
