@@ -222,7 +222,7 @@ function FormLead({ editar, onFim }: { editar?: LeadEdicao; onFim: () => void })
       <Campo label="Nome">
         <Input value={nome} onChange={(e) => setNome(e.target.value)} autoFocus required placeholder="Nome do lead" />
       </Campo>
-      <Campo label="Origem">
+      <Campo label="Origem" grupo>
         <Chips opcoes={ORIGENS} valor={origem} onChange={setOrigem} rotulos={rotuloOrigem} />
       </Campo>
       <MaisDetalhes aberto={detalhes} onToggle={() => setDetalhes((d) => !d)}>
@@ -287,10 +287,10 @@ function FormLigacao({
         enviar(() => (editar ? atualizarLigacao(editar.id, dados) : criarLigacao(dados)));
       }}
     >
-      <Campo label="Resultado">
+      <Campo label="Resultado" grupo>
         <Chips opcoes={RESULTADOS} valor={resultado} onChange={setResultado} rotulos={rotuloResultado} />
       </Campo>
-      <Campo label="Lead (opcional)">
+      <Campo label="Lead (opcional)" grupo>
         <LeadPicker leads={leads} leadId={leadId} onSelecionar={setLeadId} texto={busca} onTexto={setBusca} />
       </Campo>
       <MaisDetalhes aberto={detalhes} onToggle={() => setDetalhes((d) => !d)}>
@@ -350,7 +350,7 @@ function FormAgendamento({
         enviar(() => (editar ? atualizarAgendamento(editar.id, dados) : criarAgendamento(dados)));
       }}
     >
-      <Campo label="Lead">
+      <Campo label="Lead" grupo>
         <LeadPicker
           leads={leads}
           leadId={leadId}

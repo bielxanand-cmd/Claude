@@ -19,7 +19,7 @@ export default async function MesPage({ searchParams }: { searchParams: Promise<
   const r = d.resumo;
 
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard mensal</h1>
         <SeletorMes mes={mes} atual={atual} base="/mes" />
@@ -75,7 +75,7 @@ export default async function MesPage({ searchParams }: { searchParams: Promise<
         <CardNumero titulo="Ligações" valor={d.contagens.ligacoes} icone={<Phone />} detalhe={`${d.contagens.ligacoesAtendidas} atendidas`} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Conversão</CardTitle>

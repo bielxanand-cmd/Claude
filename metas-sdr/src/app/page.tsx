@@ -20,7 +20,7 @@ export default async function HojePage() {
   const corMes = corDoPercentual(m.percentual);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Hoje</h1>
@@ -31,7 +31,7 @@ export default async function HojePage() {
 
       <BotoesRegistro className="hidden md:grid xl:hidden" />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_1fr]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
         {/* Progresso da meta do dia */}
         <Card className="flex flex-col items-center gap-4 p-6">
           {d.temMeta && d.meta > 0 ? (
@@ -79,7 +79,7 @@ export default async function HojePage() {
           </div>
         </Card>
 
-        <div className="grid content-start gap-4">
+        <div className="grid min-w-0 grid-cols-1 content-start gap-4">
           <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
             <CardNumero titulo="Novos leads" valor={c.leads} icone={<UserPlus />} />
             <CardNumero titulo="Ligações" valor={c.ligacoes} icone={<Phone />} detalhe={`${c.ligacoesAtendidas} atendidas`} />
@@ -109,7 +109,7 @@ export default async function HojePage() {
 
           {/* Mês em andamento */}
           <Card>
-            <CardHeader className="flex-row items-center justify-between">
+            <CardHeader className="flex-row flex-wrap items-center justify-between">
               <CardTitle className="flex items-center gap-1.5">
                 <CalendarCheck className="size-4" /> {formatarMes(m.mes)}
               </CardTitle>

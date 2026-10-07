@@ -17,7 +17,7 @@ export default async function HistoricoPage() {
   const linhasDesc = [...h.linhas].reverse();
 
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <h1 className="text-2xl font-semibold tracking-tight">Histórico mês a mês</h1>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

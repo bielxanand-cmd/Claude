@@ -24,7 +24,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
   if (!lead) notFound();
 
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <Link href="/leads" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4" /> Leads
       </Link>
@@ -59,7 +59,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
         </div>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-1.5">

@@ -36,10 +36,13 @@ export function BotoesRegistro({ className, compacto }: { className?: string; co
           size={compacto ? "default" : "lg"}
           onClick={() => abrir({ tipo: b.tipo })}
           title={`Atalho: ${b.tecla}`}
-          className="px-2"
+          className="px-2 max-sm:gap-1.5 max-sm:text-[13px]"
         >
           <b.icone />
-          <span className="truncate">+ {b.rotulo}</span>
+          <span className="truncate">
+            <span className="hidden sm:inline">+ </span>
+            {b.rotulo}
+          </span>
           {!compacto && (
             <kbd className="ml-1 hidden rounded border border-current/30 px-1 text-[10px] opacity-70 lg:inline">{b.tecla}</kbd>
           )}

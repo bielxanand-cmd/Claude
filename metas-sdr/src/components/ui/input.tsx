@@ -41,11 +41,35 @@ export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLab
   return <label className={cn("text-sm font-medium", className)} {...props} />;
 }
 
-export function Campo({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+/**
+ * Rótulo + campo. Por padrão usa <label> (associa o texto ao input). Para grupos de
+ * botões (chips, seletor de lead) use `grupo`, que vira um role="group" rotulado.
+ */
+export function Campo({
+  label,
+  children,
+  className,
+  grupo,
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+  grupo?: boolean;
+}) {
+  const classes = cn("grid gap-1.5", className);
+  const titulo = <span className="text-sm font-medium">{label}</span>;
+  if (grupo) {
+    return (
+      <div role="group" aria-label={label} className={classes}>
+        {titulo}
+        {children}
+      </div>
+    );
+  }
   return (
-    <div className={cn("grid gap-1.5", className)}>
-      <span className="text-sm font-medium">{label}</span>
+    <label className={classes}>
+      {titulo}
       {children}
-    </div>
+    </label>
   );
 }

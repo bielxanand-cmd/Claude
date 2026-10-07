@@ -17,7 +17,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   const filtrado = !!(f.q || f.status || f.origem || f.de || f.ate);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <div className="flex items-baseline justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
         <span className="text-sm text-muted-foreground">{total} {total === 1 ? "lead" : "leads"}</span>
