@@ -1,7 +1,7 @@
 import "server-only";
 import { db } from "@/server/db";
-import { type Dia, type Mes, diaDe, mesDe, mesesEntre, intervaloDoDia, intervaloDoMes, hoje } from "@/lib/datas";
-import type { MetaRegistro } from "@/lib/metas/regras";
+import { type Dia, type Mes, hoje, mesDe, mesesEntre, primeiroDiaDoMes, ultimoDiaDoMes } from "@/lib/datas";
+import { type MetaRegistro, type TotaisDia, totaisDoDia } from "@/lib/metas/regras";
 
 /** Metas, dias sem meta e jornada padrão do usuário — tudo que as regras precisam. */
 export async function carregarRegras(userId: string) {
@@ -18,48 +18,33 @@ export async function carregarRegras(userId: string) {
   };
 }
 
-type Intervalo = { gte: Date; lt: Date };
-
-/** Agendamentos válidos (não cancelados) por dia, a partir de quando foram feitos. */
-export async function agendamentosPorDia(userId: string, intervalo: Intervalo): Promise<Map<Dia, number>> {
-  const rows = await db.agendamento.findMany({
-    where: { userId, feitoEm: intervalo, status: { not: "CANCELADO" } },
-    select: { feitoEm: true },
+/** Totais por dia (ligações, agendamentos feitos, cancelados e válidos) entre duas datas, inclusive. */
+export async function totaisPorDia(userId: string, de: Dia, ate: Dia): Promise<Map<Dia, TotaisDia>> {
+  const regs = await db.registro.findMany({
+    where: { userId, dia: { gte: de, lte: ate } },
+    select: { dia: true, tipo: true, quantidade: true },
   });
-  const mapa = new Map<Dia, number>();
-  for (const r of rows) {
-    const d = diaDe(r.feitoEm);
-    mapa.set(d, (mapa.get(d) ?? 0) + 1);
+  const porDia = new Map<Dia, typeof regs>();
+  for (const r of regs) {
+    const lista = porDia.get(r.dia);
+    if (lista) lista.push(r);
+    else porDia.set(r.dia, [r]);
   }
-  return mapa;
+  return new Map([...porDia].map(([dia, lista]) => [dia, totaisDoDia(lista)]));
 }
 
-/** Contagens do período: leads, ligações, agendamentos válidos e cancelados. */
-export async function contagens(userId: string, intervalo: Intervalo) {
-  const [leads, ligacoes, ligacoesAtendidas, agendamentos, cancelados] = await Promise.all([
-    db.lead.count({ where: { userId, entradaEm: intervalo } }),
-    db.ligacao.count({ where: { userId, realizadaEm: intervalo } }),
-    db.ligacao.count({ where: { userId, realizadaEm: intervalo, resultado: "ATENDEU" } }),
-    db.agendamento.count({ where: { userId, feitoEm: intervalo, status: { not: "CANCELADO" } } }),
-    db.agendamento.count({ where: { userId, feitoEm: intervalo, status: "CANCELADO" } }),
-  ]);
-  return { leads, ligacoes, ligacoesAtendidas, agendamentos, cancelados };
+export const totaisDoMes = (userId: string, mes: Mes) =>
+  totaisPorDia(userId, primeiroDiaDoMes(mes), ultimoDiaDoMes(mes));
+
+/** Agendamentos válidos por dia, no formato que `resumirMes` espera. */
+export function agendamentosPorDia(totais: Map<Dia, TotaisDia>): Map<Dia, number> {
+  return new Map([...totais].map(([dia, t]) => [dia, t.agendamentos]));
 }
 
-export const intervaloHoje = () => intervaloDoDia(hoje());
-export { intervaloDoMes };
-
-/** Primeiro mês com algum registro (ou o mês atual, se não houver nada). */
+/** Primeiro mês com algum lançamento (ou o mês atual, se não houver nada). */
 export async function primeiroMesComDados(userId: string): Promise<Mes> {
-  const [l, c, a] = await Promise.all([
-    db.lead.findFirst({ where: { userId }, orderBy: { entradaEm: "asc" }, select: { entradaEm: true } }),
-    db.ligacao.findFirst({ where: { userId }, orderBy: { realizadaEm: "asc" }, select: { realizadaEm: true } }),
-    db.agendamento.findFirst({ where: { userId }, orderBy: { feitoEm: "asc" }, select: { feitoEm: true } }),
-  ]);
-  const datas = [l?.entradaEm, c?.realizadaEm, a?.feitoEm].filter((d): d is Date => !!d);
-  if (datas.length === 0) return mesDe(hoje());
-  const min = new Date(Math.min(...datas.map((d) => d.getTime())));
-  return mesDe(diaDe(min));
+  const r = await db.registro.findFirst({ where: { userId }, orderBy: { dia: "asc" }, select: { dia: true } });
+  return r ? mesDe(r.dia) : mesDe(hoje());
 }
 
 export function mesesAteHoje(inicio: Mes): Mes[] {

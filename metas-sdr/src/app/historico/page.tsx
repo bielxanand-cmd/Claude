@@ -72,7 +72,7 @@ export default async function HistoricoPage() {
           <CardTitle>Detalhe por mês</CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto px-0 sm:px-5">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b text-left text-xs text-muted-foreground">
                 <th className="px-3 py-2 font-medium">Mês</th>
@@ -82,9 +82,7 @@ export default async function HistoricoPage() {
                 <th className="px-3 py-2 text-right font-medium">Dias c/ meta batida</th>
                 <th className="px-3 py-2 font-medium">Meta mensal</th>
                 <th className="px-3 py-2 text-right font-medium">Ligações</th>
-                <th className="px-3 py-2 text-right font-medium">Leads</th>
                 <th className="px-3 py-2 text-right font-medium">Lig.→Agend.</th>
-                <th className="px-3 py-2 text-right font-medium">Lead→Agend.</th>
                 <th className="px-3 py-2 text-right font-medium">Cancel.</th>
               </tr>
             </thead>
@@ -118,9 +116,7 @@ export default async function HistoricoPage() {
                       )}
                     </td>
                     <td className="px-3 py-2.5 text-right">{l.ligacoes}</td>
-                    <td className="px-3 py-2.5 text-right">{l.leads}</td>
-                    <td className="px-3 py-2.5 text-right">{formatarPct(l.convLigacoes, 1)}</td>
-                    <td className="px-3 py-2.5 text-right">{formatarPct(l.convLeads, 1)}</td>
+                    <td className="px-3 py-2.5 text-right">{formatarPct(l.conversao, 1)}</td>
                     <td className="px-3 py-2.5 text-right text-muted-foreground">{l.cancelados}</td>
                   </tr>
                 );

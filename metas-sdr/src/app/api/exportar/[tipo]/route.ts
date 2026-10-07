@@ -1,19 +1,12 @@
 import { db } from "@/server/db";
 import { usuarioAtualId } from "@/server/usuario";
+import { carregarRegras, totaisPorDia } from "@/server/queries/regras-usuario";
 import { paraCsv } from "@/lib/csv";
-import { formatarDataHora, hoje } from "@/lib/datas";
-import {
-  rotuloOrigem,
-  rotuloResultado,
-  rotuloStatusAgendamento,
-  rotuloStatusLead,
-  type Origem,
-  type Resultado,
-  type StatusAgendamento,
-  type StatusLead,
-} from "@/lib/rotulos";
+import { formatarDataHora, formatarDia, hoje } from "@/lib/datas";
+import { metaDoDia } from "@/lib/metas/regras";
 
-const TIPOS = ["leads", "ligacoes", "agendamentos"] as const;
+const TIPOS = ["resumo", "lancamentos"] as const;
+const ROTULO = { LIGACAO: "Ligações", AGENDAMENTO: "Agendamentos", CANCELAMENTO: "Cancelamento" } as const;
 
 export async function GET(_req: Request, { params }: { params: Promise<{ tipo: string }> }) {
   const { tipo } = await params;
@@ -21,41 +14,31 @@ export async function GET(_req: Request, { params }: { params: Promise<{ tipo: s
   const userId = await usuarioAtualId();
   let csv: string;
 
-  if (tipo === "leads") {
-    const leads = await db.lead.findMany({ where: { userId }, orderBy: { entradaEm: "asc" } });
+  if (tipo === "resumo") {
+    const [regras, totais] = await Promise.all([carregarRegras(userId), totaisPorDia(userId, "0000-01-01", "9999-12-31")]);
+    const diaHoje = hoje();
+    const dias = [...totais.keys()].sort();
     csv = paraCsv(
-      ["id", "nome", "empresa", "telefone", "email", "origem", "status", "entrada", "observacoes"],
-      leads.map((l) => [
-        l.id, l.nome, l.empresa, l.telefone, l.email,
-        rotuloOrigem[l.origem as Origem], rotuloStatusLead[l.status as StatusLead],
-        formatarDataHora(l.entradaEm), l.observacoes,
-      ]),
-    );
-  } else if (tipo === "ligacoes") {
-    const ligs = await db.ligacao.findMany({ where: { userId }, orderBy: { realizadaEm: "asc" }, include: { lead: { select: { nome: true } } } });
-    csv = paraCsv(
-      ["id", "data_hora", "lead_id", "lead", "resultado", "duracao_min", "observacao"],
-      ligs.map((c) => [
-        c.id, formatarDataHora(c.realizadaEm), c.leadId, c.lead?.nome,
-        rotuloResultado[c.resultado as Resultado],
-        c.duracaoSeg != null ? (c.duracaoSeg / 60).toFixed(1).replace(".", ",") : null, c.observacao,
-      ]),
+      ["dia", "ligacoes", "agendamentos_feitos", "cancelados", "agendamentos_validos", "meta", "meta_atingida"],
+      dias.map((d) => {
+        const t = totais.get(d)!;
+        const meta = metaDoDia(d, regras.metas, regras.diasSemMeta);
+        const atingida = meta ? (t.agendamentos >= meta ? "sim" : d < diaHoje ? "não" : "") : "sem meta";
+        return [formatarDia(d), t.ligacoes, t.feitos, t.cancelados, t.agendamentos, meta || null, atingida];
+      }),
     );
   } else {
-    const ags = await db.agendamento.findMany({ where: { userId }, orderBy: { feitoEm: "asc" }, include: { lead: { select: { nome: true } } } });
+    const regs = await db.registro.findMany({ where: { userId }, orderBy: { em: "asc" } });
     csv = paraCsv(
-      ["id", "feito_em", "reuniao_em", "lead_id", "lead", "status", "conta_para_meta", "observacao"],
-      ags.map((a) => [
-        a.id, formatarDataHora(a.feitoEm), formatarDataHora(a.reuniaoEm), a.leadId, a.lead.nome,
-        rotuloStatusAgendamento[a.status as StatusAgendamento], a.status === "CANCELADO" ? "não" : "sim", a.observacao,
-      ]),
+      ["lancado_em", "tipo", "quantidade", "conta_no_dia"],
+      regs.map((r) => [formatarDataHora(r.em), ROTULO[r.tipo], r.quantidade, formatarDia(r.dia)]),
     );
   }
 
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${tipo}-${hoje()}.csv"`,
+      "Content-Disposition": `attachment; filename="${tipo === "resumo" ? "resumo-diario" : "lancamentos"}-${hoje()}.csv"`,
     },
   });
 }

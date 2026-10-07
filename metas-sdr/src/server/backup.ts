@@ -1,15 +1,13 @@
 import "server-only";
 import { db } from "@/server/db";
 import { ehDiaValido } from "@/lib/datas";
-import { MOTIVOS, ORIGENS, RESULTADOS, STATUS_AGENDAMENTO, STATUS_LEAD, ehUm } from "@/lib/rotulos";
+import { MOTIVOS, TIPOS_REGISTRO, ehUm } from "@/lib/rotulos";
 
-export const VERSAO_BACKUP = 1;
+export const VERSAO_BACKUP = 2;
 
 export async function gerarBackup(userId: string) {
-  const [leads, ligacoes, agendamentos, metas, diasSemMeta, jornadas, config] = await Promise.all([
-    db.lead.findMany({ where: { userId } }),
-    db.ligacao.findMany({ where: { userId } }),
-    db.agendamento.findMany({ where: { userId } }),
+  const [registros, metas, diasSemMeta, jornadas, config] = await Promise.all([
+    db.registro.findMany({ where: { userId } }),
     db.meta.findMany({ where: { userId } }),
     db.diaSemMeta.findMany({ where: { userId } }),
     db.jornadaDia.findMany({ where: { userId } }),
@@ -21,9 +19,7 @@ export async function gerarBackup(userId: string) {
     versao: VERSAO_BACKUP,
     exportadoEm: new Date().toISOString(),
     dados: {
-      leads: sem(leads),
-      ligacoes: sem(ligacoes),
-      agendamentos: sem(agendamentos),
+      registros: sem(registros),
       metas: sem(metas),
       diasSemMeta: sem(diasSemMeta),
       jornadas: sem(jornadas),
@@ -72,39 +68,16 @@ export async function restaurarBackup(userId: string, json: unknown): Promise<{ 
     if (b.versao !== VERSAO_BACKUP) throw new BackupInvalido("Versão de backup não suportada.");
     const d = b.dados;
 
-    const leads = lista(d.leads, "leads").map((l) => ({
-      id: str(l.id, "lead.id"),
-      userId,
-      nome: str(l.nome, "lead.nome"),
-      empresa: strOuNulo(l.empresa),
-      telefone: strOuNulo(l.telefone),
-      email: strOuNulo(l.email),
-      origem: enumDe(ORIGENS, l.origem, "lead.origem"),
-      status: enumDe(STATUS_LEAD, l.status, "lead.status"),
-      entradaEm: data(l.entradaEm, "lead.entradaEm"),
-      observacoes: strOuNulo(l.observacoes),
-    }));
-    const idsLeads = new Set(leads.map((l) => l.id));
-    const ligacoes = lista(d.ligacoes, "ligacoes").map((c) => ({
-      id: str(c.id, "ligacao.id"),
-      userId,
-      leadId: typeof c.leadId === "string" && idsLeads.has(c.leadId) ? c.leadId : null,
-      realizadaEm: data(c.realizadaEm, "ligacao.realizadaEm"),
-      resultado: enumDe(RESULTADOS, c.resultado, "ligacao.resultado"),
-      duracaoSeg: intOuNulo(c.duracaoSeg),
-      observacao: strOuNulo(c.observacao),
-    }));
-    const agendamentos = lista(d.agendamentos, "agendamentos").map((a) => {
-      const leadId = str(a.leadId, "agendamento.leadId");
-      if (!idsLeads.has(leadId)) throw new BackupInvalido("Agendamento aponta para um lead inexistente.");
+    const registros = lista(d.registros, "registros").map((r) => {
+      const quantidade = intOuNulo(r.quantidade);
+      if (quantidade == null || quantidade < 1) throw new BackupInvalido("Quantidade inválida em um lançamento.");
       return {
-        id: str(a.id, "agendamento.id"),
+        id: str(r.id, "registro.id"),
         userId,
-        leadId,
-        feitoEm: data(a.feitoEm, "agendamento.feitoEm"),
-        reuniaoEm: data(a.reuniaoEm, "agendamento.reuniaoEm"),
-        status: enumDe(STATUS_AGENDAMENTO, a.status, "agendamento.status"),
-        observacao: strOuNulo(a.observacao),
+        tipo: enumDe(TIPOS_REGISTRO, r.tipo, "registro.tipo"),
+        quantidade,
+        em: data(r.em, "registro.em"),
+        dia: dia(r.dia, "registro.dia"),
       };
     });
     const metas = lista(d.metas, "metas").map((m) => ({
@@ -129,15 +102,11 @@ export async function restaurarBackup(userId: string, json: unknown): Promise<{ 
     const cfg = d.config as { jornadaInicio?: unknown; jornadaFim?: unknown } | null;
 
     await db.$transaction([
-      db.agendamento.deleteMany({ where: { userId } }),
-      db.ligacao.deleteMany({ where: { userId } }),
-      db.lead.deleteMany({ where: { userId } }),
+      db.registro.deleteMany({ where: { userId } }),
       db.meta.deleteMany({ where: { userId } }),
       db.diaSemMeta.deleteMany({ where: { userId } }),
       db.jornadaDia.deleteMany({ where: { userId } }),
-      db.lead.createMany({ data: leads }),
-      db.ligacao.createMany({ data: ligacoes }),
-      db.agendamento.createMany({ data: agendamentos }),
+      db.registro.createMany({ data: registros }),
       db.meta.createMany({ data: metas }),
       db.diaSemMeta.createMany({ data: diasSemMeta }),
       db.jornadaDia.createMany({ data: jornadas }),
@@ -153,11 +122,11 @@ export async function restaurarBackup(userId: string, json: unknown): Promise<{ 
     ]);
     return {
       ok: true,
-      resumo: `${leads.length} leads, ${ligacoes.length} ligações e ${agendamentos.length} agendamentos restaurados.`,
+      resumo: `${registros.length} lançamentos restaurados.`,
     };
   } catch (e) {
     if (e instanceof BackupInvalido) return { ok: false, erro: e.message };
     console.error(e);
-    return { ok: false, erro: "Não foi possível restaurar o backup (IDs duplicados ou dados corrompidos)." };
+    return { ok: false, erro: "Não foi possível restaurar o backup (dados corrompidos)." };
   }
 }

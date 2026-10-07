@@ -43,7 +43,7 @@ export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLab
 
 /**
  * Rótulo + campo. Por padrão usa <label> (associa o texto ao input). Para grupos de
- * botões (chips, seletor de lead) use `grupo`, que vira um role="group" rotulado.
+ * botões (contador, chips) use `grupo`, que vira um role="group" rotulado.
  */
 export function Campo({
   label,

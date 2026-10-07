@@ -14,7 +14,9 @@ import {
   projecaoDoDia,
   resumirMes,
   sequenciaAtual,
+  somarTotais,
   taxaConversao,
+  totaisDoDia,
 } from "@/lib/metas/regras";
 
 const diaria = (valor: number, vigenteDesde: string): MetaRegistro => ({ tipo: "DIARIA", valor, vigenteDesde });
@@ -202,5 +204,28 @@ describe("ritmo e conversão", () => {
   it("taxa de conversão", () => {
     expect(taxaConversao(5, 50)).toBe(10);
     expect(taxaConversao(1, 0)).toBeNull();
+  });
+});
+
+describe("lançamentos do dia", () => {
+  it("soma ligações e agendamentos e desconta cancelamentos", () => {
+    const t = totaisDoDia([
+      { tipo: "LIGACAO", quantidade: 10 },
+      { tipo: "LIGACAO", quantidade: 5 },
+      { tipo: "AGENDAMENTO", quantidade: 1 },
+      { tipo: "AGENDAMENTO", quantidade: 3 },
+      { tipo: "CANCELAMENTO", quantidade: 1 },
+    ]);
+    expect(t).toEqual({ ligacoes: 15, feitos: 4, cancelados: 1, agendamentos: 3 });
+  });
+
+  it("agendamentos válidos nunca ficam negativos", () => {
+    expect(totaisDoDia([{ tipo: "CANCELAMENTO", quantidade: 2 }]).agendamentos).toBe(0);
+  });
+
+  it("soma totais de vários dias", () => {
+    const a = totaisDoDia([{ tipo: "AGENDAMENTO", quantidade: 2 }]);
+    const b = totaisDoDia([{ tipo: "CANCELAMENTO", quantidade: 3 }, { tipo: "LIGACAO", quantidade: 4 }]);
+    expect(somarTotais([a, b])).toEqual({ ligacoes: 4, feitos: 2, cancelados: 3, agendamentos: 2 });
   });
 });

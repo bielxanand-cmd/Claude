@@ -16,40 +16,18 @@ model User {
   nome         String
   createdAt    DateTime      @default(now())
   config       Config?
-  leads        Lead[]
-  ligacoes     Ligacao[]
-  agendamentos Agendamento[]
+  registros    Registro[]
   metas        Meta[]
   diasSemMeta  DiaSemMeta[]
   jornadas     JornadaDia[]
 }
 
-enum OrigemLead {
-  INBOUND
-  OUTBOUND
-  INDICACAO
-  OUTRO
-}
-
-enum StatusLead {
-  NOVO
-  EM_CONTATO
-  AGENDADO
-  PERDIDO
-}
-
-enum ResultadoLigacao {
-  ATENDEU
-  NAO_ATENDEU
-  CAIXA_POSTAL
-  RETORNAR
-}
-
-enum StatusAgendamento {
-  MARCADO
-  REALIZADO
-  NO_SHOW
-  CANCELADO
+// Lançamentos de execução: quantas ligações e agendamentos foram feitos.
+// Um CANCELAMENTO desconta agendamentos do dia em que eles foram feitos.
+enum TipoRegistro {
+  LIGACAO
+  AGENDAMENTO
+  CANCELAMENTO
 }
 
 enum TipoMeta {
@@ -64,56 +42,21 @@ enum MotivoDiaSemMeta {
   OUTRO
 }
 
-model Lead {
-  id           String        @id @default(cuid())
-  userId       String
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  nome         String
-  empresa      String?
-  telefone     String?
-  email        String?
-  origem       OrigemLead    @default(OUTBOUND)
-  entradaEm    DateTime      @default(now())
-  status       StatusLead    @default(NOVO)
-  observacoes  String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  ligacoes     Ligacao[]
-  agendamentos Agendamento[]
-
-  @@index([userId, entradaEm])
-}
-
-model Ligacao {
-  id          String           @id @default(cuid())
-  userId      String
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  leadId      String?
-  lead        Lead?            @relation(fields: [leadId], references: [id], onDelete: SetNull)
-  realizadaEm DateTime         @default(now())
-  resultado   ResultadoLigacao
-  duracaoSeg  Int?
-  observacao  String?
-  createdAt   DateTime         @default(now())
-
-  @@index([userId, realizadaEm])
-}
-
-model Agendamento {
-  id         String            @id @default(cuid())
+model Registro {
+  id         String       @id @default(cuid())
   userId     String
-  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  leadId     String
-  lead       Lead              @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  // Momento em que o agendamento foi feito: é o que conta para a meta.
-  feitoEm    DateTime          @default(now())
-  // Data/hora da reunião marcada com o lead.
-  reuniaoEm  DateTime
-  status     StatusAgendamento @default(MARCADO)
-  observacao String?
-  createdAt  DateTime          @default(now())
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tipo       TipoRegistro
+  quantidade Int
+  // Momento em que o lançamento foi feito.
+  em         DateTime     @default(now())
+  // Dia ("aaaa-mm-dd", São Paulo) em que a quantidade conta. Para ligações e
+  // agendamentos é o dia de `em`; para cancelamentos, o dia em que o agendamento foi feito.
+  dia        String
+  createdAt  DateTime     @default(now())
 
-  @@index([userId, feitoEm])
+  @@index([userId, dia])
+  @@index([userId, em])
 }
 
 // Histórico de metas: a meta vigente numa data é a de maior vigenteDesde <= data.

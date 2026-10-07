@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, History, Home, Phone, Settings, Target, UserPlus, Users } from "lucide-react";
+import { CalendarDays, History, Home, Phone, Settings, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRegistroRapido } from "@/components/registro/registro-rapido";
 import { BotaoTema } from "./tema";
@@ -12,7 +12,6 @@ const links = [
   { href: "/", rotulo: "Hoje", icone: Home },
   { href: "/mes", rotulo: "Mês", icone: CalendarDays },
   { href: "/historico", rotulo: "Histórico", icone: History },
-  { href: "/leads", rotulo: "Leads", icone: Users },
   { href: "/configuracoes", rotulo: "Config.", icone: Settings },
 ];
 
@@ -23,12 +22,11 @@ function ativo(pathname: string, href: string) {
 export function BotoesRegistro({ className, compacto }: { className?: string; compacto?: boolean }) {
   const { abrir } = useRegistroRapido();
   const botoes = [
-    { tipo: "lead" as const, rotulo: "Lead", icone: UserPlus, tecla: "L" },
-    { tipo: "ligacao" as const, rotulo: "Ligação", icone: Phone, tecla: "C" },
-    { tipo: "agendamento" as const, rotulo: "Agendamento", icone: Target, tecla: "A" },
+    { tipo: "ligacao" as const, rotulo: "Ligações", icone: Phone, tecla: "C" },
+    { tipo: "agendamento" as const, rotulo: "Agendamentos", icone: Target, tecla: "A" },
   ];
   return (
-    <div className={cn("grid grid-cols-3 gap-2", className)}>
+    <div className={cn("grid grid-cols-2 gap-2", className)}>
       {botoes.map((b) => (
         <Button
           key={b.tipo}
@@ -79,7 +77,7 @@ export function Navegacao() {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <BotoesRegistro compacto className="hidden w-[30rem] xl:grid" />
+            <BotoesRegistro compacto className="hidden w-[22rem] lg:grid" />
             <BotaoTema />
           </div>
         </div>
@@ -88,7 +86,7 @@ export function Navegacao() {
       {/* Celular: registro rápido + navegação fixos no rodapé */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         <BotoesRegistro compacto className="px-3 pt-2" />
-        <nav className="grid grid-cols-5">
+        <nav className="grid grid-cols-4">
           {links.map((l) => (
             <Link
               key={l.href}

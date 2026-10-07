@@ -1,6 +1,6 @@
 import { Check, Minus, X } from "lucide-react";
 import type { ResultadoDia } from "@/lib/metas/regras";
-import { diaDaSemana, formatarDia } from "@/lib/datas";
+import { diaDaSemana, formatarDia, hoje } from "@/lib/datas";
 import { cn } from "@/lib/utils";
 
 const estilo: Record<ResultadoDia["situacao"], string> = {
@@ -16,6 +16,7 @@ const SEMANA = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 /** Calendário do mês: verde = meta atingida, vermelho = não atingida, cinza = sem meta. */
 export function CalendarioMes({ dias, motivos }: { dias: ResultadoDia[]; motivos: Record<string, string> }) {
   const vazios = (diaDaSemana(dias[0].dia) + 6) % 7; // semana começando na segunda
+  const diaHoje = hoje();
   return (
     <div className="grid gap-3">
       <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-muted-foreground sm:gap-1.5 sm:text-xs">
@@ -45,7 +46,7 @@ export function CalendarioMes({ dias, motivos }: { dias: ResultadoDia[]; motivos
                 {d.situacao === "nao-atingida" && <X className="size-3 text-bad" aria-label="não atingida" />}
                 {d.situacao === "sem-meta" && <Minus className="size-3" aria-label="sem meta" />}
               </div>
-              {(d.situacao !== "futuro" || d.agendamentos > 0) && (
+              {(d.agendamentos > 0 || d.dia <= diaHoje) && (
                 <div className="text-right text-sm font-semibold sm:text-lg">
                   {d.agendamentos}
                   {d.temMeta && <span className="text-[10px] font-normal text-muted-foreground sm:text-xs">/{d.meta}</span>}

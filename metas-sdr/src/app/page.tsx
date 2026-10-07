@@ -1,4 +1,4 @@
-import { Ban, CalendarCheck, Flag, Phone, Target, TrendingUp, UserPlus } from "lucide-react";
+import { CalendarCheck, Flag, Phone, Target, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnelProgresso, BarraProgresso, CardNumero, corTexto } from "@/components/comum/indicadores";
 import { LinhaDoTempo } from "@/components/hoje/linha-do-tempo";
@@ -8,13 +8,13 @@ import { usuarioAtualId } from "@/server/usuario";
 import { dadosDeHoje } from "@/server/queries/hoje";
 import { formatarDiaExtenso, formatarMes } from "@/lib/datas";
 import { corDoPercentual } from "@/lib/metas/regras";
-import { rotuloMotivo, type Motivo } from "@/lib/rotulos";
+import { plural, rotuloMotivo, type Motivo } from "@/lib/rotulos";
 import { formatarNumero, cn } from "@/lib/utils";
 
 export default async function HojePage() {
   const userId = await usuarioAtualId();
   const d = await dadosDeHoje(userId);
-  const { contagens: c, resumoMes: m } = d;
+  const { totais: t, resumoMes: m } = d;
   const motivo =
     d.motivoSemMeta === "FIM_DE_SEMANA" ? "Fim de semana" : d.motivoSemMeta ? rotuloMotivo[d.motivoSemMeta as Motivo] : null;
   const corMes = corDoPercentual(m.percentual);
@@ -42,7 +42,7 @@ export default async function HojePage() {
                     {formatarNumero(d.percentual)}%
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {c.agendamentos} de {d.meta} agendamentos
+                    {t.agendamentos} de {d.meta} agendamentos
                   </div>
                 </div>
               </AnelProgresso>
@@ -80,26 +80,26 @@ export default async function HojePage() {
         </Card>
 
         <div className="grid min-w-0 grid-cols-1 content-start gap-4">
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-            <CardNumero titulo="Novos leads" valor={c.leads} icone={<UserPlus />} />
-            <CardNumero titulo="Ligações" valor={c.ligacoes} icone={<Phone />} detalhe={`${c.ligacoesAtendidas} atendidas`} />
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+            <CardNumero
+              titulo="Ligações"
+              valor={t.ligacoes}
+              icone={<Phone />}
+              detalhe={t.agendamentos ? `${formatarNumero(t.ligacoes / t.agendamentos, 1)} por agendamento` : "hoje"}
+            />
             <CardNumero
               titulo="Agendamentos"
-              valor={c.agendamentos}
+              valor={t.agendamentos}
               icone={<Target />}
               destaque={d.meta > 0 ? corTexto[d.cor] : undefined}
               detalhe={
-                c.cancelados > 0 ? (
-                  <span className="inline-flex items-center gap-1">
-                    <Ban className="size-3" /> {c.cancelados} cancelado{c.cancelados > 1 ? "s" : ""} (não conta)
-                  </span>
-                ) : (
-                  "cancelados não contam"
-                )
+                t.cancelados > 0
+                  ? `${plural(t.cancelados, "cancelado", "cancelados")} (já ${t.cancelados > 1 ? "descontados" : "descontado"})`
+                  : "cancelados não contam"
               }
             />
             <CardNumero
-              titulo="Faltam p/ meta"
+              titulo="Faltam"
               valor={d.temMeta ? d.faltam : "—"}
               icone={<Flag />}
               destaque={d.temMeta && d.faltam === 0 ? "text-ok" : undefined}
@@ -141,10 +141,10 @@ export default async function HojePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Atividades de hoje</CardTitle>
+          <CardTitle>Lançamentos de hoje</CardTitle>
         </CardHeader>
         <CardContent>
-          <LinhaDoTempo itens={d.linhaDoTempo} />
+          <LinhaDoTempo itens={d.lancamentos} />
         </CardContent>
       </Card>
     </div>

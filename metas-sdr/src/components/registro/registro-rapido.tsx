@@ -2,70 +2,24 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Minus, Plus } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Campo, Input, Select, Textarea } from "@/components/ui/input";
-import { Chips } from "@/components/ui/chips";
-import { LeadPicker, type LeadOpcao } from "./lead-picker";
-import {
-  ORIGENS,
-  RESULTADOS,
-  STATUS_AGENDAMENTO,
-  STATUS_LEAD,
-  rotuloOrigem,
-  rotuloResultado,
-  rotuloStatusAgendamento,
-  rotuloStatusLead,
-  type Origem,
-  type Resultado as ResultadoLigacao,
-} from "@/lib/rotulos";
-import { paraInputDataHora, somarDias, hoje, instanteLocal, ehDiaValido } from "@/lib/datas";
-import { ehDiaUtil } from "@/lib/metas/regras";
-import {
-  atualizarAgendamento,
-  atualizarLead,
-  atualizarLigacao,
-  criarAgendamento,
-  criarLead,
-  criarLigacao,
-  type Resultado,
-} from "@/server/actions/registros";
+import { Campo, Input } from "@/components/ui/input";
+import { hoje, paraInputDataHora } from "@/lib/datas";
+import { plural, type TipoRegistro } from "@/lib/rotulos";
+import { atualizarRegistro, criarRegistro } from "@/server/actions/registros";
+import { cn } from "@/lib/utils";
 
-// ---- Dados para edição ----
-
-export interface LeadEdicao {
+export interface RegistroEdicao {
   id: string;
-  nome: string;
-  empresa: string | null;
-  telefone: string | null;
-  email: string | null;
-  origem: string;
-  status: string;
-  observacoes: string | null;
-  entradaEm: Date;
-}
-export interface LigacaoEdicao {
-  id: string;
-  leadId: string | null;
-  resultado: string;
-  duracaoSeg: number | null;
-  observacao: string | null;
-  realizadaEm: Date;
-}
-export interface AgendamentoEdicao {
-  id: string;
-  leadId: string;
-  reuniaoEm: Date;
-  feitoEm: Date;
-  status: string;
-  observacao: string | null;
+  tipo: TipoRegistro;
+  quantidade: number;
+  em: Date;
+  dia: string;
 }
 
-type Pedido =
-  | { tipo: "lead"; editar?: LeadEdicao }
-  | { tipo: "ligacao"; editar?: LigacaoEdicao; leadId?: string }
-  | { tipo: "agendamento"; editar?: AgendamentoEdicao; leadId?: string };
+type Pedido = { tipo: "ligacao" | "agendamento"; editar?: undefined } | { tipo?: undefined; editar: RegistroEdicao };
 
 const Ctx = createContext<{ abrir: (p: Pedido) => void } | null>(null);
 
@@ -75,31 +29,7 @@ export function useRegistroRapido() {
   return c;
 }
 
-/** Lembra a última origem usada para agilizar o próximo cadastro. */
-const ORIGEM_KEY = "metas-sdr:ultima-origem";
-function ultimaOrigem(): Origem {
-  try {
-    const v = localStorage.getItem(ORIGEM_KEY);
-    if (v && (ORIGENS as readonly string[]).includes(v)) return v as Origem;
-  } catch {}
-  return "OUTBOUND";
-}
-function guardarOrigem(o: string) {
-  try {
-    localStorage.setItem(ORIGEM_KEY, o);
-  } catch {}
-}
-
-/** Próximo dia útil às 10:00 — sugestão padrão para a reunião. */
-function sugestaoReuniao(): string {
-  let d = somarDias(hoje(), 1);
-  while (!ehDiaUtil(d)) d = somarDias(d, 1);
-  return paraInputDataHora(instanteLocal(d, "10:00"));
-}
-
-const titulos = { lead: "Lead", ligacao: "Ligação", agendamento: "Agendamento" };
-
-export function RegistroRapidoProvider({ leads, children }: { leads: LeadOpcao[]; children: React.ReactNode }) {
+export function RegistroRapidoProvider({ children }: { children: React.ReactNode }) {
   const [pedido, setPedido] = useState<Pedido | null>(null);
   const [chave, setChave] = useState(0);
 
@@ -108,13 +38,13 @@ export function RegistroRapidoProvider({ leads, children }: { leads: LeadOpcao[]
     setChave((k) => k + 1);
   }, []);
 
-  // Atalhos: L = lead, C = ligação, A = agendamento (fora de campos de texto).
+  // Atalhos: C = ligações, A = agendamentos (fora de campos de texto).
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.ctrlKey || e.metaKey || e.altKey || pedido) return;
       const alvo = e.target as HTMLElement | null;
       if (alvo && (alvo.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(alvo.tagName))) return;
-      const tipo = ({ l: "lead", c: "ligacao", a: "agendamento" } as const)[e.key.toLowerCase() as "l" | "c" | "a"];
+      const tipo = ({ c: "ligacao", a: "agendamento" } as const)[e.key.toLowerCase() as "c" | "a"];
       if (tipo) {
         e.preventDefault();
         abrir({ tipo });
@@ -125,261 +55,160 @@ export function RegistroRapidoProvider({ leads, children }: { leads: LeadOpcao[]
   }, [abrir, pedido]);
 
   const fechar = () => setPedido(null);
+  const inicial: TipoRegistro = pedido?.editar?.tipo ?? (pedido?.tipo === "ligacao" ? "LIGACAO" : "AGENDAMENTO");
 
   return (
     <Ctx.Provider value={{ abrir }}>
       {children}
       <Dialog open={!!pedido} onOpenChange={(o) => !o && fechar()}>
-        {pedido && (
-          <DialogContent
-            key={chave}
-            titulo={`${pedido.editar ? "Editar" : "Nova"} ${titulos[pedido.tipo].toLowerCase()}`.replace("Nova lead", "Novo lead")}
-          >
-            {pedido.tipo === "lead" && <FormLead editar={pedido.editar} onFim={fechar} />}
-            {pedido.tipo === "ligacao" && (
-              <FormLigacao leads={leads} editar={pedido.editar} leadInicial={pedido.leadId} onFim={fechar} />
-            )}
-            {pedido.tipo === "agendamento" && (
-              <FormAgendamento leads={leads} editar={pedido.editar} leadInicial={pedido.leadId} onFim={fechar} />
-            )}
-          </DialogContent>
-        )}
+        {pedido && <FormRegistro key={chave} tipoInicial={inicial} editar={pedido.editar} onFim={fechar} />}
       </Dialog>
     </Ctx.Provider>
   );
 }
 
-// ---- Partes comuns ----
+const TITULOS: Record<TipoRegistro, string> = {
+  LIGACAO: "Registrar ligações",
+  AGENDAMENTO: "Registrar agendamentos",
+  CANCELAMENTO: "Registrar cancelamento",
+};
 
-function MaisDetalhes({ aberto, onToggle, children }: { aberto: boolean; onToggle: () => void; children: React.ReactNode }) {
-  return (
-    <div className="grid gap-3">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex items-center gap-1 self-start text-sm text-muted-foreground hover:text-foreground"
-        aria-expanded={aberto}
-      >
-        <ChevronDown className={`size-4 transition-transform ${aberto ? "rotate-180" : ""}`} />
-        {aberto ? "Menos detalhes" : "Mais detalhes"}
-      </button>
-      {aberto && <div className="grid gap-3">{children}</div>}
-    </div>
-  );
+function rotuloEnviar(tipo: TipoRegistro, n: number) {
+  if (tipo === "LIGACAO") return `Registrar ${plural(n, "ligação", "ligações")}`;
+  if (tipo === "AGENDAMENTO") return `Registrar ${plural(n, "agendamento", "agendamentos")}`;
+  return `Registrar ${plural(n, "cancelamento", "cancelamentos")}`;
 }
 
-function useEnvio(onFim: () => void, mensagem: string) {
+/**
+ * Quantidade (padrão 1) e confirmar. Em agendamentos, o alternador "Agendei / Cancelou":
+ * um cancelamento desconta do dia em que o agendamento foi feito (padrão: hoje).
+ */
+function FormRegistro({
+  tipoInicial,
+  editar,
+  onFim,
+}: {
+  tipoInicial: TipoRegistro;
+  editar?: RegistroEdicao;
+  onFim: () => void;
+}) {
+  const [tipo, setTipo] = useState<TipoRegistro>(tipoInicial);
+  const [qtd, setQtd] = useState(String(editar?.quantidade ?? 1));
+  const [diaAg, setDiaAg] = useState(editar?.tipo === "CANCELAMENTO" ? editar.dia : hoje());
+  const [outroHorario, setOutroHorario] = useState(!!editar);
+  const [em, setEm] = useState(paraInputDataHora(editar?.em ?? new Date()));
   const [pendente, iniciar] = useTransition();
-  const enviar = (acao: () => Promise<Resultado<unknown>>) =>
+  const n = Math.max(1, parseInt(qtd) || 1);
+  const mudar = (d: number) => setQtd(String(Math.max(1, n + d)));
+
+  function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    const dados = {
+      tipo,
+      quantidade: parseInt(qtd),
+      em: outroHorario ? em : undefined,
+      diaAgendamento: tipo === "CANCELAMENTO" ? diaAg : undefined,
+    };
     iniciar(async () => {
-      const r = await acao();
-      if (r.ok) {
-        toast.success(mensagem);
-        onFim();
-      } else {
-        toast.error(r.erro);
-      }
+      const r = editar ? await atualizarRegistro(editar.id, dados) : await criarRegistro(dados);
+      if (!r.ok) return void toast.error(r.erro);
+      if (editar) toast.success("Lançamento atualizado");
+      else if (tipo === "LIGACAO") toast.success(`+${plural(dados.quantidade, "ligação", "ligações")}`);
+      else if (tipo === "AGENDAMENTO") toast.success(`+${plural(dados.quantidade, "agendamento", "agendamentos")} 🎯`);
+      else toast.success(plural(dados.quantidade, "cancelamento registrado", "cancelamentos registrados"));
+      onFim();
     });
-  return { pendente, enviar };
-}
-
-function Rodape({ pendente, rotulo }: { pendente: boolean; rotulo: string }) {
-  return (
-    <Button type="submit" size="lg" disabled={pendente} className="w-full">
-      {pendente ? "Salvando..." : rotulo}
-    </Button>
-  );
-}
-
-// ---- Formulários ----
-
-function FormLead({ editar, onFim }: { editar?: LeadEdicao; onFim: () => void }) {
-  const [nome, setNome] = useState(editar?.nome ?? "");
-  const [origem, setOrigem] = useState<Origem>((editar?.origem as Origem) ?? ultimaOrigem());
-  const [detalhes, setDetalhes] = useState(!!editar);
-  const [extra, setExtra] = useState({
-    empresa: editar?.empresa ?? "",
-    telefone: editar?.telefone ?? "",
-    email: editar?.email ?? "",
-    observacoes: editar?.observacoes ?? "",
-    status: editar?.status ?? "NOVO",
-    entradaEm: paraInputDataHora(editar?.entradaEm ?? new Date()),
-  });
-  const { pendente, enviar } = useEnvio(onFim, editar ? "Lead atualizado" : "Lead registrado");
-  const set = (k: keyof typeof extra) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setExtra((x) => ({ ...x, [k]: e.target.value }));
+  }
 
   return (
-    <form
-      className="grid gap-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        guardarOrigem(origem);
-        const dados = { nome, origem, ...extra, entradaEm: detalhes ? extra.entradaEm : undefined };
-        enviar(() => (editar ? atualizarLead(editar.id, dados) : criarLead({ ...dados, status: undefined })));
-      }}
-    >
-      <Campo label="Nome">
-        <Input value={nome} onChange={(e) => setNome(e.target.value)} autoFocus required placeholder="Nome do lead" />
-      </Campo>
-      <Campo label="Origem" grupo>
-        <Chips opcoes={ORIGENS} valor={origem} onChange={setOrigem} rotulos={rotuloOrigem} />
-      </Campo>
-      <MaisDetalhes aberto={detalhes} onToggle={() => setDetalhes((d) => !d)}>
-        <Campo label="Empresa">
-          <Input value={extra.empresa} onChange={set("empresa")} />
-        </Campo>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Campo label="Telefone">
-            <Input value={extra.telefone} onChange={set("telefone")} inputMode="tel" />
-          </Campo>
-          <Campo label="E-mail">
-            <Input value={extra.email} onChange={set("email")} type="email" />
-          </Campo>
-        </div>
-        {editar && (
-          <Campo label="Status">
-            <Select value={extra.status} onChange={set("status")}>
-              {STATUS_LEAD.map((s) => (
-                <option key={s} value={s}>{rotuloStatusLead[s]}</option>
+    <DialogContent titulo={editar ? "Editar lançamento" : TITULOS[tipo]}>
+      <form className="grid gap-4" onSubmit={enviar}>
+        {!editar && tipo !== "LIGACAO" && (
+          <div className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1" role="group" aria-label="Tipo">
+            {(["AGENDAMENTO", "CANCELAMENTO"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={tipo === t}
+                onClick={() => setTipo(t)}
+                className={cn(
+                  "h-9 rounded-lg text-sm font-medium text-muted-foreground",
+                  tipo === t && "bg-card text-foreground shadow-sm ring-1 ring-border",
+                )}
+              >
+                {t === "AGENDAMENTO" ? "Agendei" : "Cancelou"}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <Campo label="Quantidade" grupo>
+          <div className="grid grid-cols-[3.5rem_1fr_3.5rem] items-center gap-2">
+            <Button type="button" variant="outline" className="h-14 text-2xl" onClick={() => mudar(-1)} aria-label="Diminuir">
+              <Minus className="size-5!" />
+            </Button>
+            <Input
+              type="number"
+              min={1}
+              max={500}
+              inputMode="numeric"
+              value={qtd}
+              onChange={(e) => setQtd(e.target.value)}
+              className="h-14 text-center text-3xl font-semibold"
+              aria-label="Quantidade"
+              required
+            />
+            <Button type="button" variant="outline" className="h-14 text-2xl" onClick={() => mudar(1)} aria-label="Aumentar">
+              <Plus className="size-5!" />
+            </Button>
+          </div>
+          {!editar && tipo === "LIGACAO" && (
+            <div className="flex gap-2">
+              {[5, 10, 20].map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setQtd(String(v))}
+                  className="rounded-full border border-input bg-card px-3.5 py-1.5 text-sm font-medium hover:bg-muted"
+                >
+                  {v}
+                </button>
               ))}
-            </Select>
+            </div>
+          )}
+        </Campo>
+
+        {tipo === "CANCELAMENTO" && (
+          <Campo label="Agendamento feito em">
+            <Input type="date" value={diaAg} max={hoje()} onChange={(e) => setDiaAg(e.target.value)} required />
+            <span className="text-xs text-muted-foreground">O cancelamento desconta do dia em que o agendamento foi feito.</span>
           </Campo>
         )}
-        <Campo label="Data/hora de entrada">
-          <Input type="datetime-local" value={extra.entradaEm} onChange={set("entradaEm")} />
-        </Campo>
-        <Campo label="Observações">
-          <Textarea value={extra.observacoes} onChange={set("observacoes")} />
-        </Campo>
-      </MaisDetalhes>
-      <Rodape pendente={pendente} rotulo={editar ? "Salvar" : "Registrar lead"} />
-    </form>
-  );
-}
 
-function FormLigacao({
-  leads,
-  editar,
-  leadInicial,
-  onFim,
-}: {
-  leads: LeadOpcao[];
-  editar?: LigacaoEdicao;
-  leadInicial?: string;
-  onFim: () => void;
-}) {
-  const [resultado, setResultado] = useState<ResultadoLigacao>((editar?.resultado as ResultadoLigacao) ?? "ATENDEU");
-  const [leadId, setLeadId] = useState<string | null>(editar?.leadId ?? leadInicial ?? null);
-  const [busca, setBusca] = useState("");
-  const [detalhes, setDetalhes] = useState(!!editar);
-  const [duracao, setDuracao] = useState(editar?.duracaoSeg != null ? String(Math.round(editar.duracaoSeg / 60)) : "");
-  const [observacao, setObservacao] = useState(editar?.observacao ?? "");
-  const [quando, setQuando] = useState(paraInputDataHora(editar?.realizadaEm ?? new Date()));
-  const { pendente, enviar } = useEnvio(onFim, editar ? "Ligação atualizada" : "Ligação registrada");
-
-  return (
-    <form
-      className="grid gap-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const dados = { leadId, resultado, duracaoMin: duracao, observacao, realizadaEm: detalhes ? quando : undefined };
-        enviar(() => (editar ? atualizarLigacao(editar.id, dados) : criarLigacao(dados)));
-      }}
-    >
-      <Campo label="Resultado" grupo>
-        <Chips opcoes={RESULTADOS} valor={resultado} onChange={setResultado} rotulos={rotuloResultado} />
-      </Campo>
-      <Campo label="Lead (opcional)" grupo>
-        <LeadPicker leads={leads} leadId={leadId} onSelecionar={setLeadId} texto={busca} onTexto={setBusca} />
-      </Campo>
-      <MaisDetalhes aberto={detalhes} onToggle={() => setDetalhes((d) => !d)}>
-        <div className="grid grid-cols-2 gap-3">
-          <Campo label="Duração (min)">
-            <Input type="number" min={0} step="0.5" inputMode="decimal" value={duracao} onChange={(e) => setDuracao(e.target.value)} />
-          </Campo>
-          <Campo label="Data/hora">
-            <Input type="datetime-local" value={quando} onChange={(e) => setQuando(e.target.value)} />
-          </Campo>
+        <div className="grid gap-3">
+          <button
+            type="button"
+            onClick={() => setOutroHorario((v) => !v)}
+            className="flex items-center gap-1 self-start text-sm text-muted-foreground hover:text-foreground"
+            aria-expanded={outroHorario}
+          >
+            <ChevronDown className={cn("size-4 transition-transform", outroHorario && "rotate-180")} />
+            {outroHorario ? "Usar o horário atual" : "Lançar em outro horário"}
+          </button>
+          {outroHorario && (
+            <Campo label="Data/hora do lançamento">
+              <Input type="datetime-local" value={em} onChange={(e) => setEm(e.target.value)} />
+              {tipo !== "CANCELAMENTO" && (
+                <span className="text-xs text-muted-foreground">A quantidade conta no dia desta data.</span>
+              )}
+            </Campo>
+          )}
         </div>
-        <Campo label="Observação">
-          <Textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} />
-        </Campo>
-      </MaisDetalhes>
-      <Rodape pendente={pendente} rotulo={editar ? "Salvar" : "Registrar ligação"} />
-    </form>
-  );
-}
 
-function FormAgendamento({
-  leads,
-  editar,
-  leadInicial,
-  onFim,
-}: {
-  leads: LeadOpcao[];
-  editar?: AgendamentoEdicao;
-  leadInicial?: string;
-  onFim: () => void;
-}) {
-  const [leadId, setLeadId] = useState<string | null>(editar?.leadId ?? leadInicial ?? null);
-  const [busca, setBusca] = useState("");
-  const [reuniao, setReuniao] = useState(editar ? paraInputDataHora(editar.reuniaoEm) : sugestaoReuniao());
-  const [detalhes, setDetalhes] = useState(!!editar);
-  const [status, setStatus] = useState(editar?.status ?? "MARCADO");
-  const [observacao, setObservacao] = useState(editar?.observacao ?? "");
-  const [feitoEm, setFeitoEm] = useState(paraInputDataHora(editar?.feitoEm ?? new Date()));
-  const { pendente, enviar } = useEnvio(onFim, editar ? "Agendamento atualizado" : "Agendamento registrado 🎯");
-
-  return (
-    <form
-      className="grid gap-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const reuniaoValida = ehDiaValido(reuniao.slice(0, 10));
-        if (!reuniaoValida) return toast.error("Informe a data e hora da reunião.");
-        const dados = {
-          leadId,
-          novoLeadNome: leadId ? undefined : busca,
-          novoLeadOrigem: ultimaOrigem(),
-          reuniaoEm: reuniao,
-          status,
-          observacao,
-          feitoEm: detalhes ? feitoEm : undefined,
-        };
-        enviar(() => (editar ? atualizarAgendamento(editar.id, dados) : criarAgendamento(dados)));
-      }}
-    >
-      <Campo label="Lead" grupo>
-        <LeadPicker
-          leads={leads}
-          leadId={leadId}
-          onSelecionar={setLeadId}
-          texto={busca}
-          onTexto={setBusca}
-          permitirNovo={!editar}
-          autoFocus={!leadId}
-        />
-      </Campo>
-      <Campo label="Reunião marcada para">
-        <Input type="datetime-local" value={reuniao} onChange={(e) => setReuniao(e.target.value)} required />
-      </Campo>
-      <MaisDetalhes aberto={detalhes} onToggle={() => setDetalhes((d) => !d)}>
-        <Campo label="Status">
-          <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-            {STATUS_AGENDAMENTO.map((s) => (
-              <option key={s} value={s}>{rotuloStatusAgendamento[s]}</option>
-            ))}
-          </Select>
-        </Campo>
-        <Campo label="Agendamento feito em">
-          <Input type="datetime-local" value={feitoEm} onChange={(e) => setFeitoEm(e.target.value)} />
-        </Campo>
-        <Campo label="Observação">
-          <Textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} />
-        </Campo>
-      </MaisDetalhes>
-      <Rodape pendente={pendente} rotulo={editar ? "Salvar" : "Registrar agendamento"} />
-    </form>
+        <Button type="submit" size="lg" disabled={pendente} className="w-full" autoFocus={!editar}>
+          {pendente ? "Salvando..." : editar ? "Salvar" : rotuloEnviar(tipo, n)}
+        </Button>
+      </form>
+    </DialogContent>
   );
 }

@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@/server/db";
-import { hoje as hojeDia, intervaloDoDia, intervaloDoMes, mesDe, minutosDoDia } from "@/lib/datas";
+import { hoje as hojeDia, intervaloDoDia, mesDe, minutosDoDia } from "@/lib/datas";
 import {
   corDoPercentual,
   diaTemMeta,
@@ -10,70 +10,44 @@ import {
   projecaoDoDia,
   resumirMes,
 } from "@/lib/metas/regras";
-import { agendamentosPorDia, carregarRegras, contagens } from "./regras-usuario";
-
-export type ItemLinhaDoTempo =
-  | { tipo: "lead"; id: string; em: Date; lead: { id: string; nome: string; empresa: string | null; origem: string; status: string; telefone: string | null; email: string | null; observacoes: string | null } }
-  | { tipo: "ligacao"; id: string; em: Date; resultado: string; duracaoSeg: number | null; observacao: string | null; lead: { id: string; nome: string } | null }
-  | { tipo: "agendamento"; id: string; em: Date; reuniaoEm: Date; status: string; observacao: string | null; lead: { id: string; nome: string } };
+import { agendamentosPorDia, carregarRegras, totaisDoMes } from "./regras-usuario";
 
 export async function dadosDeHoje(userId: string, agora = new Date()) {
   const dia = hojeDia(agora);
-  const intervalo = intervaloDoDia(dia);
   const mes = mesDe(dia);
 
-  const [regras, cont, jornadaDia, leads, ligacoes, agendamentos, porDiaMes, diaSemMeta] = await Promise.all([
+  const [regras, totaisMes, jornadaDia, diaSemMeta, lancamentos] = await Promise.all([
     carregarRegras(userId),
-    contagens(userId, intervalo),
+    totaisDoMes(userId, mes),
     db.jornadaDia.findUnique({ where: { userId_data: { userId, data: dia } } }),
-    db.lead.findMany({ where: { userId, entradaEm: intervalo } }),
-    db.ligacao.findMany({ where: { userId, realizadaEm: intervalo }, include: { lead: { select: { id: true, nome: true } } } }),
-    db.agendamento.findMany({ where: { userId, feitoEm: intervalo }, include: { lead: { select: { id: true, nome: true } } } }),
-    agendamentosPorDia(userId, intervaloDoMes(mes)),
     db.diaSemMeta.findUnique({ where: { userId_data: { userId, data: dia } } }),
+    // Lançado hoje (inclui cancelamentos que descontam de dias anteriores).
+    db.registro.findMany({ where: { userId, em: intervaloDoDia(dia) }, orderBy: { em: "desc" } }),
   ]);
 
+  const totais = totaisMes.get(dia) ?? { ligacoes: 0, feitos: 0, cancelados: 0, agendamentos: 0 };
   const temMeta = diaTemMeta(dia, regras.diasSemMeta);
   const metaVigente = metaDiariaVigente(regras.metas, dia);
   const meta = temMeta ? metaVigente : 0;
-  const pct = percentual(cont.agendamentos, meta);
+  const pct = percentual(totais.agendamentos, meta);
   const jornada = jornadaDia ? { inicio: jornadaDia.inicio, fim: jornadaDia.fim } : regras.jornadaPadrao;
-  const resumoMes = resumirMes(mes, porDiaMes, regras.metas, regras.diasSemMeta, dia);
-
-  const linhaDoTempo: ItemLinhaDoTempo[] = [
-    ...leads.map((l): ItemLinhaDoTempo => ({ tipo: "lead", id: l.id, em: l.entradaEm, lead: l })),
-    ...ligacoes.map((c): ItemLinhaDoTempo => ({
-      tipo: "ligacao", id: c.id, em: c.realizadaEm, resultado: c.resultado, duracaoSeg: c.duracaoSeg, observacao: c.observacao, lead: c.lead,
-    })),
-    ...agendamentos.map((a): ItemLinhaDoTempo => ({
-      tipo: "agendamento", id: a.id, em: a.feitoEm, reuniaoEm: a.reuniaoEm, status: a.status, observacao: a.observacao, lead: a.lead,
-    })),
-  ].sort((a, b) => b.em.getTime() - a.em.getTime());
 
   return {
     dia,
-    contagens: cont,
+    totais,
     temMeta,
     motivoSemMeta: diaSemMeta ? diaSemMeta.motivo : temMeta ? null : ("FIM_DE_SEMANA" as const),
     meta,
     metaVigente,
-    faltam: faltam(meta, cont.agendamentos),
+    faltam: faltam(meta, totais.agendamentos),
     percentual: pct,
     cor: corDoPercentual(pct),
     jornada,
     jornadaPersonalizada: !!jornadaDia,
-    projecao: projecaoDoDia(cont.agendamentos, minutosDoDia(agora), jornada),
-    resumoMes,
-    linhaDoTempo,
+    projecao: projecaoDoDia(totais.agendamentos, minutosDoDia(agora), jornada),
+    resumoMes: resumirMes(mes, agendamentosPorDia(totaisMes), regras.metas, regras.diasSemMeta, dia),
+    lancamentos,
   };
 }
 
-/** Leads recentes para o seletor rápido dos formulários. */
-export async function leadsParaSelecao(userId: string) {
-  return db.lead.findMany({
-    where: { userId },
-    orderBy: { entradaEm: "desc" },
-    take: 300,
-    select: { id: true, nome: true, empresa: true, status: true },
-  });
-}
+export type Lancamento = Awaited<ReturnType<typeof dadosDeHoje>>["lancamentos"][number];

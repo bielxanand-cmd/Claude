@@ -1,4 +1,4 @@
-import { Ban, CalendarCheck, Phone, Target, TrendingUp, UserPlus } from "lucide-react";
+import { Ban, CalendarCheck, Phone, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarraProgresso, CardNumero, corTexto } from "@/components/comum/indicadores";
 import { SeletorMes } from "@/components/comum/seletor-mes";
@@ -7,7 +7,6 @@ import { CalendarioMes } from "@/components/graficos/calendario";
 import { usuarioAtualId } from "@/server/usuario";
 import { dadosDoMes } from "@/server/queries/mes";
 import { ehMesValido, hoje, mesDe } from "@/lib/datas";
-import { rotuloStatusAgendamento, STATUS_AGENDAMENTO } from "@/lib/rotulos";
 import { cn, formatarNumero, formatarPct } from "@/lib/utils";
 
 export default async function MesPage({ searchParams }: { searchParams: Promise<{ m?: string }> }) {
@@ -71,54 +70,39 @@ export default async function MesPage({ searchParams }: { searchParams: Promise<
           icone={<TrendingUp />}
           detalhe="agendamentos/dia"
         />
-        <CardNumero titulo="Leads" valor={d.contagens.leads} icone={<UserPlus />} />
-        <CardNumero titulo="Ligações" valor={d.contagens.ligacoes} icone={<Phone />} detalhe={`${d.contagens.ligacoesAtendidas} atendidas`} />
+        <CardNumero
+          titulo="Ligações"
+          valor={d.totais.ligacoes}
+          icone={<Phone />}
+          detalhe={d.ligacoesPorDiaUtil != null ? `${formatarNumero(d.ligacoesPorDiaUtil)} por dia útil` : undefined}
+        />
+        <CardNumero
+          titulo="Cancelados"
+          valor={d.totais.cancelados}
+          icone={<Ban />}
+          detalhe={`de ${d.totais.feitos} agendados (não contam)`}
+        />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Conversão</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div>
-              <div className="text-3xl font-semibold">{formatarPct(d.conversao.ligacoesParaAgendamentos, 1)}</div>
-              <div className="text-sm text-muted-foreground">
-                Ligações → agendamentos ({d.contagens.agendamentos} de {d.contagens.ligacoes})
-              </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Conversão</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-x-12 gap-y-4">
+          <div>
+            <div className="text-3xl font-semibold">{formatarPct(d.conversao, 1)}</div>
+            <div className="text-sm text-muted-foreground">
+              Ligações → agendamentos ({d.totais.agendamentos} de {d.totais.ligacoes})
             </div>
-            <div>
-              <div className="text-3xl font-semibold">{formatarPct(d.conversao.leadsParaAgendamentos, 1)}</div>
-              <div className="text-sm text-muted-foreground">
-                Leads → agendamentos ({d.contagens.agendamentos} de {d.contagens.leads})
-              </div>
+          </div>
+          <div>
+            <div className="text-3xl font-semibold">
+              {d.ligacoesPorAgendamento != null ? formatarNumero(d.ligacoesPorAgendamento, 1) : "—"}
             </div>
-          </CardContent>
-        </Card>
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-1.5">
-              <Target className="size-4" /> Agendamentos por status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {STATUS_AGENDAMENTO.map((s) => (
-                <div key={s} className="rounded-xl bg-muted p-3">
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    {s === "CANCELADO" && <Ban className="size-3.5" />}
-                    {rotuloStatusAgendamento[s]}
-                  </div>
-                  <div className="text-2xl font-semibold">{d.status[s]}</div>
-                </div>
-              ))}
-            </div>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Cancelados ({d.contagens.cancelados}) não contam para a meta.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="text-sm text-muted-foreground">Ligações por agendamento</div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

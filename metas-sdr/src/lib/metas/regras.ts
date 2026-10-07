@@ -227,3 +227,41 @@ export function projecaoDoDia(agendamentos: number, minutoAtual: number, jornada
 export function taxaConversao(convertidos: number, base: number): number | null {
   return base > 0 ? (convertidos / base) * 100 : null;
 }
+
+export type TipoRegistro = "LIGACAO" | "AGENDAMENTO" | "CANCELAMENTO";
+
+export interface TotaisDia {
+  ligacoes: number;
+  /** Agendamentos lançados no dia. */
+  feitos: number;
+  /** Cancelamentos que descontam deste dia. */
+  cancelados: number;
+  /** Agendamentos que contam para a meta: feitos - cancelados (nunca negativo). */
+  agendamentos: number;
+}
+
+/** Soma os lançamentos de um dia (todos devem pertencer ao mesmo dia). */
+export function totaisDoDia(registros: { tipo: TipoRegistro; quantidade: number }[]): TotaisDia {
+  let ligacoes = 0;
+  let feitos = 0;
+  let cancelados = 0;
+  for (const r of registros) {
+    if (r.tipo === "LIGACAO") ligacoes += r.quantidade;
+    else if (r.tipo === "AGENDAMENTO") feitos += r.quantidade;
+    else cancelados += r.quantidade;
+  }
+  return { ligacoes, feitos, cancelados, agendamentos: Math.max(0, feitos - cancelados) };
+}
+
+/** Soma totais de vários dias (o "nunca negativo" vale por dia, antes de somar). */
+export function somarTotais(lista: TotaisDia[]): TotaisDia {
+  return lista.reduce(
+    (s, t) => ({
+      ligacoes: s.ligacoes + t.ligacoes,
+      feitos: s.feitos + t.feitos,
+      cancelados: s.cancelados + t.cancelados,
+      agendamentos: s.agendamentos + t.agendamentos,
+    }),
+    { ligacoes: 0, feitos: 0, cancelados: 0, agendamentos: 0 },
+  );
+}

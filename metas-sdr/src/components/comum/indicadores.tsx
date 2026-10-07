@@ -69,12 +69,12 @@ export function CardNumero({
   className?: string;
 }) {
   return (
-    <Card className={cn("flex flex-col gap-1 p-4 sm:p-5", className)}>
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>{titulo}</span>
-        {icone && <span className="[&_svg]:size-4">{icone}</span>}
+    <Card className={cn("flex min-w-0 flex-col gap-1 p-3 sm:p-5", className)}>
+      <div className="flex items-center justify-between gap-1 text-xs text-muted-foreground sm:text-sm">
+        <span className="break-words">{titulo}</span>
+        {icone && <span className="hidden sm:inline [&_svg]:size-4">{icone}</span>}
       </div>
-      <div className={cn("text-3xl font-semibold tracking-tight sm:text-4xl", destaque)}>{valor}</div>
+      <div className={cn("text-2xl font-semibold tracking-tight sm:text-4xl", destaque)}>{valor}</div>
       {detalhe && <div className="text-xs text-muted-foreground sm:text-sm">{detalhe}</div>}
     </Card>
   );

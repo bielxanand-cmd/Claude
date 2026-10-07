@@ -149,9 +149,8 @@ export default async function ConfiguracoesPage() {
           <div>
             <h4 className="mb-2 text-sm font-medium">Exportar CSV (abre no Excel)</h4>
             <div className="flex flex-wrap gap-2">
-              <LinkDownload href="/api/exportar/leads">Leads</LinkDownload>
-              <LinkDownload href="/api/exportar/ligacoes">Ligações</LinkDownload>
-              <LinkDownload href="/api/exportar/agendamentos">Agendamentos</LinkDownload>
+              <LinkDownload href="/api/exportar/resumo">Resumo por dia</LinkDownload>
+              <LinkDownload href="/api/exportar/lancamentos">Lançamentos</LinkDownload>
             </div>
           </div>
           <div className="border-t pt-4">
