@@ -1,0 +1,106 @@
+// Banco local em SQLite. Para migrar para Postgres, troque o provider para
+// "postgresql", ajuste DATABASE_URL no .env e gere novas migrations.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Uso individual por enquanto: existe um usuário padrão, mas todas as tabelas
+// já são ligadas a um usuário para facilitar a inclusão de login no futuro.
+model User {
+  id           String        @id @default(cuid())
+  nome         String
+  createdAt    DateTime      @default(now())
+  config       Config?
+  registros    Registro[]
+  metas        Meta[]
+  diasSemMeta  DiaSemMeta[]
+  jornadas     JornadaDia[]
+}
+
+// Lançamentos de execução: quantas ligações e agendamentos foram feitos.
+// Um CANCELAMENTO desconta agendamentos do dia em que eles foram feitos.
+enum TipoRegistro {
+  LIGACAO
+  AGENDAMENTO
+  CANCELAMENTO
+}
+
+enum TipoMeta {
+  DIARIA
+  MENSAL
+}
+
+enum MotivoDiaSemMeta {
+  FERIADO
+  FOLGA
+  FERIAS
+  OUTRO
+}
+
+model Registro {
+  id         String       @id @default(cuid())
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tipo       TipoRegistro
+  quantidade Int
+  // Momento em que o lançamento foi feito.
+  em         DateTime     @default(now())
+  // Dia ("aaaa-mm-dd", São Paulo) em que a quantidade conta. Para ligações e
+  // agendamentos é o dia de `em`; para cancelamentos, o dia em que o agendamento foi feito.
+  dia        String
+  createdAt  DateTime     @default(now())
+
+  @@index([userId, dia])
+  @@index([userId, em])
+}
+
+// Histórico de metas: a meta vigente numa data é a de maior vigenteDesde <= data.
+// Datas de calendário são guardadas como texto "aaaa-mm-dd" (fuso America/Sao_Paulo).
+model Meta {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tipo         TipoMeta
+  // Para MENSAL, null significa "calcular: meta diária x dias úteis do mês".
+  valor        Int?
+  vigenteDesde String
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, tipo, vigenteDesde])
+}
+
+model DiaSemMeta {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data      String
+  motivo    MotivoDiaSemMeta
+  descricao String?
+  createdAt DateTime         @default(now())
+
+  @@unique([userId, data])
+}
+
+// Jornada específica de um dia (sobrescreve a jornada padrão da Config).
+model JornadaDia {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data   String
+  inicio String // "HH:mm"
+  fim    String // "HH:mm"
+
+  @@unique([userId, data])
+}
+
+model Config {
+  userId        String @id
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jornadaInicio String @default("08:00")
+  jornadaFim    String @default("18:00")
+}
