@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarraProgresso, CardNumero, corTexto } from "@/components/comum/indicadores";
 import { SeletorMes } from "@/components/comum/seletor-mes";
 import { GraficoDiario } from "@/components/graficos/grafico-diario";
+import { GraficoLigacoes } from "@/components/graficos/grafico-ligacoes";
 import { CalendarioMes } from "@/components/graficos/calendario";
 import { usuarioAtualId } from "@/server/usuario";
 import { dadosDoMes } from "@/server/queries/mes";
@@ -110,6 +111,18 @@ export default async function MesPage({ searchParams }: { searchParams: Promise<
         </CardHeader>
         <CardContent>
           <GraficoDiario dias={r.dias} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex-row flex-wrap items-center justify-between">
+          <CardTitle>Ligações por dia</CardTitle>
+          {d.ligacoesPorDiaUtil != null && (
+            <span className="text-sm text-muted-foreground">média de {formatarNumero(d.ligacoesPorDiaUtil)} por dia útil</span>
+          )}
+        </CardHeader>
+        <CardContent>
+          <GraficoLigacoes dias={d.ligacoesPorDia} />
         </CardContent>
       </Card>
 

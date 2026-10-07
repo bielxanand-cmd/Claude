@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@/server/db";
-import { type Mes, hoje } from "@/lib/datas";
+import { type Mes, diasDoMes, hoje } from "@/lib/datas";
 import { corDoPercentual, resumirMes, somarTotais, taxaConversao } from "@/lib/metas/regras";
 import { agendamentosPorDia, carregarRegras, totaisDoMes } from "./regras-usuario";
 
@@ -19,6 +19,11 @@ export async function dadosDoMes(userId: string, mes: Mes) {
     resumo,
     cor: corDoPercentual(resumo.percentual),
     totais: t,
+    ligacoesPorDia: diasDoMes(mes).map((dia) => ({
+      dia,
+      ligacoes: totais.get(dia)?.ligacoes ?? 0,
+      agendamentos: totais.get(dia)?.agendamentos ?? 0,
+    })),
     ligacoesPorDiaUtil: diasDecorridos ? t.ligacoes / diasDecorridos : null,
     conversao: taxaConversao(t.agendamentos, t.ligacoes),
     ligacoesPorAgendamento: t.agendamentos ? t.ligacoes / t.agendamentos : null,

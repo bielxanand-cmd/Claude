@@ -40,7 +40,7 @@ Para voltar a um banco vazio, apague o arquivo `prisma/dev.db` e rode `npx prism
 ## Telas
 
 - **Hoje**: cards de ligações, agendamentos e "faltam X". Também mostra o anel de progresso da meta (vermelho < 50%, amarelo 50–99%, verde ≥ 100%), o indicador de ritmo ("no ritmo atual você termina o dia com N") e os lançamentos do dia, com opção de editar e excluir.
-- **Mês**: seletor de mês, agendamentos × meta mensal, dias com meta batida, média por dia, ligações, cancelados, conversão de ligações em agendamentos, gráfico diário e calendário.
+- **Mês**: seletor de mês, agendamentos × meta mensal, dias com meta batida, média por dia, ligações, cancelados, conversão de ligações em agendamentos, gráficos diários de agendamentos e de ligações, e calendário.
 - **Histórico**: tabela e gráfico mês a mês com % de atingimento, dias com meta batida, meta mensal batida (sim/não), ligações, conversão e cancelados. Destaca o melhor mês e a sequência atual de dias batendo a meta.
 - **Configurações**: metas, jornada padrão, dias sem meta, exportação CSV e backup/restauração.
 
